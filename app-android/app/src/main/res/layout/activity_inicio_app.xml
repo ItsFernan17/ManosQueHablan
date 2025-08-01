@@ -16,19 +16,16 @@
         android:orientation="horizontal"
         android:padding="16dp"
         android:background="@color/background"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <ImageView
-            android:layout_width="180dp"
-            android:layout_height="55dp"
-            android:src="@drawable/logo_completo" />
-
-        <View
             android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="0.6" />
+            android:layout_height="55dp"
+            android:layout_weight="1"
+            android:scaleType="fitStart"
+            android:src="@drawable/logo_completo" />
 
         <ImageView
             android:layout_width="24dp"
@@ -52,10 +49,10 @@
         android:layout_height="0dp"
         android:layout_marginTop="2dp"
         android:background="@color/background"
+        app:layout_constraintTop_toBottomOf="@id/header"
         app:layout_constraintBottom_toTopOf="@id/btnNuevoVideo"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/header">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:id="@+id/contenedorVideos"
@@ -94,28 +91,25 @@
                     android:textColor="@color/texto_splash"
                     android:textSize="14sp" />
             </LinearLayout>
-
         </LinearLayout>
     </ScrollView>
 
     <!-- Botón grabar nuevo video -->
     <LinearLayout
         android:id="@+id/btnNuevoVideo"
-        android:layout_width="250dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:layout_marginTop="25dp"
-        android:layout_marginBottom="25dp"
-        android:background="@drawable/boton_redondeado"
+        android:background="@drawable/boton_redondeado_aceptar"
         android:clickable="true"
         android:focusable="true"
         android:gravity="center"
         android:orientation="horizontal"
         android:paddingVertical="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/scrollView2">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_percent="0.75">
 
         <ImageView
             android:layout_width="30dp"

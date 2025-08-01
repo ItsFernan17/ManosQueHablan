@@ -61,10 +61,9 @@ class GrabarVideoActivity : AppCompatActivity() {
         }
 
         binding.btnRotarCamara.setOnClickListener {
-            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK)
-                CameraSelector.LENS_FACING_FRONT
-            else
-                CameraSelector.LENS_FACING_BACK
+            lensFacing =
+                if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT
+                else CameraSelector.LENS_FACING_BACK
             iniciarCamara()
         }
 
@@ -88,9 +87,7 @@ class GrabarVideoActivity : AppCompatActivity() {
         }
         if (noOtorgados.isNotEmpty()) {
             ActivityCompat.requestPermissions(
-                this,
-                noOtorgados.toTypedArray(),
-                REQUEST_CODE_PERMISOS
+                this, noOtorgados.toTypedArray(), REQUEST_CODE_PERMISOS
             )
         }
     }
@@ -107,9 +104,7 @@ class GrabarVideoActivity : AppCompatActivity() {
     }
 
     override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISOS && allPermissionsGranted()) {
@@ -127,9 +122,8 @@ class GrabarVideoActivity : AppCompatActivity() {
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(binding.previewView.surfaceProvider)
             }
-            val recorder = Recorder.Builder()
-                .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
-                .build()
+            val recorder =
+                Recorder.Builder().setQualitySelector(QualitySelector.from(Quality.HIGHEST)).build()
             videoCapture = VideoCapture.withOutput(recorder)
             camSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
 
@@ -145,19 +139,14 @@ class GrabarVideoActivity : AppCompatActivity() {
     private fun iniciarGrabacion() {
         val outputOptions = FileOutputOptions.Builder(createTempFile()).build()
         val currentCapture = videoCapture ?: return
-        recording = currentCapture.output
-            .prepareRecording(this, outputOptions)
-            .apply {
+        recording = currentCapture.output.prepareRecording(this, outputOptions).apply {
                 if (ContextCompat.checkSelfPermission(
-                        this@GrabarVideoActivity,
-                        Manifest.permission.RECORD_AUDIO
-                    )
-                    == PackageManager.PERMISSION_GRANTED
+                        this@GrabarVideoActivity, Manifest.permission.RECORD_AUDIO
+                    ) == PackageManager.PERMISSION_GRANTED
                 ) {
                     withAudioEnabled()
                 }
-            }
-            .start(ContextCompat.getMainExecutor(this)) { event ->
+            }.start(ContextCompat.getMainExecutor(this)) { event ->
                 when (event) {
                     is VideoRecordEvent.Start -> iniciarTemporizador()
                     is VideoRecordEvent.Finalize -> {
@@ -241,9 +230,7 @@ class GrabarVideoActivity : AppCompatActivity() {
                 } else {
                     ocultarCargando()
                     Toast.makeText(
-                        this@GrabarVideoActivity,
-                        "Error al procesar el video",
-                        Toast.LENGTH_SHORT
+                        this@GrabarVideoActivity, "Error al procesar el video", Toast.LENGTH_SHORT
                     ).show()
                 }
             } catch (e: Exception) {
@@ -261,12 +248,15 @@ class GrabarVideoActivity : AppCompatActivity() {
             val carpeta = File(getExternalFilesDir(null), nombreCarpeta)
             if (!carpeta.exists()) carpeta.mkdirs()
 
+            // Guardar video con nombre personalizado
             guardarArchivoLocal(
                 ApiCliente.BASE_URL + data.video_url.removePrefix("/"),
-                "video.mp4",
+                "video_${fecha}.mp4",
                 "video/mp4",
                 carpeta
             )
+
+            // Mantener audio y transcripción igual
             guardarArchivoLocal(
                 ApiCliente.BASE_URL + data.audio_url.removePrefix("/"),
                 "audio.mp3",
@@ -279,14 +269,11 @@ class GrabarVideoActivity : AppCompatActivity() {
                 "text/plain",
                 carpeta
             )
-
         }
 
+
     private suspend fun guardarArchivoLocal(
-        url: String,
-        nombreArchivo: String,
-        mimeType: String,
-        carpetaDestino: File
+        url: String, nombreArchivo: String, mimeType: String, carpetaDestino: File
     ) = withContext(Dispatchers.IO) {
         try {
             val request = okhttp3.Request.Builder().url(url).build()

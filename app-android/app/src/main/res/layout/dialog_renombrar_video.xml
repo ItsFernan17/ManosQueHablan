@@ -47,7 +47,7 @@
             android:gravity="center"
             android:layout_marginTop="24dp">
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnCancelar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -60,7 +60,7 @@
                 android:paddingHorizontal="24dp"
                 android:paddingVertical="10dp" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnAceptar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

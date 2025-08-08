@@ -16,6 +16,7 @@ import com.frivasm.manosquehablan.dialogs.DialogUtils
 import com.frivasm.manosquehablan.utils.VideoUtils
 import com.frivasm.manosquehablan.GrabarVideoActivity
 import com.frivasm.manosquehablan.R
+import com.frivasm.manosquehablan.helpers.VideoOrdenamientoAlfabeticoViewHelper
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -63,8 +64,9 @@ class InicioAppActivity : AppCompatActivity() {
     private fun aplicarOrdenamiento(tipo: String) {
         when (tipo) {
             "recientes" -> VideoLoader.cargarVideosRecientes(this, contenedor, vistaSinVideos)
-            "fecha" -> VideoOrdenamientoViewHelper.ordenarVideosPorFecha(this, contenedor, vistaSinVideos)
-            "alfabetico" -> Toast.makeText(this, "Ordenar alfabéticamente (pendiente)", Toast.LENGTH_SHORT).show()
+            "fecha"     -> VideoOrdenamientoViewHelper.ordenarVideosPorFecha(this, contenedor, vistaSinVideos)
+            "alfabetico"-> VideoOrdenamientoAlfabeticoViewHelper.ordenarVideosPorLetra(this, contenedor, vistaSinVideos)
+            else        -> VideoLoader.cargarVideosRecientes(this, contenedor, vistaSinVideos)
         }
     }
 }

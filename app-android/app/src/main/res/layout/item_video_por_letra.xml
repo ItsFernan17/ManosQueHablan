@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="12dp">
+
+    <!-- Encabezado de la letra (chip) con línea horizontal -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/txtEncabezadoLetra"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="A"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:fontFamily="@font/poppins_bold"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="6dp"
+            android:background="@drawable/bg_chip_letra" />
+
+        <!-- Línea que se extiende a la derecha de la letra -->
+        <View
+            android:id="@+id/lineaEncabezadoLetra"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:background="#E0E0E0"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- Contenedor del video -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="10dp">
+
+        <!-- Miniatura con botón de reproducción -->
+        <FrameLayout
+            android:layout_width="120dp"
+            android:layout_height="80dp"
+            android:layout_marginEnd="12dp">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/imgMiniatura"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:adjustViewBounds="true"
+                app:shapeAppearanceOverlay="@style/RoundedMiniaturaStyle" />
+
+            <ImageView
+                android:id="@+id/btnReproducir"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:src="@drawable/reproducir"
+                app:tint="@android:color/white" />
+        </FrameLayout>
+
+        <!-- Título y detalles -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp">
+
+            <TextView
+                android:id="@+id/txtTitulo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_bold"
+                android:text="Aviones Nuevos"
+                android:textColor="@color/texto_videos"
+                android:textSize="16sp"
+                android:ellipsize="marquee"
+                android:singleLine="true"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:scrollHorizontally="true"
+                android:textAlignment="center"
+                android:clickable="true"
+                android:focusable="false"
+                android:focusableInTouchMode="false" />
+
+            <TextView
+                android:id="@+id/txtDetalles"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1/08/2025 · 00:20 de video"
+                android:textSize="14sp"
+                android:textColor="#777777"
+                android:fontFamily="@font/poppins_regular" />
+        </LinearLayout>
+
+        <!-- Botón de opciones -->
+        <ImageView
+            android:id="@+id/btnOpciones"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/opciones"
+            android:layout_marginStart="8dp"
+            app:tint="@color/rojo" />
+    </LinearLayout>
+
+    <!-- Línea divisoria entre items -->
+    <View
+        android:id="@+id/lineaDivisoria"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0"
+        android:layout_marginTop="4dp" />
+</LinearLayout>

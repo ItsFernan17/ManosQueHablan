@@ -12,6 +12,10 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 
 object OrdenamientoBottomSheetHelper {
 
+    private const val TIPO_RECIENTES = "recientes"
+    private const val TIPO_ALFABETICO = "alfabetico"
+    private const val TIPO_FECHA = "fecha"
+
     fun mostrarBottomSheetOrdenamiento(
         context: Context,
         onTipoSeleccionado: (String) -> Unit
@@ -28,6 +32,7 @@ object OrdenamientoBottomSheetHelper {
         val textoAlfabetico = view.findViewById<TextView>(R.id.texto_alfabetico)
         val textoFecha = view.findViewById<TextView>(R.id.texto_fecha)
 
+        // OJO: evitar getChildAt(0) frágil; referencia el ImageView por id si puedes.
         val iconoRecientes = opcionRecientes.getChildAt(0) as ImageView
         val iconoAlfabetico = opcionAlfabetico.getChildAt(0) as ImageView
         val iconoFecha = opcionFecha.getChildAt(0) as ImageView
@@ -39,7 +44,8 @@ object OrdenamientoBottomSheetHelper {
         val colorRojo = ContextCompat.getColor(context, R.color.rojo)
         val colorNormal = ContextCompat.getColor(context, R.color.texto_videos)
 
-        fun aplicarSeleccion(tipo: String) {
+        // Solo pinta el estado visual (no guarda ni cierra)
+        fun pintarSeleccion(tipo: String) {
             textoRecientes.setTextColor(colorNormal)
             textoAlfabetico.setTextColor(colorNormal)
             textoFecha.setTextColor(colorNormal)
@@ -53,34 +59,48 @@ object OrdenamientoBottomSheetHelper {
             checkFecha.visibility = View.GONE
 
             when (tipo) {
-                "recientes" -> {
+                TIPO_RECIENTES -> {
                     textoRecientes.setTextColor(colorRojo)
                     iconoRecientes.setColorFilter(colorRojo)
                     checkRecientes.visibility = View.VISIBLE
                 }
-                "alfabetico" -> {
+                TIPO_ALFABETICO -> {
                     textoAlfabetico.setTextColor(colorRojo)
                     iconoAlfabetico.setColorFilter(colorRojo)
                     checkAlfabetico.visibility = View.VISIBLE
                 }
-                "fecha" -> {
+                TIPO_FECHA -> {
                     textoFecha.setTextColor(colorRojo)
                     iconoFecha.setColorFilter(colorRojo)
                     checkFecha.visibility = View.VISIBLE
                 }
             }
+        }
 
+        // Confirma: guarda preferencia, notifica y cierra
+        fun confirmar(tipo: String) {
             PreferenciasHelper.guardarOrden(context, tipo)
             onTipoSeleccionado(tipo)
             dialog.dismiss()
         }
 
-        val ordenActual = PreferenciasHelper.obtenerOrden(context)
-        aplicarSeleccion(ordenActual)
+        // Estado inicial: pinta según preferencia pero NO cierres
+        val ordenActual = PreferenciasHelper.obtenerOrden(context).ifBlank { TIPO_RECIENTES }
+        pintarSeleccion(ordenActual)
 
-        opcionRecientes.setOnClickListener { aplicarSeleccion("recientes") }
-        opcionAlfabetico.setOnClickListener { aplicarSeleccion("alfabetico") }
-        opcionFecha.setOnClickListener { aplicarSeleccion("fecha") }
+        // Clicks: pintan y confirman
+        opcionRecientes.setOnClickListener {
+            pintarSeleccion(TIPO_RECIENTES)
+            confirmar(TIPO_RECIENTES)
+        }
+        opcionAlfabetico.setOnClickListener {
+            pintarSeleccion(TIPO_ALFABETICO)
+            confirmar(TIPO_ALFABETICO)
+        }
+        opcionFecha.setOnClickListener {
+            pintarSeleccion(TIPO_FECHA)
+            confirmar(TIPO_FECHA)
+        }
 
         dialog.show()
     }

@@ -6,19 +6,20 @@
     android:orientation="vertical"
     android:paddingHorizontal="12dp">
 
-    <!-- Encabezado de la fecha -->
+    <!-- Encabezado de la fecha con estilo chip -->
     <TextView
         android:id="@+id/txtEncabezadoFecha"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Videos de Hoy"
-        android:textSize="15sp"
+        android:text="Hoy"
+        android:textSize="14sp"
         android:textStyle="bold"
-        android:textColor="@color/black"
-        android:paddingHorizontal="8dp"
-        android:paddingVertical="6dp"
+        android:textColor="@android:color/white"
         android:fontFamily="@font/poppins_bold"
-        android:layout_marginBottom="6dp" />
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="6dp"
+        android:background="@drawable/bg_chip_fecha"
+        android:layout_marginBottom="8dp" />
 
     <!-- Contenedor del video -->
     <LinearLayout
@@ -65,7 +66,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/poppins_bold"
-                android:text="Texto muy largo que se desplazará"
+                android:text="Nuevo Vocabulario Ahora Todos"
                 android:textColor="@color/texto_videos"
                 android:textSize="16sp"
                 android:ellipsize="marquee"
@@ -75,17 +76,16 @@
                 android:textAlignment="center"
                 android:clickable="true"
                 android:focusable="false"
-                android:focusableInTouchMode="false"
-                />
+                android:focusableInTouchMode="false" />
 
             <TextView
                 android:id="@+id/txtDetalles"
-                android:layout_width="wrap_content"
+                android:layout_width="212dp"
                 android:layout_height="wrap_content"
-                android:text="1/08/2025 · 2 MB · 00:20"
-                android:textSize="14sp"
+                android:fontFamily="@font/poppins_regular"
+                android:text="1/08/2025 · 00:20 de video"
                 android:textColor="#777777"
-                android:fontFamily="@font/poppins_regular" />
+                android:textSize="14sp" />
         </LinearLayout>
 
         <!-- Botón de opciones -->
@@ -100,6 +100,7 @@
 
     <!-- Línea divisoria entre videos -->
     <View
+        android:id="@+id/lineaDivisoria"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="#E0E0E0"

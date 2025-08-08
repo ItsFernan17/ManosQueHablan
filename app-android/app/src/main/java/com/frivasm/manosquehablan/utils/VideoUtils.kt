@@ -30,9 +30,8 @@ object VideoUtils {
     suspend fun construirDetalles(context: Context, fecha: Date, ruta: String): String {
         val formatoHora = SimpleDateFormat("h:mm a", Locale.getDefault())
         val hora = formatoHora.format(fecha)
-        val tamano = Formatter.formatShortFileSize(context, File(ruta).length())
         val duracion = obtenerDuracion(ruta)
-        return "$hora · $tamano · $duracion"
+        return "$hora · $duracion"
     }
 
     fun obtenerFechaCreacionVideo(path: String): Long {

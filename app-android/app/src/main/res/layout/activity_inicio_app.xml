@@ -35,6 +35,7 @@
             app:tint="@color/rojo" />
 
         <ImageView
+            android:id="@+id/btnOpciones"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_marginStart="12dp"

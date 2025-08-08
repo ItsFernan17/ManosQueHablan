@@ -1,4 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.ManosQueHablan" parent="Theme.AppCompat.Light.NoActionBar" />
+    <style name="Theme.ManosQueHablan" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Colores principales -->
+        <item name="colorPrimary">@color/celeste</item>
+        <item name="colorPrimaryVariant">@color/violeta</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <item name="colorSecondary">@color/rojo</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <!-- Fondo general -->
+        <item name="android:colorBackground">@color/background</item>
+
+        <!-- Texto y superficie -->
+        <item name="colorOnBackground">@color/texto_videos</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/texto_videos</item>
+
+        <!-- Texto principal -->
+        <item name="android:textColorPrimary">@color/texto_videos</item>
+    </style>
 </resources>

@@ -45,7 +45,6 @@
                     app:tint="@android:color/white" />
             </FrameLayout>
 
-
             <!-- Título y Fecha -->
             <LinearLayout
                 android:layout_width="0dp"
@@ -64,12 +63,13 @@
                     android:textColor="@color/texto_videos"
                     android:textSize="16sp"
                     android:ellipsize="marquee"
-                    android:marqueeRepeatLimit="marquee_forever"
                     android:singleLine="true"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
+                    android:marqueeRepeatLimit="marquee_forever"
                     android:scrollHorizontally="true"
                     android:textAlignment="center"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
                     />
 
                 <TextView
@@ -123,6 +123,5 @@
                 android:src="@drawable/eliminar"
                 app:tint="@color/violeta" />
         </LinearLayout>
-
     </LinearLayout>
 </androidx.cardview.widget.CardView>

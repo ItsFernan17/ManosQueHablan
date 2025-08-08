@@ -33,15 +33,16 @@
             app:tint="@color/celeste"
             android:layout_marginBottom="16dp" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnCerrarAudio"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Cerrar"
+            android:text="Cancelar"
             android:textAllCaps="false"
-            android:background="@drawable/boton_redondeado_cancelar"
             android:textColor="@color/white"
+            android:background="@drawable/boton_redondeado_cancelar"
             android:fontFamily="@font/poppins_medium"
+            android:textSize="14sp"
             android:paddingHorizontal="24dp"
             android:paddingVertical="10dp" />
     </LinearLayout>

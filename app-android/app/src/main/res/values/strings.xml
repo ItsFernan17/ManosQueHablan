@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Manos Que Hablan</string>
+    <string name="videos_recientes_hoy">Videos Recientes - Hoy</string>
+    <string name="videos_anteriores">Videos Anteriores</string>
 </resources>

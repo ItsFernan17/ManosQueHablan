@@ -19,14 +19,26 @@ MODEL_FOLDER_PATH = os.path.join(ROOT_PATH, "models")
 MODEL_PATH = os.path.join(MODEL_FOLDER_PATH, "action.h5")
 WORDS_JSON_PATH = os.path.join(MODEL_FOLDER_PATH, "words.json")
 
-# VALIDACIONES
-if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError(f"❌ Modelo no encontrado en la ruta: {MODEL_PATH}")
+# VALIDACIONES (No fallar al importar, solo advertir)
+def validate_model_files():
+    """Valida que los archivos del modelo existan"""
+    issues = []
+    
+    if not os.path.exists(MODEL_PATH):
+        issues.append(f"❌ Modelo no encontrado en la ruta: {MODEL_PATH}")
+    
+    if not os.path.exists(WORDS_JSON_PATH):
+        issues.append(f"❌ Archivo de palabras no encontrado en: {WORDS_JSON_PATH}")
+    
+    return issues
 
-if not os.path.exists(WORDS_JSON_PATH):
-    raise FileNotFoundError(f"❌ Archivo de palabras no encontrado en: {WORDS_JSON_PATH}")
-
-# PARÁMETROS VISUALES PARA OpenCV
-FONT = cv2.FONT_HERSHEY_PLAIN
-FONT_SIZE = 1.5
-FONT_POS = (5, 30)
+# PARÁMETROS VISUALES PARA OpenCV (con manejo de errores)
+try:
+    FONT = cv2.FONT_HERSHEY_PLAIN
+    FONT_SIZE = 1.5
+    FONT_POS = (5, 30)
+except NameError:
+    # cv2 no está disponible
+    FONT = None
+    FONT_SIZE = 1.5
+    FONT_POS = (5, 30)

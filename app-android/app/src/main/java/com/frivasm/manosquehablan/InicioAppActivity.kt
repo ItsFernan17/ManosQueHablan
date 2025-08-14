@@ -1,5 +1,7 @@
 package com.frivasm.manosquehablan
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -26,6 +28,7 @@ class InicioAppActivity : AppCompatActivity() {
     private lateinit var contenedor: LinearLayout
     private lateinit var vistaSinVideos: LinearLayout
     private lateinit var btnOpciones: ImageView
+    private lateinit var btnNuevoVideo: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,9 +37,11 @@ class InicioAppActivity : AppCompatActivity() {
         contenedor = findViewById(R.id.contenedorVideos)
         vistaSinVideos = findViewById(R.id.vistaSinVideos)
         btnOpciones = findViewById(R.id.btnOpciones)
+        btnNuevoVideo = findViewById(R.id.btnNuevoVideo)
 
-        findViewById<LinearLayout>(R.id.btnNuevoVideo).setOnClickListener {
-            startActivity(Intent(this, GrabarVideoActivity::class.java))
+        btnNuevoVideo.setOnClickListener {
+            // Animar el botón antes de navegar
+            animateButtonAndNavigate()
         }
 
         btnOpciones.setOnClickListener {
@@ -50,6 +55,47 @@ class InicioAppActivity : AppCompatActivity() {
         }
 
         aplicarOrdenamiento(PreferenciasHelper.obtenerOrden(this))
+    }
+
+    private fun animateButtonAndNavigate() {
+        // Crear animación de escala y rebote
+        val scaleDown = ObjectAnimator.ofFloat(btnNuevoVideo, "scaleX", 1f, 0.95f)
+        val scaleDownY = ObjectAnimator.ofFloat(btnNuevoVideo, "scaleY", 1f, 0.95f)
+        
+        val scaleUp = ObjectAnimator.ofFloat(btnNuevoVideo, "scaleX", 0.95f, 1.05f)
+        val scaleUpY = ObjectAnimator.ofFloat(btnNuevoVideo, "scaleY", 0.95f, 1.05f)
+        
+        val scaleNormal = ObjectAnimator.ofFloat(btnNuevoVideo, "scaleX", 1.05f, 1f)
+        val scaleNormalY = ObjectAnimator.ofFloat(btnNuevoVideo, "scaleY", 1.05f, 1f)
+        
+        // Secuencia de animación: bajar → subir → normal
+        val animatorSet = AnimatorSet().apply {
+            playTogether(scaleDown, scaleDownY)
+            duration = 100
+        }
+        
+        val animatorSet2 = AnimatorSet().apply {
+            playTogether(scaleUp, scaleUpY)
+            duration = 150
+        }
+        
+        val animatorSet3 = AnimatorSet().apply {
+            playTogether(scaleNormal, scaleNormalY)
+            duration = 100
+        }
+        
+        // Secuencia completa
+        val fullAnimation = AnimatorSet().apply {
+            playSequentially(animatorSet, animatorSet2, animatorSet3)
+        }
+        
+        // Ejecutar animación y navegar al final
+        fullAnimation.start()
+        
+        // Navegar después de la animación
+        btnNuevoVideo.postDelayed({
+            startActivity(Intent(this, GrabarVideoActivity::class.java))
+        }, 350) // 350ms para que termine la animación
     }
 
     override fun onResume() {

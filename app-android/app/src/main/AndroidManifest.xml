@@ -6,6 +6,9 @@
     <!-- Permisos de cámara y micrófono -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    
+    <!-- Permiso de vibración para feedback táctil -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- Acceso a Internet para comunicar con la API -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -53,10 +56,6 @@
         <!-- Actividades -->
 
         <activity
-            android:name=".DialogLoadingActivity"
-            android:exported="false" />
-
-        <activity
             android:name=".GrabarVideoActivity"
             android:exported="false"
             android:screenOrientation="sensor" />
@@ -75,11 +74,7 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.ManosQueHablan" />
+
     </application>
 
 </manifest>

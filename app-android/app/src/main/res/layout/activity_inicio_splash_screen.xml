@@ -18,22 +18,19 @@
         android:contentDescription="Fondo"
         android:adjustViewBounds="true" />
 
-    <!-- Logo centrado -->
+    <!-- Logo arriba -->
     <ImageView
         android:id="@+id/logoImage"
         android:layout_width="180dp"
         android:layout_height="180dp"
         android:layout_marginTop="100dp"
-        android:layout_marginBottom="16dp"
         android:contentDescription="Logo"
         android:src="@drawable/logo"
-        app:layout_constraintBottom_toTopOf="@+id/titulo"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.35" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Título -->
+    <!-- Título en el centro -->
     <TextView
         android:id="@+id/titulo"
         android:layout_width="250dp"
@@ -46,28 +43,15 @@
         android:textSize="40sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/logoImage" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
-    <!-- Subtítulo -->
-    <TextView
-        android:id="@+id/subtitulo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Comunicando sin barreras"
-        android:textColor="@color/texto_splash"
-        android:textSize="16sp"
-        android:fontFamily="@font/poppins_medium"
-        android:layout_marginTop="6dp"
-        app:layout_constraintTop_toBottomOf="@id/titulo"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <!-- Autor -->
+    <!-- Autor abajo -->
     <TextView
         android:id="@+id/creditos"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="50dp"
+        android:layout_marginBottom="100dp"
         android:fontFamily="@font/poppins_medium"
         android:text="Desarrollado por Fernando Rivas"
         android:textColor="@color/texto_splash"
@@ -75,5 +59,84 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Puntos de carga rojos -->
+    <LinearLayout
+        android:id="@+id/loadingContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="80dp"
+        android:layout_marginBottom="52dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@id/creditos"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Punto 1 -->
+        <FrameLayout
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginEnd="16dp">
+            
+            <ImageView
+                android:id="@+id/loadingDot1_rojo"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/loading_dot_circular"
+                android:scaleType="fitCenter" />
+                
+            <ImageView
+                android:id="@+id/loadingDot1_celeste"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/loading_dot_celeste"
+                android:scaleType="fitCenter"
+                android:alpha="0" />
+        </FrameLayout>
+
+        <!-- Punto 2 -->
+        <FrameLayout
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginEnd="16dp">
+            
+            <ImageView
+                android:id="@+id/loadingDot2_rojo"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/loading_dot_circular"
+                android:scaleType="fitCenter" />
+                
+            <ImageView
+                android:id="@+id/loadingDot2_celeste"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/loading_dot_celeste"
+                android:scaleType="fitCenter"
+                android:alpha="0" />
+        </FrameLayout>
+
+        <!-- Punto 3 -->
+        <FrameLayout
+            android:layout_width="16dp"
+            android:layout_height="16dp">
+            
+            <ImageView
+                android:id="@+id/loadingDot3_rojo"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/loading_dot_circular"
+                android:scaleType="fitCenter" />
+                
+            <ImageView
+                android:id="@+id/loadingDot3_celeste"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/loading_dot_celeste"
+                android:scaleType="fitCenter"
+                android:alpha="0" />
+        </FrameLayout>
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

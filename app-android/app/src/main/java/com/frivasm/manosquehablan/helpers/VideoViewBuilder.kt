@@ -15,7 +15,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import android.media.ThumbnailUtils
-import android.provider.MediaStore
 
 object VideoViewBuilder {
 
@@ -64,11 +63,8 @@ object VideoViewBuilder {
                 CoroutineScope(Dispatchers.Main).launch {
                     val thumbnail = withContext(Dispatchers.IO) {
                         try {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                ThumbnailUtils.createVideoThumbnail(videoFile, Size(320, 240), null)
-                            } else {
-                                ThumbnailUtils.createVideoThumbnail(videoFile.path, MediaStore.Video.Thumbnails.MINI_KIND)
-                            }
+                            // Usar la API moderna de ThumbnailUtils para todas las versiones
+                            ThumbnailUtils.createVideoThumbnail(videoFile, Size(320, 240), null)
                         } catch (e: Exception) {
                             null
                         }

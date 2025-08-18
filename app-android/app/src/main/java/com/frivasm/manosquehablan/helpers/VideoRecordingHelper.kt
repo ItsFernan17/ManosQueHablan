@@ -73,7 +73,14 @@ class VideoRecordingHelper(
                         if (!event.hasError()) {
                             onRecordingStopped?.invoke()
                         } else {
-                            onRecordingError?.invoke("Error al grabar video")
+                            // Solo mostrar error si no es una cancelación intencional
+                            val errorMessage = event.error?.toString() ?: "Error al grabar video"
+                            if (!errorMessage.contains("cancelled", ignoreCase = true) && 
+                                !errorMessage.contains("cancelado", ignoreCase = true)) {
+                                onRecordingError?.invoke("Error al grabar video")
+                            } else {
+                                Log.d("VideoRecording", "Grabación cancelada intencionalmente")
+                            }
                         }
                         recording = null
                     }
@@ -87,11 +94,20 @@ class VideoRecordingHelper(
     
     fun detenerGrabacion() {
         try {
-            recording?.stop()
+            // Si hay una grabación activa, detenerla de forma silenciosa
+            recording?.let { currentRecording ->
+                try {
+                    currentRecording.stop()
+                } catch (e: Exception) {
+                    // No mostrar error si se cancela intencionalmente
+                    Log.d("VideoRecording", "Grabación detenida intencionalmente")
+                }
+            }
             recording = null
             isPaused = false
         } catch (e: Exception) {
-            Log.e("VideoRecording", "Error al detener grabación: ${e.message}")
+            // Solo logear el error, no mostrar Toast al usuario
+            Log.d("VideoRecording", "Grabación detenida: ${e.message}")
         }
     }
     
@@ -138,13 +154,22 @@ class VideoRecordingHelper(
     
     fun cleanup() {
         try {
-            recording?.stop()
+            // Detener grabación de forma silenciosa
+            recording?.let { currentRecording ->
+                try {
+                    currentRecording.stop()
+                } catch (e: Exception) {
+                    // No mostrar error si se cancela intencionalmente
+                    Log.d("VideoRecording", "Grabación cancelada durante cleanup")
+                }
+            }
             recording = null
             currentTempFile = null
             isPaused = false
             cameraExecutor.shutdown()
         } catch (e: Exception) {
-            Log.e("VideoRecording", "Error en cleanup: ${e.message}")
+            // Solo logear el error, no mostrar Toast al usuario
+            Log.d("VideoRecording", "Cleanup completado: ${e.message}")
         }
     }
 }

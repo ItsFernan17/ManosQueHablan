@@ -9,12 +9,13 @@ from gtts import gTTS
 from moviepy.editor import VideoFileClip, AudioFileClip, CompositeAudioClip, TextClip, CompositeVideoClip, ColorClip
 import moviepy.config as mp_config
 import imageio
+from PIL import Image, ImageDraw, ImageFont # Importar Pillow
 try:
     import ffmpeg
     FFMPEG_PYTHON_AVAILABLE = True
 except ImportError:
     FFMPEG_PYTHON_AVAILABLE = False
-from .verificar import evaluate_model_with_frames
+from .evaluate import evaluate_model_with_frames
 
 # DIMENSIONES ESTÁNDAR PARA TELÉFONO VERTICAL
 PHONE_WIDTH = 720   # Ancho estándar
@@ -194,64 +195,78 @@ def calcular_duracion_subtitulo(texto):
     return duracion_total
 
 def crear_subtitulo_minimalista(texto, duracion):
-    """Crea subtítulos minimalistas y elegantes"""
+    """Crea subtítulos minimalistas y elegantes usando Pillow para mejor soporte de texto."""
     try:
         print(f"Creando subtítulo minimalista para: '{texto}'")
         
-        import cv2
-        import numpy as np
         from moviepy.editor import ImageClip
         
-        # Configuración minimalista
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 0.8  # Tamaño equivalente a ~15px
-        font_thickness = 2
+        # Configuración de la fuente (asegúrate de que esta fuente exista en el sistema)
+        # Puedes probar con "arial.ttf", "DejaVuSans.ttf", o una ruta absoluta a una fuente.
+        try:
+            font_path = "C:/Windows/Fonts/arial.ttf" # Ruta común para Arial en Windows
+            font_size = 40
+            font = ImageFont.truetype(font_path, font_size)
+        except IOError:
+            print("⚠️ Fuente Arial no encontrada, usando fuente por defecto. Los acentos podrían no mostrarse correctamente.")
+            font_size = 30 # Reducir tamaño si la fuente por defecto es más grande
+            font = ImageFont.load_default()
+
+        # Calcular dimensiones del texto usando Pillow
+        # getbbox() es más preciso para el tamaño real del texto
+        bbox = font.getbbox(texto)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
         
-        # Texto tal como viene, sin modificaciones
-        texto_display = texto
+        # Dimensiones del subtítulo con padding
+        padding_x = 30
+        padding_y = 20
+        subtitle_width = text_width + padding_x * 2
+        subtitle_height = text_height + padding_y * 2
         
-        # Calcular dimensiones del texto
-        (text_width, text_height), baseline = cv2.getTextSize(
-            texto_display, font, font_scale, font_thickness
-        )
-        
-        # Dimensiones del subtítulo con padding mínimo
-        padding = 20
-        subtitle_width = text_width + padding * 2
-        subtitle_height = text_height + padding * 2
-        
-        # Crear imagen RGBA para transparencia
-        img = np.zeros((subtitle_height, subtitle_width, 4), dtype=np.uint8)
+        # Asegurar que el ancho no exceda el del teléfono
+        if subtitle_width > PHONE_WIDTH - 40:
+            # Si es demasiado ancho, ajustar el tamaño de la fuente o el padding
+            # Por simplicidad, aquí solo se ajusta el ancho del cuadro
+            subtitle_width = PHONE_WIDTH - 40
+            # Considerar ajustar font_size o envolver texto si esto es un problema recurrente
+            
+        # Crear imagen RGBA con Pillow para transparencia
+        img = Image.new("RGBA", (subtitle_width, subtitle_height), (0, 0, 0, 0)) # Fondo transparente
+        draw = ImageDraw.Draw(img)
         
         # Fondo negro semi-transparente (elegante)
-        img[:, :] = [0, 0, 0, 120]  # Negro con 47% de transparencia
+        # Dibujar un rectángulo para el fondo
+        draw.rectangle([(0, 0), (subtitle_width, subtitle_height)], fill=(0, 0, 0, 180)) # Negro con 70% de opacidad
         
-        # Posición del texto centrado
-        x = padding
-        y = text_height + padding
+        # Posición del texto centrado dentro del cuadro del subtítulo
+        # Ajustar la posición para que el texto esté centrado vertical y horizontalmente
+        text_x = (subtitle_width - text_width) / 2 - bbox[0]
+        text_y = (subtitle_height - text_height) / 2 - bbox[1]
         
-        # Texto blanco limpio sin efectos
-        cv2.putText(img, texto_display, (x, y), font, font_scale, 
-                   (255, 255, 255, 255), font_thickness)
+        # Dibujar texto blanco
+        draw.text((text_x, text_y), texto, font=font, fill=(255, 255, 255, 255))
         
-        # Convertir a RGB para MoviePy
-        img_rgb = img[:, :, :3]  # Solo RGB
+        # Convertir imagen de Pillow a array de NumPy para MoviePy
+        img_np = np.array(img)
         
         # Crear clip
-        img_clip = ImageClip(img_rgb, duration=duracion)
+        img_clip = ImageClip(img_np, duration=duracion)
         
         # Posición en la parte inferior centrada
         margin_bottom = 80
         img_clip = img_clip.set_position(('center', PHONE_HEIGHT - margin_bottom - subtitle_height))
         
-        # Aplicar transparencia
-        img_clip = img_clip.set_opacity(0.8)
+        # La transparencia ya está manejada por el canal alfa de la imagen,
+        # pero set_opacity puede ser útil para un control adicional si se desea.
+        # img_clip = img_clip.set_opacity(0.9) # Opcional: ajustar opacidad general del clip
         
         print(f"Subtítulo minimalista creado para '{texto}'")
         return img_clip
         
     except Exception as e:
         print(f"Error creando subtítulo minimalista: {e}")
+        print("🔄 Usando fallback para subtítulos.")
         return crear_subtitulo_simple_fallback(texto, duracion)
 
 def crear_subtitulo_simple_fallback(texto, duracion):
@@ -552,9 +567,10 @@ def optimizar_para_movil(video_clip):
     
     return video_clip
 
-def procesar_video_vertical_estandar_ffmpeg(input_path, carpeta="."):
+def procesar_video_vertical_estandar_ffmpeg(input_path, carpeta=".", detection_data=None):
     """
-    Procesa video usando FFmpeg directo para evitar problemas de MoviePy
+    Procesa video usando FFmpeg directo, con sincronización de alta precisión.
+    Acepta un diccionario de detección para re-escalar tiempos.
     """
     print(f"🚀 Procesamiento con FFmpeg directo: {input_path}")
     
@@ -573,26 +589,15 @@ def procesar_video_vertical_estandar_ffmpeg(input_path, carpeta="."):
     transcript_path = os.path.join(carpeta, f"{nombre_base}_transcripcion.txt")
     audio_path = os.path.join(carpeta, f"{nombre_base}_audio_completo.mp3")
     
-    # 1. DETECTAR SEÑAS (usando MoviePy solo para análisis)
-    print("🔍 Detectando señas en el video...")
-    try:
-        detecciones = evaluate_model_with_frames(input_path, threshold=0.5)
-        
-        if not detecciones:
-            print("⚠️ No se detectaron señas, intentando con threshold más bajo...")
-            detecciones = evaluate_model_with_frames(input_path, threshold=0.3)
-        
-        if not detecciones:
-            print("❌ No se detectaron señas en el video")
-            print("🚫 Sin señas detectadas - no se generarán archivos de salida")
-            return None  # No procesar si no hay señas
-            
-        print(f"✅ Detectadas {len(detecciones)} señas")
-        
-    except Exception as e:
-        print(f"❌ Error en detección de señas: {e}")
-        print("🚫 Error en detección - no se generarán archivos de salida")
-        return None
+    # 1. EXTRAER DATOS DE DETECCIÓN
+    detecciones = []
+    original_fps = 30.0 # Default
+    if detection_data and 'detections' in detection_data:
+        detecciones = detection_data['detections']
+        original_fps = detection_data.get('original_fps', original_fps)
+        print(f"✅ Usando {len(detecciones)} detecciones pre-calculadas con FPS original de {original_fps:.2f}")
+    else:
+        print("⚠️ No se proveyeron datos de detección, el resultado puede no tener subtítulos/audio.")
     
     # 2. CONVERTIR A VERTICAL CON MÉTODO INTELIGENTE
     print("🔧 Convirtiendo a formato vertical...")
@@ -612,83 +617,47 @@ def procesar_video_vertical_estandar_ffmpeg(input_path, carpeta="."):
         try:
             # Cargar video convertido con MoviePy
             video_clip = VideoFileClip(video_temp)
+            final_fps = video_clip.fps
             
-            # Crear subtítulos para señas detectadas
-            subtitulos = []
-            print(f"🔤 Creando {len(detecciones)} subtítulos...")
+            # --- LOGGING DE VALIDACIÓN ---
+            print("\n--- VALIDACIÓN DE SINCRONIZACIÓN ---")
+            print(f"FPS Original: {original_fps:.2f} | FPS Final: {final_fps:.2f}")
+            time_rescale_ratio = final_fps / original_fps if original_fps > 0 else 1.0
+            print(f"Ratio de re-escala de tiempo: {time_rescale_ratio:.4f}")
             
-            for i, detection_data in enumerate(detecciones):
-                # Extraer datos de la detección (manejar formato con/sin confianza)
-                if len(detection_data) == 3:
-                    frame_idx, palabra, confidence = detection_data
-                    confidence_text = f" ({confidence:.1f}%)"
-                else:
-                    frame_idx, palabra = detection_data
-                    confidence = 0.0
-                    confidence_text = ""
+            final_audio_clips = []
+            final_subtitle_clips = []
+
+            for i, (frame_absoluto, palabra, _) in enumerate(detecciones):
+                # Calcular tiempo de anclaje en la línea de tiempo ORIGINAL
+                t_original = frame_absoluto / original_fps
                 
-                # El frame_idx ahora representa cuando SE DETECTA la seña
-                detection_time = frame_idx / video_clip.fps
-                duracion = calcular_duracion_subtitulo(palabra)  # Duración dinámica basada en la palabra
+                # Re-escalar a la línea de tiempo FINAL
+                t_ancla_final = t_original * time_rescale_ratio
+
+                if i == 0: # Log del primer item como ejemplo
+                    print(f"Ejemplo Mapeo: Frame Absoluto {frame_absoluto} -> t_original {t_original:.2f}s -> t_final {t_ancla_final:.2f}s")
                 
-                print(f"🔤 Procesando subtítulo {i+1}/{len(detecciones)}: '{palabra}'{confidence_text} al detectar en {detection_time:.2f}s (duración: {duracion:.1f}s)")
-                
-                subtitulo = crear_subtitulo_vertical(palabra, duracion)
-                if subtitulo:
-                    # Mostrar subtítulo cuando se detecta la seña
-                    subtitulo = subtitulo.set_start(detection_time)
-                    subtitulos.append(subtitulo)
-                    print(f"✅ Subtítulo '{palabra}'{confidence_text} sincronizado al detectar la seña")
-                else:
-                    print(f"❌ No se pudo crear subtítulo para '{palabra}'{confidence_text}")
-            
-            print(f"📊 Total de subtítulos creados: {len(subtitulos)}")
-            
-            # Combinar video con subtítulos
-            if subtitulos:
-                print("🎬 Combinando video con subtítulos...")
-                try:
-                    video_con_subtitulos = CompositeVideoClip([video_clip] + subtitulos)
-                    print("✅ Video con subtítulos combinado exitosamente")
-                except Exception as e:
-                    print(f"❌ Error combinando subtítulos: {e}")
-                    video_con_subtitulos = video_clip
-            else:
-                print("⚠️ No hay subtítulos para agregar")
-                video_con_subtitulos = video_clip
-            
-            # Generar audio sincronizado
-            print("🎧 Generando audio sincronizado...")
-            audio_clips = []
-            
-            for detection_data in detecciones:
-                # Extraer datos de la detección (manejar formato con/sin confianza)
-                if len(detection_data) == 3:
-                    frame_idx, palabra, confidence = detection_data
-                    confidence_text = f" ({confidence:.1f}%)"
-                else:
-                    frame_idx, palabra = detection_data
-                    confidence_text = ""
-                
-                # El frame_idx ahora representa cuando SE DETECTA la seña
-                detection_time = frame_idx / video_clip.fps
-                temp_audio = os.path.join(carpeta, f"temp_audio_{frame_idx}.mp3")
-                
+                # Generar audio y subtítulo
+                temp_audio = os.path.join(carpeta, f"temp_audio_{frame_absoluto}.mp3")
                 if generar_audio(palabra, temp_audio):
                     try:
-                        # Reproducir audio cuando se detecta la seña
-                        clip = AudioFileClip(temp_audio).set_start(detection_time)
-                        audio_clips.append(clip)
-                        print(f"🎵 Audio para '{palabra}'{confidence_text} sincronizado al detectar en {detection_time:.2f}s")
+                        audio_clip = AudioFileClip(temp_audio).set_start(t_ancla_final)
+                        final_audio_clips.append(audio_clip)
                     except Exception as e:
-                        print(f"⚠️ Error con audio {temp_audio}: {e}")
+                        print(f"⚠️ Error cargando audio {temp_audio}: {e}")
+
+                subtitle_duration = calcular_duracion_subtitulo(palabra)
+                subtitulo_clip = crear_subtitulo_vertical(palabra, subtitle_duration)
+                if subtitulo_clip:
+                    subtitulo_clip = subtitulo_clip.set_start(t_ancla_final)
+                    final_subtitle_clips.append(subtitulo_clip)
             
-            # Combinar audio con video
-            if audio_clips:
-                audio_final = CompositeAudioClip(audio_clips)
-                video_final = video_con_subtitulos.set_audio(audio_final)
-            else:
-                video_final = video_con_subtitulos
+            print("-------------------------------------\n")
+
+            # Combinar todo
+            video_con_subtitulos = CompositeVideoClip([video_clip] + final_subtitle_clips) if final_subtitle_clips else video_clip
+            video_final = video_con_subtitulos.set_audio(CompositeAudioClip(final_audio_clips)) if final_audio_clips else video_con_subtitulos
             
             # Exportar video final con subtítulos y audio
             print("💾 Exportando video con subtítulos y audio...")
@@ -1156,36 +1125,3 @@ if __name__ == "__main__":
             print(f"  1. {resultado}")
     else:
         print("❌ Sin señas detectadas - no se generaron archivos")
-
-# ==========================================
-# CAMBIOS IMPLEMENTADOS:
-# ==========================================
-# 
-# 1. LIMPIEZA AUTOMÁTICA:
-#    - limpiar_carpeta_static(): Limpia automáticamente la carpeta static
-#    - Mantiene solo la sesión más reciente
-#    - Elimina archivos sueltos
-#    - Se ejecuta al inicio de cada procesamiento
-#
-# 2. SIN SEÑAS = SIN ARCHIVOS:
-#    - Si no se detectan señas: return None
-#    - No se genera video vertical
-#    - No se genera transcripción
-#    - No se genera audio
-#    - Se limpia todo automáticamente
-#
-# 3. PORCENTAJE DE CONFIANZA:
-#    - Cada detección incluye porcentaje de acierto
-#    - Se muestra en todos los logs
-#    - Formato: "palabra (85.3%)"
-#
-# 4. THRESHOLD ALTO:
-#    - Threshold por defecto: 0.8 (80% de confianza)
-#    - Solo detecta señas muy claras
-#    - Reduce falsos positivos
-#
-# 5. INTEGRACIÓN CON MAIN.PY:
-#    - main.py maneja resultado None correctamente
-#    - Respuesta HTTP 422 cuando no hay señas
-#    - Limpieza automática integrada
-# ==========================================

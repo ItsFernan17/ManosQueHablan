@@ -25,6 +25,12 @@ import java.util.*
 
 class InicioAppActivity : AppCompatActivity() {
 
+    companion object {
+        private const val ORDEN_RECIENTES = "recientes"
+        private const val ORDEN_FECHA = "fecha"
+        private const val ORDEN_ALFABETICO = "alfabetico"
+    }
+
     private lateinit var contenedor: LinearLayout
     private lateinit var vistaSinVideos: LinearLayout
     private lateinit var btnOpciones: ImageView
@@ -48,7 +54,7 @@ class InicioAppActivity : AppCompatActivity() {
             OrdenamientoBottomSheetHelper.mostrarBottomSheetOrdenamiento(
                 context = this,
                 onTipoSeleccionado = { tipo ->
-                    PreferenciasHelper.guardarOrden(this, tipo)
+                    // El helper ya guarda la preferencia, solo necesitamos reaccionar.
                     aplicarOrdenamiento(tipo)
                 }
             )
@@ -58,44 +64,36 @@ class InicioAppActivity : AppCompatActivity() {
     }
 
     private fun animateButtonAndNavigate() {
-        // Crear animación de escala y rebote
-        val scaleDown = ObjectAnimator.ofFloat(btnNuevoVideo, "scaleX", 1f, 0.95f)
-        val scaleDownY = ObjectAnimator.ofFloat(btnNuevoVideo, "scaleY", 1f, 0.95f)
-        
-        val scaleUp = ObjectAnimator.ofFloat(btnNuevoVideo, "scaleX", 0.95f, 1.05f)
-        val scaleUpY = ObjectAnimator.ofFloat(btnNuevoVideo, "scaleY", 0.95f, 1.05f)
-        
-        val scaleNormal = ObjectAnimator.ofFloat(btnNuevoVideo, "scaleX", 1.05f, 1f)
-        val scaleNormalY = ObjectAnimator.ofFloat(btnNuevoVideo, "scaleY", 1.05f, 1f)
-        
-        // Secuencia de animación: bajar → subir → normal
-        val animatorSet = AnimatorSet().apply {
-            playTogether(scaleDown, scaleDownY)
-            duration = 100
+        btnNuevoVideo.isEnabled = false // Evitar doble click
+
+        val scaleDown = ObjectAnimator.ofPropertyValuesHolder(
+            btnNuevoVideo,
+            android.animation.PropertyValuesHolder.ofFloat("scaleX", 0.95f),
+            android.animation.PropertyValuesHolder.ofFloat("scaleY", 0.95f)
+        ).apply { duration = 100 }
+
+        val scaleUp = ObjectAnimator.ofPropertyValuesHolder(
+            btnNuevoVideo,
+            android.animation.PropertyValuesHolder.ofFloat("scaleX", 1.05f),
+            android.animation.PropertyValuesHolder.ofFloat("scaleY", 1.05f)
+        ).apply { duration = 150 }
+
+        val scaleNormal = ObjectAnimator.ofPropertyValuesHolder(
+            btnNuevoVideo,
+            android.animation.PropertyValuesHolder.ofFloat("scaleX", 1f),
+            android.animation.PropertyValuesHolder.ofFloat("scaleY", 1f)
+        ).apply { duration = 100 }
+
+        AnimatorSet().apply {
+            playSequentially(scaleDown, scaleUp, scaleNormal)
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    startActivity(Intent(this@InicioAppActivity, GrabarVideoActivity::class.java))
+                    btnNuevoVideo.isEnabled = true // Reactivar al volver
+                }
+            })
+            start()
         }
-        
-        val animatorSet2 = AnimatorSet().apply {
-            playTogether(scaleUp, scaleUpY)
-            duration = 150
-        }
-        
-        val animatorSet3 = AnimatorSet().apply {
-            playTogether(scaleNormal, scaleNormalY)
-            duration = 100
-        }
-        
-        // Secuencia completa
-        val fullAnimation = AnimatorSet().apply {
-            playSequentially(animatorSet, animatorSet2, animatorSet3)
-        }
-        
-        // Ejecutar animación y navegar al final
-        fullAnimation.start()
-        
-        // Navegar después de la animación
-        btnNuevoVideo.postDelayed({
-            startActivity(Intent(this, GrabarVideoActivity::class.java))
-        }, 350) // 350ms para que termine la animación
     }
 
     override fun onResume() {
@@ -109,10 +107,10 @@ class InicioAppActivity : AppCompatActivity() {
 
     private fun aplicarOrdenamiento(tipo: String) {
         when (tipo) {
-            "recientes" -> VideoLoader.cargarVideosRecientes(this, contenedor, vistaSinVideos)
-            "fecha"     -> VideoOrdenamientoViewHelper.ordenarVideosPorFecha(this, contenedor, vistaSinVideos)
-            "alfabetico"-> VideoOrdenamientoAlfabeticoViewHelper.ordenarVideosPorLetra(this, contenedor, vistaSinVideos)
-            else        -> VideoLoader.cargarVideosRecientes(this, contenedor, vistaSinVideos)
+            ORDEN_RECIENTES -> VideoLoader.cargarVideosRecientes(this, contenedor, vistaSinVideos)
+            ORDEN_FECHA -> VideoOrdenamientoViewHelper.ordenarVideosPorFecha(this, contenedor, vistaSinVideos)
+            ORDEN_ALFABETICO -> VideoOrdenamientoAlfabeticoViewHelper.ordenarVideosPorLetra(this, contenedor, vistaSinVideos)
+            else -> VideoLoader.cargarVideosRecientes(this, contenedor, vistaSinVideos)
         }
     }
 }

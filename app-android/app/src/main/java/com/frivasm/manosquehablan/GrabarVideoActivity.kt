@@ -69,7 +69,11 @@ class GrabarVideoActivity : AppCompatActivity() {
         }
         
         videoRecordingHelper.onRecordingError = { error ->
-            Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
+            // Solo mostrar error si no es una cancelación intencional
+            if (!error.contains("cancelled", ignoreCase = true) && 
+                !error.contains("cancelado", ignoreCase = true)) {
+                Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
+            }
         }
     }
     
@@ -118,8 +122,14 @@ class GrabarVideoActivity : AppCompatActivity() {
     }
     
     private fun detenerGrabacion() {
-        videoRecordingHelper.detenerGrabacion()
-        onRecordingStopped()
+        try {
+            videoRecordingHelper.detenerGrabacion()
+            onRecordingStopped()
+        } catch (e: Exception) {
+            // Solo logear el error, no mostrar Toast al usuario
+            Log.d("Camara", "Grabación detenida: ${e.message}")
+            onRecordingStopped()
+        }
     }
     
     private fun pausarGrabacion() {
@@ -179,6 +189,10 @@ class GrabarVideoActivity : AppCompatActivity() {
         // Restaurar estado de pausa completamente
         videoPauseHelper.resetPauseState()
         
+        // Ocultar la vista de cámara y mostrar solo el diálogo de carga
+        binding.previewView.visibility = android.view.View.GONE
+        binding.fondoCamara.visibility = android.view.View.GONE
+        
         // Enviar video a API
         val path = videoRecordingHelper.getRecordingPath()
         if (path != null) {
@@ -197,16 +211,22 @@ class GrabarVideoActivity : AppCompatActivity() {
         }
     }
 
+    fun restaurarVistaCamara() {
+        binding.previewView.visibility = android.view.View.VISIBLE
+        binding.fondoCamara.visibility = android.view.View.VISIBLE
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         try {
-            // Limpiar recursos
+            // Limpiar recursos de forma silenciosa
             videoRecordingHelper.cleanup()
             videoTimerHelper.cleanup()
             // Limpiar estado de pausa completamente
             videoPauseHelper.limpiarCompletamente()
         } catch (e: Exception) {
-            Log.e("Camara", "Error en onDestroy: ${e.message}")
+            // Solo logear el error, no mostrar Toast al usuario
+            Log.d("Camara", "Limpieza completada: ${e.message}")
         }
     }
 }

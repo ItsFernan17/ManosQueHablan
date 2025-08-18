@@ -8,11 +8,13 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.frivasm.manosquehablan.GrabarVideoActivity
 import com.frivasm.manosquehablan.InicioAppActivity
 import com.frivasm.manosquehablan.R
 import com.frivasm.manosquehablan.api.ApiCliente
 import com.frivasm.manosquehablan.api.RespuestaProcesamiento
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -42,70 +44,117 @@ class VideoFileHelper(
                 val response = withContext(Dispatchers.IO) {
                     ApiCliente.instance.procesarVideo(body)
                 }
+                
+                Log.d("VideoFileHelper", "Respuesta del API: ${response.code()} - ${response.message()}")
+                
                 if (response.isSuccessful && response.body() != null) {
-                    guardarArchivosEnCarpeta(response.body()!!)
-                    ocultarCargando()
-                    Toast.makeText(
-                        context,
-                        "Archivos guardados correctamente",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    context.startActivity(Intent(context, InicioAppActivity::class.java))
-                    if (context is android.app.Activity) {
-                        context.finish()
+                    Log.d("VideoFileHelper", "API exitoso, guardando archivos...")
+                    try {
+                        guardarArchivosEnCarpeta(response.body()!!)
+                        ocultarCargando()
+                        Toast.makeText(
+                            context,
+                            "Archivos guardados correctamente",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        // Pequeño delay antes de redirigir
+                        delay(1500)
+                        context.startActivity(Intent(context, InicioAppActivity::class.java))
+                        if (context is android.app.Activity) {
+                            context.finish()
+                        }
+                    } catch (e: Exception) {
+                        Log.e("VideoFileHelper", "Error al guardar archivos: ${e.message}")
+                        ocultarCargando()
+                        Toast.makeText(
+                            context, "Error al guardar archivos. Intenta nuevamente", Toast.LENGTH_LONG
+                        ).show()
+                        // Restaurar vista de cámara para permitir nuevo intento
+                        if (context is GrabarVideoActivity) {
+                            context.restaurarVistaCamara()
+                        }
                     }
                 } else {
+                    Log.e("VideoFileHelper", "API no exitoso: ${response.code()} - ${response.message()}")
                     ocultarCargando()
                     Toast.makeText(
-                        context, "Error al procesar el video", Toast.LENGTH_SHORT
+                        context, "Error del servidor. Intenta nuevamente", Toast.LENGTH_LONG
                     ).show()
+                    // Restaurar vista de cámara para permitir nuevo intento
+                    if (context is GrabarVideoActivity) {
+                        context.restaurarVistaCamara()
+                    }
                 }
             } catch (e: Exception) {
+                Log.e("VideoFileHelper", "Excepción durante llamada API: ${e.message}")
                 ocultarCargando()
-                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG)
+                Toast.makeText(context, "Error de conexión. Intenta nuevamente", Toast.LENGTH_LONG)
                     .show()
+                // Restaurar vista de cámara para permitir nuevo intento
+                if (context is GrabarVideoActivity) {
+                    context.restaurarVistaCamara()
+                }
             }
         }
     }
     
     private suspend fun guardarArchivosEnCarpeta(data: RespuestaProcesamiento) =
         withContext(Dispatchers.IO) {
-            val fecha = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
-            val nombreCarpeta = "ManosQueHablan/Sesion_$fecha"
-            val carpeta = File(context.getExternalFilesDir(null), nombreCarpeta)
-            if (!carpeta.exists()) carpeta.mkdirs()
+            try {
+                Log.d("VideoFileHelper", "Iniciando guardado de archivos...")
+                val fecha = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+                val nombreCarpeta = "ManosQueHablan/Sesion_$fecha"
+                val carpeta = File(context.getExternalFilesDir(null), nombreCarpeta)
+                if (!carpeta.exists()) carpeta.mkdirs()
+                
+                Log.d("VideoFileHelper", "Carpeta creada: ${carpeta.absolutePath}")
 
-            // Guardar video con nombre personalizado
-            guardarArchivoLocal(
-                ApiCliente.BASE_URL + data.video_url.removePrefix("/"),
-                "video_${fecha}.mp4",
-                "video/mp4",
-                carpeta
-            )
+                // Guardar video con nombre personalizado
+                Log.d("VideoFileHelper", "Guardando video...")
+                guardarArchivoLocal(
+                    ApiCliente.BASE_URL + data.video_url.removePrefix("/"),
+                    "video_${fecha}.mp4",
+                    "video/mp4",
+                    carpeta
+                )
 
-            // Mantener audio y transcripción igual
-            guardarArchivoLocal(
-                ApiCliente.BASE_URL + data.audio_url.removePrefix("/"),
-                "audio.mp3",
-                "audio/mpeg",
-                carpeta
-            )
-            guardarArchivoLocal(
-                ApiCliente.BASE_URL + data.texto_url.removePrefix("/"),
-                "transcripcion.txt",
-                "text/plain",
-                carpeta
-            )
+                // Mantener audio y transcripción igual
+                Log.d("VideoFileHelper", "Guardando audio...")
+                guardarArchivoLocal(
+                    ApiCliente.BASE_URL + data.audio_url.removePrefix("/"),
+                    "audio.mp3",
+                    "audio/mpeg",
+                    carpeta
+                )
+                
+                Log.d("VideoFileHelper", "Guardando transcripción...")
+                guardarArchivoLocal(
+                    ApiCliente.BASE_URL + data.texto_url.removePrefix("/"),
+                    "transcripcion.txt",
+                    "text/plain",
+                    carpeta
+                )
+                
+                Log.d("VideoFileHelper", "Todos los archivos guardados exitosamente")
+            } catch (e: Exception) {
+                Log.e("VideoFileHelper", "Error en guardarArchivosEnCarpeta: ${e.message}")
+                throw e // Re-lanzar la excepción para que se maneje en el nivel superior
+            }
         }
 
     private suspend fun guardarArchivoLocal(
         url: String, nombreArchivo: String, mimeType: String, carpetaDestino: File
     ) = withContext(Dispatchers.IO) {
         try {
+            Log.d("VideoFileHelper", "Descargando $nombreArchivo desde: $url")
             val request = okhttp3.Request.Builder().url(url).build()
             val client = okhttp3.OkHttpClient()
             val response = client.newCall(request).execute()
-            if (!response.isSuccessful || response.body == null) throw Exception("Descarga fallida")
+            
+            if (!response.isSuccessful || response.body == null) {
+                Log.e("VideoFileHelper", "Descarga fallida para $nombreArchivo: ${response.code}")
+                throw Exception("Descarga fallida para $nombreArchivo: ${response.code}")
+            }
 
             val archivoDestino = File(carpetaDestino, nombreArchivo)
             response.body!!.byteStream().use { input ->
@@ -121,9 +170,10 @@ class VideoFileHelper(
                 null
             )
 
-            Log.d("GuardarArchivo", "Guardado: ${archivoDestino.absolutePath}")
+            Log.d("VideoFileHelper", "Archivo guardado exitosamente: ${archivoDestino.absolutePath}")
         } catch (e: Exception) {
-            Log.e("GuardarArchivo", "Error al guardar $nombreArchivo: ${e.message}")
+            Log.e("VideoFileHelper", "Error al guardar $nombreArchivo: ${e.message}")
+            throw e // Re-lanzar la excepción para que se maneje en el nivel superior
         }
     }
     

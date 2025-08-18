@@ -56,11 +56,9 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
-            android:id="@+id/contenedorVideos"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="vertical">
 
             <!-- Vista cuando no hay videos -->
             <LinearLayout
@@ -70,7 +68,8 @@
                 android:background="@android:color/transparent"
                 android:gravity="center"
                 android:orientation="vertical"
-                android:padding="24dp">
+                android:padding="24dp"
+                android:visibility="gone">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -91,6 +90,14 @@
                     android:textAlignment="center"
                     android:textColor="@color/texto_splash"
                     android:textSize="14sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/contenedorVideos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

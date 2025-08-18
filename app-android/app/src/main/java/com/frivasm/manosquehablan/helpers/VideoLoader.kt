@@ -21,7 +21,6 @@ object VideoLoader {
         if (!raiz.exists() || !raiz.isDirectory) {
             contenedor.removeAllViews()
             vistaSinVideos.visibility = View.VISIBLE
-            contenedor.addView(vistaSinVideos)
             return
         }
 
@@ -35,7 +34,6 @@ object VideoLoader {
 
         if (videos.isEmpty()) {
             vistaSinVideos.visibility = View.VISIBLE
-            contenedor.addView(vistaSinVideos)
             return
         }
 

@@ -15,6 +15,9 @@ android {
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        // Configuración de la URL base de la API
+        buildConfigField("String", "DEFAULT_BASE_URL", "\"http://192.168.1.100:5000/\"")
+
         // ✅ Para pruebas: solo un ABI compatible real (quita esto para producción si todo está alineado a 16KB)
         ndk {
             abiFilters += listOf("armeabi-v7a")
@@ -49,6 +52,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 

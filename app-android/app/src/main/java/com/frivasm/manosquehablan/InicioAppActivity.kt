@@ -1,5 +1,7 @@
 package com.frivasm.manosquehablan
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Intent
@@ -29,6 +31,7 @@ class InicioAppActivity : AppCompatActivity() {
         private const val ORDEN_RECIENTES = "recientes"
         private const val ORDEN_FECHA = "fecha"
         private const val ORDEN_ALFABETICO = "alfabetico"
+        private const val ANIMATION_TRANSITION_DURATION = 200L // Animación para cambios de vista
     }
 
     private lateinit var contenedor: LinearLayout
@@ -60,7 +63,7 @@ class InicioAppActivity : AppCompatActivity() {
             )
         }
 
-        aplicarOrdenamiento(PreferenciasHelper.obtenerOrden(this))
+        aplicarOrdenamientoConAnimacion(PreferenciasHelper.obtenerOrden(this), conTransicion = false)
     }
 
     private fun animateButtonAndNavigate() {
@@ -99,18 +102,96 @@ class InicioAppActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         try {
-            aplicarOrdenamiento(PreferenciasHelper.obtenerOrden(this))
+            aplicarOrdenamientoConAnimacion(PreferenciasHelper.obtenerOrden(this), conTransicion = false)
         } catch (e: Exception) {
             Log.e("InicioApp", "Error al recargar videos: ${e.message}")
         }
     }
 
-    private fun aplicarOrdenamiento(tipo: String) {
-        when (tipo) {
-            ORDEN_RECIENTES -> VideoLoader.cargarVideosRecientes(this, contenedor, vistaSinVideos)
-            ORDEN_FECHA -> VideoOrdenamientoViewHelper.ordenarVideosPorFecha(this, contenedor, vistaSinVideos)
-            ORDEN_ALFABETICO -> VideoOrdenamientoAlfabeticoViewHelper.ordenarVideosPorLetra(this, contenedor, vistaSinVideos)
-            else -> VideoLoader.cargarVideosRecientes(this, contenedor, vistaSinVideos)
+    fun aplicarOrdenamiento(tipo: String) {
+        aplicarOrdenamientoConAnimacion(tipo, conTransicion = true)
+    }
+
+    private fun aplicarOrdenamientoConAnimacion(tipo: String, conTransicion: Boolean = false) {
+        val cargarVideos = {
+            when (tipo) {
+                ORDEN_RECIENTES -> VideoLoader.cargarVideosRecientes(this, contenedor, vistaSinVideos)
+                ORDEN_FECHA -> VideoOrdenamientoViewHelper.ordenarVideosPorFecha(this, contenedor, vistaSinVideos)
+                ORDEN_ALFABETICO -> VideoOrdenamientoAlfabeticoViewHelper.ordenarVideosPorLetra(this, contenedor, vistaSinVideos)
+                else -> VideoLoader.cargarVideosRecientes(this, contenedor, vistaSinVideos)
+            }
+            // Asegurar layout y redraw
+            contenedor.requestLayout()
+            contenedor.invalidate()
+        }
+
+        if (conTransicion && contenedor.childCount > 0) {
+            // Animación rápida de transición para cambios de vista
+            val slideOut = ObjectAnimator.ofFloat(contenedor, View.TRANSLATION_X, 0f, -30f)
+            val fadeOut = ObjectAnimator.ofFloat(contenedor, View.ALPHA, 1f, 0.4f)
+            
+            val animSetOut = AnimatorSet()
+            animSetOut.playTogether(slideOut, fadeOut)
+            animSetOut.duration = ANIMATION_TRANSITION_DURATION
+            
+            animSetOut.addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    cargarVideos()
+                    
+                    // Slide in desde la derecha + fade in
+                    contenedor.translationX = 30f
+                    contenedor.alpha = 0.4f
+                    
+                    val slideIn = ObjectAnimator.ofFloat(contenedor, View.TRANSLATION_X, 30f, 0f)
+                    val fadeIn = ObjectAnimator.ofFloat(contenedor, View.ALPHA, 0.4f, 1f)
+                    
+                    val animSetIn = AnimatorSet()
+                    animSetIn.playTogether(slideIn, fadeIn)
+                    animSetIn.duration = ANIMATION_TRANSITION_DURATION
+                    animSetIn.start()
+                }
+            })
+            animSetOut.start()
+        } else {
+            // Sin animación
+            cargarVideos()
+            // Asegurar que el contenedor esté en posición normal
+            contenedor.alpha = 1f
+            contenedor.translationX = 0f
+        }
+    }
+
+    /**
+     * Elimina un video específico con animación sin recargar toda la lista
+     */
+    fun eliminarVideoConAnimacion(vista: View, videoFile: File) {
+        // Verificar que la vista esté en el contenedor
+        if (vista.parent == contenedor) {
+            // Crear animación de desvanecimiento para la vista específica
+            val scaleX = ObjectAnimator.ofFloat(vista, View.SCALE_X, 1f, 0f)
+            val scaleY = ObjectAnimator.ofFloat(vista, View.SCALE_Y, 1f, 0f)
+            val alpha = ObjectAnimator.ofFloat(vista, View.ALPHA, 1f, 0f)
+            
+            val animSet = AnimatorSet()
+            animSet.playTogether(scaleX, scaleY, alpha)
+            animSet.duration = 400L // Duración para eliminación
+            
+            animSet.addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    // Eliminar la vista del contenedor cuando termine la animación
+                    contenedor.removeView(vista)
+                    
+                    // Si no quedan más videos, mostrar la vista sin videos
+                    if (contenedor.childCount == 0) {
+                        vistaSinVideos.visibility = View.VISIBLE
+                    }
+                }
+            })
+            
+            animSet.start()
+        } else {
+            // Si la vista no está en el contenedor, recargar normalmente sin animación
+            aplicarOrdenamientoConAnimacion(PreferenciasHelper.obtenerOrden(this), conTransicion = false)
         }
     }
 }

@@ -61,6 +61,10 @@ object DialogUtils {
 
                     // ⚠️ No se modifica directamente el título aquí: dejar que onRenombrado lo haga visualmente
                     onRenombrado(nuevoArchivo)
+                    
+                    // Si el contexto es una actividad, no necesitamos hacer nada adicional
+                    // ya que la vista se actualiza directamente a través del callback onRenombrado
+                    // y no es necesario eliminar la vista del contenedor
 
                     dialog.dismiss()
                 } else {

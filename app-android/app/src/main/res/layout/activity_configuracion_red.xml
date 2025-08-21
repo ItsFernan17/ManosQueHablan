@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="#F5F5F5">
+
+    <!-- Título -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Configuración de Red"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        android:gravity="center"
+        android:layout_marginBottom="32dp" />
+
+    <!-- Estado de conexión -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="24dp"
+        android:padding="16dp"
+        android:background="@drawable/boton_redondeado_cancelar">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Estado de red:"
+            android:textSize="16sp"
+            android:textColor="#666666" />
+
+        <TextView
+            android:id="@+id/textEstadoRed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Verificando..."
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/btnActualizar"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/rotacion"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp" />
+
+    </LinearLayout>
+
+    <!-- URL del servidor -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="URL del servidor:"
+        android:textSize="16sp"
+        android:textColor="#333333"
+        android:layout_marginBottom="8dp" />
+
+    <EditText
+        android:id="@+id/editTextUrl"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:hint="http://192.168.1.100:5000/"
+        android:inputType="textUri"
+        android:background="@drawable/bg_edittext_renombrar"
+        android:padding="16dp"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Botón probar conexión -->
+    <Button
+        android:id="@+id/btnProbar"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Probar Conexión"
+        android:background="@drawable/boton_redondeado_aceptar"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        android:layout_marginBottom="32dp" />
+
+    <!-- Información adicional -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Instrucciones:"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="• Asegúrate de que tu dispositivo y el servidor estén en la misma red\n• La URL debe incluir http:// o https://\n• Ejemplo: http://192.168.1.100:5000/"
+        android:textSize="14sp"
+        android:textColor="#666666"
+        android:lineSpacingExtra="4dp"
+        android:layout_marginBottom="32dp" />
+
+    <!-- Botones de acción -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <Button
+            android:id="@+id/btnCancelar"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="Cancelar"
+            android:background="@drawable/boton_redondeado_cancelar"
+            android:textColor="@android:color/white"
+            android:layout_marginEnd="16dp"
+            android:minWidth="100dp" />
+
+        <Button
+            android:id="@+id/btnGuardar"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="Guardar"
+            android:background="@drawable/boton_redondeado_aceptar"
+            android:textColor="@android:color/white"
+            android:minWidth="100dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

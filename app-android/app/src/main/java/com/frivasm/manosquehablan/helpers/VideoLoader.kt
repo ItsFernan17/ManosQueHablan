@@ -26,7 +26,7 @@ object VideoLoader {
 
         val videos = raiz.listFiles()?.filter { it.isDirectory }?.flatMap { carpeta ->
             carpeta.listFiles()?.filter {
-                it.isFile && it.extension.equals("mp4", ignoreCase = true) && it.length() > 1_000_000
+                it.isFile && it.extension.equals("mp4", ignoreCase = true) && it.length() > 100_000 // Reducido de 1MB a 100KB
             } ?: emptyList()
         } ?: emptyList()
 

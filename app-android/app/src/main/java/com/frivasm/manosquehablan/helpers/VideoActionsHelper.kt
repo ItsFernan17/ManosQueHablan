@@ -46,10 +46,24 @@ object VideoActionsHelper {
     fun eliminarVideoConConfirmacion(
         context: Context,
         archivo: File,
+        vista: android.view.View? = null,
         onEliminado: () -> Unit
     ) {
         com.frivasm.manosquehablan.dialogs.DialogUtils.mostrarDialogoEliminar(context, archivo) {
+            // Llamar al callback proporcionado
             onEliminado()
+            
+            // Si el contexto es una actividad y tenemos la vista, animar la eliminación
+            if (context is com.frivasm.manosquehablan.InicioAppActivity && vista != null) {
+                context.runOnUiThread {
+                    context.eliminarVideoConAnimacion(vista, archivo)
+                }
+            } else if (context is com.frivasm.manosquehablan.InicioAppActivity) {
+                // Si no tenemos la vista, recargar normalmente
+                context.runOnUiThread {
+                    context.aplicarOrdenamiento(com.frivasm.manosquehablan.helpers.PreferenciasHelper.obtenerOrden(context))
+                }
+            }
         }
     }
 }

@@ -1,41 +1,56 @@
 package com.frivasm.manosquehablan.utils
 
-import android.content.Context
-import android.media.MediaPlayer
-import android.text.format.Formatter
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
-import android.media.MediaMetadataRetriever
 import java.text.SimpleDateFormat
 import java.util.*
 
 object VideoUtils {
-
-    suspend fun obtenerDuracion(ruta: String): String = withContext(Dispatchers.IO) {
-        try {
-            val mediaPlayer = MediaPlayer()
-            mediaPlayer.setDataSource(ruta)
-            mediaPlayer.prepare()
-            val duracionMs = mediaPlayer.duration
-            mediaPlayer.release()
-
-            val segundos = duracionMs / 1000
-            String.format("%02d:%02d", segundos / 60, segundos % 60)
-        } catch (e: Exception) {
-            "00:00"
+    
+    /**
+     * Obtiene la fecha de creación de un video
+     */
+    fun obtenerFechaCreacionVideo(path: String): Long {
+        val file = File(path)
+        return if (file.exists()) {
+            file.lastModified()
+        } else {
+            0L
         }
     }
-
-    suspend fun construirDetalles(context: Context, fecha: Date, ruta: String): String {
-        val formatoHora = SimpleDateFormat("h:mm a", Locale.getDefault())
-        val hora = formatoHora.format(fecha)
-        val duracion = obtenerDuracion(ruta)
-        return "$hora · $duracion"
+    
+    /**
+     * Construye los detalles del video (tamaño, duración, etc.)
+     */
+    fun construirDetalles(
+        context: android.content.Context,
+        fecha: Date,
+        path: String
+    ): String {
+        val file = File(path)
+        if (!file.exists()) {
+            return "Archivo no encontrado"
+        }
+        
+        val tamaño = formatearTamaño(file.length())
+        val formatoFecha = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        val fechaTexto = formatoFecha.format(fecha)
+        
+        return "$tamaño • $fechaTexto"
     }
-
-    fun obtenerFechaCreacionVideo(path: String): Long {
-        return File(path).lastModified()
+    
+    /**
+     * Formatea el tamaño del archivo
+     */
+    private fun formatearTamaño(bytes: Long): String {
+        val kb = bytes / 1024.0
+        val mb = kb / 1024.0
+        val gb = mb / 1024.0
+        
+        return when {
+            gb >= 1 -> String.format("%.1f GB", gb)
+            mb >= 1 -> String.format("%.1f MB", mb)
+            kb >= 1 -> String.format("%.1f KB", kb)
+            else -> "$bytes B"
+        }
     }
-
 }

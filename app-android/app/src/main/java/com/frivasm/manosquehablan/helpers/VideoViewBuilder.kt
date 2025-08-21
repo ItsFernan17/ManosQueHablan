@@ -63,9 +63,28 @@ object VideoViewBuilder {
                 CoroutineScope(Dispatchers.Main).launch {
                     val thumbnail = withContext(Dispatchers.IO) {
                         try {
-                            // Usar la API moderna de ThumbnailUtils para todas las versiones
-                            ThumbnailUtils.createVideoThumbnail(videoFile, Size(320, 240), null)
-                        } catch (e: Exception) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                // API 29+
+                                ThumbnailUtils.createVideoThumbnail(videoFile, Size(320, 240), null)
+                            } else {
+                                // < API 29 — usar MediaMetadataRetriever y recortar al tamaño deseado
+                                val retriever = android.media.MediaMetadataRetriever()
+                                try {
+                                    retriever.setDataSource(videoFile.absolutePath)
+                                    val frame = retriever.frameAtTime // frame por defecto (≈ primer frame)
+                                    frame?.let {
+                                        ThumbnailUtils.extractThumbnail(
+                                            it,
+                                            320,
+                                            240,
+                                            ThumbnailUtils.OPTIONS_RECYCLE_INPUT
+                                        )
+                                    }
+                                } finally {
+                                    retriever.release()
+                                }
+                            }
+                        } catch (_: Exception) {
                             null
                         }
                     }
@@ -117,13 +136,29 @@ object VideoViewBuilder {
 
             btnEliminar?.setOnClickListener {
                 DialogUtils.mostrarDialogoEliminar(context, videoFile.parentFile ?: videoFile) {
+                    // Llamar a onRecargar para actualizar la interfaz automáticamente
                     onRecargar(videoFile)
+                    
+                    // Si el contexto es una actividad, animar la eliminación del video
+                    if (context is com.frivasm.manosquehablan.InicioAppActivity) {
+                        context.runOnUiThread {
+                            context.eliminarVideoConAnimacion(vista, videoFile) // <— aquí
+                        }
+                    }
                 }
             }
 
             eliminarContenedor?.setOnClickListener {
                 DialogUtils.mostrarDialogoEliminar(context, videoFile.parentFile ?: videoFile) {
+                    // Llamar a onRecargar para actualizar la interfaz automáticamente
                     onRecargar(videoFile)
+                    
+                    // Si el contexto es una actividad, animar la eliminación del video
+                    if (context is com.frivasm.manosquehablan.InicioAppActivity) {
+                        context.runOnUiThread {
+                            context.eliminarVideoConAnimacion(vista, videoFile) // <— y aquí
+                        }
+                    }
                 }
             }
 

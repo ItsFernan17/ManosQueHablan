@@ -36,7 +36,7 @@ class InicioAppActivity : AppCompatActivity() {
         private const val ORDEN_FECHA = "fecha"
         private const val ORDEN_ALFABETICO = "alfabetico"
         private const val ANIMATION_TRANSITION_DURATION = 350L // Aumentado para más suavidad
-        private const val ANIMATION_ELIMINATION_DURATION = 400L // Para eliminaciones
+        private const val ANIMATION_ELIMINATION_DURATION = 320L // Reducido para eliminación más rápida
         private const val ANIMATION_PROMOTION_DURATION = 300L // Para promociones
     }
 
@@ -150,37 +150,34 @@ class InicioAppActivity : AppCompatActivity() {
         }
 
         if (conTransicion && contenedor.childCount > 0) {
-            // Animación elegante de transición para cambios de vista
-            val slideOut = ObjectAnimator.ofFloat(contenedor, View.TRANSLATION_X, 0f, -50f)
-            val fadeOut = ObjectAnimator.ofFloat(contenedor, View.ALPHA, 1f, 0.3f)
-            val scaleOutX = ObjectAnimator.ofFloat(contenedor, View.SCALE_X, 1f, 0.95f)
-            val scaleOutY = ObjectAnimator.ofFloat(contenedor, View.SCALE_Y, 1f, 0.95f)
+            // Animación minimalista y elegante de transición
+            val fadeOut = ObjectAnimator.ofFloat(contenedor, View.ALPHA, 1f, 0.4f)
+            val scaleOut = ObjectAnimator.ofFloat(contenedor, View.SCALE_X, 1f, 0.96f)
+            val scaleOutY = ObjectAnimator.ofFloat(contenedor, View.SCALE_Y, 1f, 0.96f)
             
             currentTransitionAnimator = AnimatorSet()
-            currentTransitionAnimator!!.playTogether(slideOut, fadeOut, scaleOutX, scaleOutY)
+            currentTransitionAnimator!!.playTogether(fadeOut, scaleOut, scaleOutY)
             currentTransitionAnimator!!.duration = ANIMATION_TRANSITION_DURATION
-            currentTransitionAnimator!!.interpolator = AccelerateDecelerateInterpolator()
+            currentTransitionAnimator!!.interpolator = DecelerateInterpolator(1.5f)
             
             currentTransitionAnimator!!.addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
                     cargarVideos()
                     
-                    // Posición inicial para slide in elegante
-                    contenedor.translationX = 80f
-                    contenedor.alpha = 0f
-                    contenedor.scaleX = 0.9f
-                    contenedor.scaleY = 0.9f
+                    // Posición inicial para entrada sutil
+                    contenedor.alpha = 0.4f
+                    contenedor.scaleX = 0.96f
+                    contenedor.scaleY = 0.96f
                     
-                    // Slide in desde la derecha con efecto suave
-                    val slideIn = ObjectAnimator.ofFloat(contenedor, View.TRANSLATION_X, 80f, 0f)
-                    val fadeIn = ObjectAnimator.ofFloat(contenedor, View.ALPHA, 0f, 1f)
-                    val scaleInX = ObjectAnimator.ofFloat(contenedor, View.SCALE_X, 0.9f, 1f)
-                    val scaleInY = ObjectAnimator.ofFloat(contenedor, View.SCALE_Y, 0.9f, 1f)
+                    // Entrada suave y minimalista
+                    val fadeIn = ObjectAnimator.ofFloat(contenedor, View.ALPHA, 0.4f, 1f)
+                    val scaleInX = ObjectAnimator.ofFloat(contenedor, View.SCALE_X, 0.96f, 1f)
+                    val scaleInY = ObjectAnimator.ofFloat(contenedor, View.SCALE_Y, 0.96f, 1f)
                     
                     val animSetIn = AnimatorSet()
-                    animSetIn.playTogether(slideIn, fadeIn, scaleInX, scaleInY)
+                    animSetIn.playTogether(fadeIn, scaleInX, scaleInY)
                     animSetIn.duration = ANIMATION_TRANSITION_DURATION
-                    animSetIn.interpolator = DecelerateInterpolator(1.5f)
+                    animSetIn.interpolator = OvershootInterpolator(0.6f)
                     animSetIn.addListener(object : AnimatorListenerAdapter() {
                         override fun onAnimationEnd(animation: Animator) {
                             currentTransitionAnimator = null
@@ -199,7 +196,6 @@ class InicioAppActivity : AppCompatActivity() {
             cargarVideos()
             // Asegurar que el contenedor esté en posición normal
             contenedor.alpha = 1f
-            contenedor.translationX = 0f
             contenedor.scaleX = 1f
             contenedor.scaleY = 1f
         }
@@ -214,16 +210,16 @@ class InicioAppActivity : AppCompatActivity() {
             val esPrimerVideo = contenedor.indexOfChild(vista) == 0
             val ordenActual = PreferenciasHelper.obtenerOrden(this)
             
-            // Crear animación elegante de eliminación
-            val scaleX = ObjectAnimator.ofFloat(vista, View.SCALE_X, 1f, 0f)
-            val scaleY = ObjectAnimator.ofFloat(vista, View.SCALE_Y, 1f, 0f)
+            // Animación minimalista y limpia de eliminación
+            val scaleX = ObjectAnimator.ofFloat(vista, View.SCALE_X, 1f, 0.85f)
+            val scaleY = ObjectAnimator.ofFloat(vista, View.SCALE_Y, 1f, 0.85f)
             val alpha = ObjectAnimator.ofFloat(vista, View.ALPHA, 1f, 0f)
-            val rotationY = ObjectAnimator.ofFloat(vista, View.ROTATION_Y, 0f, 90f)
+            val translationY = ObjectAnimator.ofFloat(vista, View.TRANSLATION_Y, 0f, -20f)
             
             currentEliminationAnimator = AnimatorSet()
-            currentEliminationAnimator!!.playTogether(scaleX, scaleY, alpha, rotationY)
+            currentEliminationAnimator!!.playTogether(scaleX, scaleY, alpha, translationY)
             currentEliminationAnimator!!.duration = ANIMATION_ELIMINATION_DURATION
-            currentEliminationAnimator!!.interpolator = AccelerateDecelerateInterpolator()
+            currentEliminationAnimator!!.interpolator = DecelerateInterpolator(1.8f)
             
             currentEliminationAnimator!!.addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {

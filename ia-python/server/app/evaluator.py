@@ -5,6 +5,7 @@ import numpy as np
 import mediapipe as mp
 from typing import List, Dict, Any, Tuple
 from tensorflow.keras.models import load_model
+import unicodedata
 
 # --- CONFIG ---
 LENGTH_KEYPOINTS = 126
@@ -18,10 +19,21 @@ FONT_SIZE = 1
 # Rutas relativas al proyecto
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(BASE_DIR, "app", "models", "action.h5")
-DATA_PATH = os.path.join(BASE_DIR, "data", "frases")
+LABELS_PATH = os.path.join(BASE_DIR, "app", "models", "labels.txt")
 
-# WORDS a partir de nombres de carpetas en data/frases
-WORDS = sorted(os.listdir(DATA_PATH)) if os.path.isdir(DATA_PATH) else []
+# --- WORDS desde labels.txt ---
+def load_words_from_labels(path: str) -> List[str]:
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"No existe labels.txt en {path}")
+    words = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            w = line.strip()
+            if w:
+                words.append(unicodedata.normalize("NFC", w))
+    return words
+
+WORDS = load_words_from_labels(LABELS_PATH)
 
 # --- Carga de modelo en caliente (singleton en memoria) ---
 _MODEL = None
@@ -46,7 +58,6 @@ def extract_keypoints(results):
     return np.concatenate([lh, rh]).flatten()
 
 def normalize_keypoints(seq: List[np.ndarray], target_length: int = MODEL_FRAMES):
-    # seq: lista de vectores (126,)
     current_length = len(seq)
     if current_length == target_length:
         return seq
@@ -82,10 +93,6 @@ def evaluate_video_to_file(
     delay_frames: int = 3,
     draw=True,
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-    """
-    Procesa el video y escribe un MP4 anotado en out_mp4_path.
-    Retorna (detections, meta).
-    """
     if not os.path.isfile(video_path):
         raise FileNotFoundError(f"No existe el archivo: {video_path}")
 
@@ -99,7 +106,6 @@ def evaluate_video_to_file(
     width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)  or 640)
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 480)
 
-    # Escritor MP4 (codec mp4v). Si prefieres el flujo AVI->MP4, se puede agregar.
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     writer = cv2.VideoWriter(out_mp4_path, fourcc, fps, (width, height))
 
@@ -130,18 +136,15 @@ def evaluate_video_to_file(
                     kp_frame = extract_keypoints(results)
                     kp_seq.append(kp_frame)
             else:
-                # Cierre de gesto
                 if count_frame >= MIN_LENGTH_FRAMES + margin_frame:
                     fix_frames += 1
                     if fix_frames < delay_frames:
                         recording = True
                     else:
-                        # recorte del colchón
                         cut = margin_frame + delay_frames
                         if cut > 0 and len(kp_seq) > cut:
                             kp_seq = kp_seq[: -cut]
 
-                        # normaliza a MODEL_FRAMES
                         kp_norm = normalize_keypoints(kp_seq, target_length=MODEL_FRAMES)
                         input_data = np.expand_dims(np.array(kp_norm), axis=0)
 
@@ -166,12 +169,10 @@ def evaluate_video_to_file(
                                 "end_time": round(end_frame / fps, 3),
                             })
 
-                        # reset
                         kp_seq, count_frame, fix_frames, recording = [], 0, 0, False
                 else:
                     kp_seq, count_frame, fix_frames, recording = [], 0, 0, False
 
-            # Overlay con último resultado válido
             if draw and overlay_cooldown > 0:
                 cv2.rectangle(frame, (0, 0), (max(300, width // 2), 60), (245, 117, 16), -1)
                 cv2.putText(frame, f'{pred_label.upper()} ({pred_prob:.1f}%)',

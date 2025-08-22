@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from gtts import gTTS
 
 from app.evaluator import evaluate_video_to_file
-from app.utils import ensure_dirs, unique_name, RESULTS_DIR, UPLOADS_DIR
+from app.utils import ensure_dirs, unique_name, RESULTS_DIR  # UPLOADS_DIR ya no se usa aquí
 from app.utils_ffmpeg import (
     build_ass_file_per_detection,
     generate_tts_per_detection_items,
@@ -74,7 +74,7 @@ def create_session_dir() -> tuple[str, str]:
     return session_id, session_path
 
 
-async def schedule_cleanup(path: str, delay_seconds: int = 5):
+async def schedule_cleanup(path: str, delay_seconds: int = 3):
     """Borra la carpeta completa luego de delay_seconds."""
     try:
         await asyncio.sleep(delay_seconds)
@@ -116,7 +116,7 @@ async def evaluate_video_endpoint(
         )
 
         public_url = f"/static/results/{session_id}/{out_name}"
-        asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=5))
+        asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=3))
 
         return JSONResponse(
             {
@@ -128,9 +128,8 @@ async def evaluate_video_endpoint(
         )
 
     except Exception as e:
-        asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=5))
+        asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=3))
         raise HTTPException(status_code=500, detail=str(e))
-
 
 # -------------------------------------------------------------------
 # 2) PRODUCCIÓN: /upload_video (FINAL para el usuario)
@@ -218,7 +217,7 @@ async def upload_video_endpoint(
         audio_url = f"/static/results/{session_id}/{out_audio_name}" if audio_ok else ""
 
         # Limpieza diferida de la carpeta de sesión
-        asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=5))
+        asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=3))
 
         return JSONResponse({
             "video_url": video_url,
@@ -228,12 +227,11 @@ async def upload_video_endpoint(
 
     except Exception as e:
         # En error también limpia la sesión
-        asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=5))
+        asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=3))
         raise HTTPException(status_code=500, detail=str(e))
 
-
 # -------------------------------------------------------------------
-# 3) TEST simple con un solo MP3
+# 3) TEST simple con un solo MP3 (ahora también por carpeta de sesión)
 # -------------------------------------------------------------------
 @app.post("/test")
 async def test_endpoint(
@@ -246,15 +244,18 @@ async def test_endpoint(
     if not (video.content_type or "").startswith("video"):
         raise HTTPException(status_code=400, detail="El archivo debe ser un video.")
 
+    # Carpeta de sesión dedicada
+    session_id, session_dir = create_session_dir()
+
     input_name = unique_name("in", "mp4")
-    input_path = os.path.join(UPLOADS_DIR, input_name)
+    input_path = os.path.join(session_dir, input_name)
 
     try:
         with open(input_path, "wb") as f:
             f.write(await video.read())
 
         out_video_name = unique_name("resultado", "mp4")
-        out_video_path = os.path.join(RESULTS_DIR, out_video_name)
+        out_video_path = os.path.join(session_dir, out_video_name)
 
         detections, meta = evaluate_video_to_file(
             video_path=input_path,
@@ -267,7 +268,7 @@ async def test_endpoint(
 
         # Transcripción detallada
         out_text_name = unique_name("transcripcion", "txt")
-        out_text_path = os.path.join(RESULTS_DIR, out_text_name)
+        out_text_path = os.path.join(session_dir, out_text_name)
         transcript_lines = []
         if detections:
             for d in detections:
@@ -284,7 +285,7 @@ async def test_endpoint(
 
         # TTS simple
         out_audio_name = unique_name("audio", "mp3")
-        out_audio_path = os.path.join(RESULTS_DIR, out_audio_name)
+        out_audio_path = os.path.join(session_dir, out_audio_name)
         try:
             spoken_text = (
                 ". ".join([d.get("label", "") for d in detections if d.get("label")])
@@ -295,22 +296,20 @@ async def test_endpoint(
         except Exception:
             out_audio_path = None
 
-        return JSONResponse(
-            {
-                "video_url": f"/static/results/{out_video_name}",
-                "audio_url": f"/static/results/{out_audio_name}" if out_audio_path else "",
-                "texto_url": f"/static/results/{out_text_name}",
-            }
-        )
+        # URLs por sesión
+        resp = {
+            "video_url": f"/static/results/{session_id}/{out_video_name}",
+            "audio_url": f"/static/results/{session_id}/{out_audio_name}" if out_audio_path else "",
+            "texto_url": f"/static/results/{session_id}/{out_text_name}",
+        }
+
+        # Limpieza diferida de la carpeta de sesión
+        asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=3))
+        return JSONResponse(resp)
 
     except Exception as e:
+        asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=3))
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        try:
-            if os.path.exists(input_path):
-                os.remove(input_path)
-        except Exception:
-            pass
 
 
 def secs_to_hhmmss_mmm(s: float) -> str:

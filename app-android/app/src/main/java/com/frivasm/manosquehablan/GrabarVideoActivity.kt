@@ -3,7 +3,6 @@ package com.frivasm.manosquehablan
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import com.frivasm.manosquehablan.databinding.ActivityGrabarVideoBinding
@@ -69,11 +68,8 @@ class GrabarVideoActivity : AppCompatActivity() {
         }
         
         videoRecordingHelper.onRecordingError = { error ->
-            // Solo mostrar error si no es una cancelación intencional
-            if (!error.contains("cancelled", ignoreCase = true) && 
-                !error.contains("cancelado", ignoreCase = true)) {
-                Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
-            }
+            // Solo log para errores de grabación
+            Log.e("GrabarVideo", "Error de grabación: $error")
         }
     }
     
@@ -98,7 +94,6 @@ class GrabarVideoActivity : AppCompatActivity() {
 
         binding.btnRotarCamara.setOnClickListener {
             if (videoRecordingHelper.isRecording()) {
-                Toast.makeText(this, "No puedes cambiar cámara durante la grabación", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             videoRecordingHelper.rotarCamara()

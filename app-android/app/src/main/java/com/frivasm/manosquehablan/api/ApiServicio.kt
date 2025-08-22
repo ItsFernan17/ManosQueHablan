@@ -14,7 +14,7 @@ data class RespuestaProcesamiento(
 
 interface ApiServicio {
     @Multipart
-    @POST("test")
+    @POST("upload_video")
     suspend fun procesarVideo(
         @Part video: MultipartBody.Part
     ): Response<RespuestaProcesamiento>

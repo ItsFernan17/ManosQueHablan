@@ -3,7 +3,6 @@ package com.frivasm.manosquehablan.helpers
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
-import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -49,7 +48,7 @@ class VideoRecordingHelper(
                 provider.unbindAll()
                 provider.bindToLifecycle(lifecycleOwner, camSelector, preview, videoCapture)
             } catch (e: Exception) {
-                Toast.makeText(context, "Error al iniciar la cámara", Toast.LENGTH_SHORT).show()
+                // Solo log, sin toast
             }
         }, ContextCompat.getMainExecutor(context))
     }

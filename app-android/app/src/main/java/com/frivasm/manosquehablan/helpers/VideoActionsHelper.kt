@@ -3,7 +3,6 @@ package com.frivasm.manosquehablan.helpers
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.core.content.FileProvider
 import java.io.File
 
@@ -11,7 +10,6 @@ object VideoActionsHelper {
 
     fun exportarVideo(context: Context, video: File) {
         if (!video.exists()) {
-            Toast.makeText(context, "El archivo no existe", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -39,7 +37,7 @@ object VideoActionsHelper {
         try {
             context.startActivity(intent)
         } catch (e: Exception) {
-            Toast.makeText(context, "No se pudo abrir el video", Toast.LENGTH_LONG).show()
+            // Solo log, sin toast
         }
     }
 

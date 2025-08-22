@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
@@ -54,7 +53,6 @@ class PermissionHelper(private val activity: Activity) {
         return if (requestCode == REQUEST_CODE_PERMISOS && allPermissionsGranted()) {
             true
         } else {
-            Toast.makeText(activity, "Permisos requeridos para continuar", Toast.LENGTH_LONG).show()
             false
         }
     }

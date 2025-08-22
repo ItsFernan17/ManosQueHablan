@@ -38,13 +38,13 @@ object DialogUtils {
         btnAceptar.setOnClickListener {
             val nuevoNombre = edtNuevoNombre.text.toString().trim()
             if (nuevoNombre.isEmpty()) {
-                Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "El nombre no puede estar vacio", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             val nuevoArchivo = File(videoFile.parent, "$nuevoNombre.mp4")
             if (nuevoArchivo.exists()) {
-                Toast.makeText(context, "Ya existe un video con ese nombre", Toast.LENGTH_LONG)
+                Toast.makeText(context, "Ya existe un video con ese nombre", Toast.LENGTH_SHORT)
                     .show()
             } else {
                 if (videoFile.renameTo(nuevoArchivo)) {
@@ -62,13 +62,13 @@ object DialogUtils {
                     // ⚠️ No se modifica directamente el título aquí: dejar que onRenombrado lo haga visualmente
                     onRenombrado(nuevoArchivo)
                     
-                    // Si el contexto es una actividad, no necesitamos hacer nada adicional
-                    // ya que la vista se actualiza directamente a través del callback onRenombrado
-                    // y no es necesario eliminar la vista del contenedor
-
+                    // Toast de éxito al cambiar nombre
+                    Toast.makeText(context, "Nombre cambiado correctamente", Toast.LENGTH_SHORT).show()
+                    
                     dialog.dismiss()
                 } else {
-                    Toast.makeText(context, "No se pudo renombrar", Toast.LENGTH_LONG).show()
+                    // Mantener toast de error al renombrar
+                    Toast.makeText(context, "No se pudo renombrar", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -79,8 +79,6 @@ object DialogUtils {
 
     fun mostrarDialogoAudio(context: Context, audioFile: File) {
         if (!audioFile.exists()) {
-            Toast.makeText(context, "No se encontró el audio de traducción", Toast.LENGTH_SHORT)
-                .show()
             return
         }
 
@@ -140,12 +138,12 @@ object DialogUtils {
         btnConfirmar.setOnClickListener {
             if (carpeta.exists()) {
                 carpeta.deleteRecursively()
-                Toast.makeText(context, "El video fue eliminado correctamente", Toast.LENGTH_SHORT)
+                Toast.makeText(context, "Video eliminado correctamente", Toast.LENGTH_SHORT)
                     .show()
                 onConfirmado()
             } else {
-                Toast.makeText(context, "No se encontró el video para eliminar", Toast.LENGTH_LONG)
-                    .show()
+                // Solo log, sin toast para este error
+                onConfirmado()
             }
             dialog.dismiss()
         }

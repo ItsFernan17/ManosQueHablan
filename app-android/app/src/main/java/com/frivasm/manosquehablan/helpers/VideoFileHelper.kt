@@ -48,14 +48,48 @@ class VideoFileHelper(
                 Log.d("VideoFileHelper", "Respuesta del API: ${response.code()} - ${response.message()}")
                 
                 if (response.isSuccessful && response.body() != null) {
-                    Log.d("VideoFileHelper", "API exitoso, guardando archivos...")
+                    Log.d("VideoFileHelper", "API exitoso, validando respuesta...")
+                    val data = response.body()!!
+                    
+                    // Validar que todos los archivos necesarios estén disponibles
+                    if (data.video_url.isNullOrBlank()) {
+                        Log.e("VideoFileHelper", "El servidor no proporcionó URL del video")
+                        ocultarCargando()
+                        Toast.makeText(context, "Error: el servidor no generó el video", Toast.LENGTH_SHORT).show()
+                        if (context is GrabarVideoActivity) {
+                            context.restaurarVistaCamara()
+                        }
+                        return@launch
+                    }
+                    
+                    if (data.audio_url.isNullOrBlank()) {
+                        Log.e("VideoFileHelper", "El servidor no proporcionó URL del audio")
+                        ocultarCargando()
+                        Toast.makeText(context, "Error: el servidor no generó el audio", Toast.LENGTH_SHORT).show()
+                        if (context is GrabarVideoActivity) {
+                            context.restaurarVistaCamara()
+                        }
+                        return@launch
+                    }
+                    
+                    if (data.texto_url.isNullOrBlank()) {
+                        Log.e("VideoFileHelper", "El servidor no proporcionó URL del texto")
+                        ocultarCargando()
+                        Toast.makeText(context, "Error: el servidor no generó la transcripción", Toast.LENGTH_SHORT).show()
+                        if (context is GrabarVideoActivity) {
+                            context.restaurarVistaCamara()
+                        }
+                        return@launch
+                    }
+                    
                     try {
-                        guardarArchivosEnCarpeta(response.body()!!)
+                        Log.d("VideoFileHelper", "Todos los archivos disponibles, guardando...")
+                        guardarArchivosEnCarpeta(data)
                         ocultarCargando()
                         Toast.makeText(
                             context,
-                            "Archivos guardados correctamente",
-                            Toast.LENGTH_LONG
+                            "Video guardado correctamente",
+                            Toast.LENGTH_SHORT
                         ).show()
                         // Pequeño delay antes de redirigir
                         delay(1500)
@@ -66,9 +100,7 @@ class VideoFileHelper(
                     } catch (e: Exception) {
                         Log.e("VideoFileHelper", "Error al guardar archivos: ${e.message}")
                         ocultarCargando()
-                        Toast.makeText(
-                            context, "Error al guardar archivos. Intenta nuevamente", Toast.LENGTH_LONG
-                        ).show()
+                        Toast.makeText(context, "Error al descargar los archivos del servidor", Toast.LENGTH_SHORT).show()
                         // Restaurar vista de cámara para permitir nuevo intento
                         if (context is GrabarVideoActivity) {
                             context.restaurarVistaCamara()
@@ -77,9 +109,15 @@ class VideoFileHelper(
                 } else {
                     Log.e("VideoFileHelper", "API no exitoso: ${response.code()} - ${response.message()}")
                     ocultarCargando()
-                    Toast.makeText(
-                        context, "Error del servidor. Intenta nuevamente", Toast.LENGTH_LONG
-                    ).show()
+                    
+                    // Solo mostrar toast para errores del servidor (400 y 500)
+                    val codigoEstado = response.code()
+                    if (codigoEstado >= 400 && codigoEstado < 600) {
+                        Toast.makeText(
+                            context, "Error del servidor", Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    
                     // Restaurar vista de cámara para permitir nuevo intento
                     if (context is GrabarVideoActivity) {
                         context.restaurarVistaCamara()
@@ -88,8 +126,6 @@ class VideoFileHelper(
             } catch (e: Exception) {
                 Log.e("VideoFileHelper", "Excepción durante llamada API: ${e.message}")
                 ocultarCargando()
-                Toast.makeText(context, "Error de conexión. Intenta nuevamente", Toast.LENGTH_LONG)
-                    .show()
                 // Restaurar vista de cámara para permitir nuevo intento
                 if (context is GrabarVideoActivity) {
                     context.restaurarVistaCamara()
@@ -147,13 +183,24 @@ class VideoFileHelper(
     ) = withContext(Dispatchers.IO) {
         try {
             Log.d("VideoFileHelper", "Descargando $nombreArchivo desde: $url")
+            
+            // Validar que la URL no esté vacía
+            if (url.isBlank()) {
+                throw Exception("URL vacía para $nombreArchivo")
+            }
+            
             val request = okhttp3.Request.Builder().url(url).build()
             val client = okhttp3.OkHttpClient()
             val response = client.newCall(request).execute()
             
-            if (!response.isSuccessful || response.body == null) {
-                Log.e("VideoFileHelper", "Descarga fallida para $nombreArchivo: ${response.code}")
-                throw Exception("Descarga fallida para $nombreArchivo: ${response.code}")
+            if (!response.isSuccessful) {
+                Log.e("VideoFileHelper", "Descarga fallida para $nombreArchivo: HTTP ${response.code}")
+                throw Exception("El servidor no pudo proporcionar $nombreArchivo (HTTP ${response.code})")
+            }
+            
+            if (response.body == null) {
+                Log.e("VideoFileHelper", "Respuesta vacía para $nombreArchivo")
+                throw Exception("El servidor devolvió contenido vacío para $nombreArchivo")
             }
 
             val archivoDestino = File(carpetaDestino, nombreArchivo)
@@ -161,6 +208,11 @@ class VideoFileHelper(
                 archivoDestino.outputStream().use { output ->
                     input.copyTo(output)
                 }
+            }
+            
+            // Verificar que el archivo se descargó correctamente
+            if (!archivoDestino.exists() || archivoDestino.length() == 0L) {
+                throw Exception("El archivo $nombreArchivo se descargó pero está vacío o corrupto")
             }
 
             MediaScannerConnection.scanFile(
@@ -170,7 +222,7 @@ class VideoFileHelper(
                 null
             )
 
-            Log.d("VideoFileHelper", "Archivo guardado exitosamente: ${archivoDestino.absolutePath}")
+            Log.d("VideoFileHelper", "Archivo guardado exitosamente: ${archivoDestino.absolutePath} (${archivoDestino.length()} bytes)")
         } catch (e: Exception) {
             Log.e("VideoFileHelper", "Error al guardar $nombreArchivo: ${e.message}")
             throw e // Re-lanzar la excepción para que se maneje en el nivel superior

@@ -136,28 +136,28 @@ object VideoViewBuilder {
 
             btnEliminar?.setOnClickListener {
                 DialogUtils.mostrarDialogoEliminar(context, videoFile.parentFile ?: videoFile) {
-                    // Llamar a onRecargar para actualizar la interfaz automáticamente
-                    onRecargar(videoFile)
-                    
                     // Si el contexto es una actividad, animar la eliminación del video
                     if (context is com.frivasm.manosquehablan.InicioAppActivity) {
                         context.runOnUiThread {
-                            context.eliminarVideoConAnimacion(vista, videoFile) // <— aquí
+                            context.eliminarVideoConAnimacion(vista, videoFile)
                         }
+                    } else {
+                        // Para otros contextos, usar el callback de recarga
+                        onRecargar(videoFile)
                     }
                 }
             }
 
             eliminarContenedor?.setOnClickListener {
                 DialogUtils.mostrarDialogoEliminar(context, videoFile.parentFile ?: videoFile) {
-                    // Llamar a onRecargar para actualizar la interfaz automáticamente
-                    onRecargar(videoFile)
-                    
                     // Si el contexto es una actividad, animar la eliminación del video
                     if (context is com.frivasm.manosquehablan.InicioAppActivity) {
                         context.runOnUiThread {
-                            context.eliminarVideoConAnimacion(vista, videoFile) // <— y aquí
+                            context.eliminarVideoConAnimacion(vista, videoFile)
                         }
+                    } else {
+                        // Para otros contextos, usar el callback de recarga
+                        onRecargar(videoFile)
                     }
                 }
             }

@@ -3,7 +3,6 @@ package com.frivasm.manosquehablan.helpers
 import android.content.Context
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.frivasm.manosquehablan.R
 import com.frivasm.manosquehablan.databinding.ActivityGrabarVideoBinding
@@ -30,7 +29,6 @@ class VideoPauseHelper(
             vibrar()
         } catch (e: Exception) {
             Log.e("VideoPause", "Error al pausar grabación: ${e.message}")
-            Toast.makeText(context, "Error al pausar grabación", Toast.LENGTH_SHORT).show()
         }
     }
     
@@ -46,7 +44,6 @@ class VideoPauseHelper(
             vibrar()
         } catch (e: Exception) {
             Log.e("VideoPause", "Error al reanudar grabación: ${e.message}")
-            Toast.makeText(context, "Error al reanudar grabación", Toast.LENGTH_SHORT).show()
         }
     }
     

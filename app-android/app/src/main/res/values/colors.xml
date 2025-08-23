@@ -3,9 +3,33 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="background">#F3F2F4</color>
+    <color name="background_color">#F3F2F4</color>
     <color name="texto_splash">#153650</color>
+    <color name="texto_principal">#153650</color>
+    <color name="texto_secundario">#37343F</color>
     <color  name="celeste">#0376ED</color>
     <color name="violeta">#7e8fd8</color>
     <color name="rojo">#ed7971</color>
+    <color name="center_blue">#ed7971</color>
+    <color name="progress_indicator">#ed7971</color>
+    <color name="progress_track">#E9ECEF</color>
     <color name="texto_videos">#37343F</color>
+    
+    <!-- Colores adicionales para círculos bonitos -->
+    <color name="coral">#FF6B6B</color>
+    <color name="mint">#4ECDC4</color>
+    <color name="lavender">#A8E6CF</color>
+    <color name="peach">#FFD93D</color>
+    <color name="sky_blue">#74B9FF</color>
+    <color name="soft_pink">#FD79A8</color>
+    <color name="lime_green">#00B894</color>
+    <color name="sunset_orange">#FDCB6E</color>
+    <color name="purple_light">#6C5CE7</color>
+    <color name="turquoise">#55E6C1</color>
+    
+    <!-- Dark navy to black gradient colors for video thumbnail -->
+    <color name="dark_navy">#0B132B</color>
+    <color name="dark_black">#111827</color>
+    <color name="overlay_black">#A6000000</color> <!-- 65% black overlay -->
+    <color name="error_color">#E53E3E</color>
 </resources>

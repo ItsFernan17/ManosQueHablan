@@ -25,8 +25,8 @@ class InicioSplashScreenActivity : AppCompatActivity() {
     private lateinit var loadingDot3_rojo: android.widget.ImageView
     private lateinit var loadingDot3_celeste: android.widget.ImageView
     
-    private val celesteColor = Color.parseColor("#0376ED")
-    private val rojoColor = Color.parseColor("#ed7971")
+    // Lista para manejar handlers y evitar memory leaks
+    private val activeHandlers = mutableListOf<Handler>()
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,13 +62,19 @@ class InicioSplashScreenActivity : AppCompatActivity() {
         startAnimatedLoading()
         
         // Segunda secuencia después de que termine completamente la primera
-        Handler(Looper.getMainLooper()).postDelayed({
+        val handler1 = Handler(Looper.getMainLooper())
+        activeHandlers.add(handler1)
+        handler1.postDelayed({
             // Esperar a que termine la primera secuencia completa
-            Handler(Looper.getMainLooper()).postDelayed({
+            val handler2 = Handler(Looper.getMainLooper())
+            activeHandlers.add(handler2)
+            handler2.postDelayed({
                 // Segunda secuencia solo con saltos (sin aparición)
                 startJumpOnlySequence()
                 // Navegar a la app después de que termine la segunda secuencia
-                Handler(Looper.getMainLooper()).postDelayed({
+                val handler3 = Handler(Looper.getMainLooper())
+                activeHandlers.add(handler3)
+                handler3.postDelayed({
                     val intent = Intent(this, InicioAppActivity::class.java)
                     startActivity(intent)
                     finish()
@@ -121,7 +127,9 @@ class InicioSplashScreenActivity : AppCompatActivity() {
             val dotCeleste = dotsCeleste[index]
             
             // Iniciar animación de salto directamente
-            Handler(Looper.getMainLooper()).postDelayed({
+            val handler = Handler(Looper.getMainLooper())
+            activeHandlers.add(handler)
+            handler.postDelayed({
                 startJumpAnimation(dotRojo, dotCeleste, index, false) // false = segundo salto
             }, index * 300L) // 300ms entre cada punto (más rápido)
         }
@@ -236,13 +244,10 @@ class InicioSplashScreenActivity : AppCompatActivity() {
         }, index * 300L) // 300ms entre cada punto (más rápido)
     }
     
-    private fun hideLoadingDots() {
-        // Ocultar todos los puntos
-        loadingDot1_rojo.alpha = 0f
-        loadingDot1_celeste.alpha = 0f
-        loadingDot2_rojo.alpha = 0f
-        loadingDot2_celeste.alpha = 0f
-        loadingDot3_rojo.alpha = 0f
-        loadingDot3_celeste.alpha = 0f
+    override fun onDestroy() {
+        super.onDestroy()
+        // Limpiar todos los handlers para evitar memory leaks
+        activeHandlers.forEach { it.removeCallbacksAndMessages(null) }
+        activeHandlers.clear()
     }
 }

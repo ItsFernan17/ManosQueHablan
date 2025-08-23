@@ -56,7 +56,7 @@ class GrabarVideoActivity : AppCompatActivity() {
         videoRecordingHelper = VideoRecordingHelper(this, binding, this, cameraExecutor)
         videoTimerHelper = VideoTimerHelper(binding.temporizador)
         videoPauseHelper = VideoPauseHelper(this, binding, videoTimerHelper)
-        videoFileHelper = VideoFileHelper(this, this, layoutInflater)
+        videoFileHelper = VideoFileHelper(this)
         
         // Configurar callbacks del helper de grabación
         videoRecordingHelper.onRecordingStarted = {
@@ -119,10 +119,11 @@ class GrabarVideoActivity : AppCompatActivity() {
     private fun detenerGrabacion() {
         try {
             videoRecordingHelper.detenerGrabacion()
-            onRecordingStopped()
+            // onRecordingStopped() ya se llama desde el callback del helper
         } catch (e: Exception) {
             // Solo logear el error, no mostrar Toast al usuario
             Log.d("Camara", "Grabación detenida: ${e.message}")
+            // En caso de error, llamar onRecordingStopped() para limpiar UI
             onRecordingStopped()
         }
     }

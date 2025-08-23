@@ -38,14 +38,13 @@ object DialogUtils {
         btnAceptar.setOnClickListener {
             val nuevoNombre = edtNuevoNombre.text.toString().trim()
             if (nuevoNombre.isEmpty()) {
-                Toast.makeText(context, "El nombre no puede estar vacio", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             val nuevoArchivo = File(videoFile.parent, "$nuevoNombre.mp4")
             if (nuevoArchivo.exists()) {
-                Toast.makeText(context, "Ya existe un video con ese nombre", Toast.LENGTH_SHORT)
-                    .show()
+                Toast.makeText(context, "Ya existe un video con ese nombre", Toast.LENGTH_SHORT).show()
             } else {
                 if (videoFile.renameTo(nuevoArchivo)) {
                     // Actualizar index del sistema (antiguo y nuevo)
@@ -62,12 +61,12 @@ object DialogUtils {
                     // ⚠️ No se modifica directamente el título aquí: dejar que onRenombrado lo haga visualmente
                     onRenombrado(nuevoArchivo)
                     
-                    // Toast de éxito al cambiar nombre
-                    Toast.makeText(context, "Nombre cambiado correctamente", Toast.LENGTH_SHORT).show()
-                    
                     dialog.dismiss()
+                    
+                    // Toast de éxito después de cerrar el dialog para mejor timing
+                    Toast.makeText(context, "Nombre cambiado correctamente", Toast.LENGTH_SHORT).show()
                 } else {
-                    // Mantener toast de error al renombrar
+                    // Toast de error al renombrar
                     Toast.makeText(context, "No se pudo renombrar", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -138,14 +137,15 @@ object DialogUtils {
         btnConfirmar.setOnClickListener {
             if (carpeta.exists()) {
                 carpeta.deleteRecursively()
-                Toast.makeText(context, "Video eliminado correctamente", Toast.LENGTH_SHORT)
-                    .show()
+                dialog.dismiss()
                 onConfirmado()
+                // Toast después de cerrar el dialog y actualizar la UI
+                Toast.makeText(context, "Video eliminado correctamente", Toast.LENGTH_SHORT).show()
             } else {
                 // Solo log, sin toast para este error
+                dialog.dismiss()
                 onConfirmado()
             }
-            dialog.dismiss()
         }
 
         dialog.show()

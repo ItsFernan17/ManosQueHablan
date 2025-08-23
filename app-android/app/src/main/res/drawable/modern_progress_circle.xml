@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Círculo de fondo gris claro -->
+    <item>
+        <shape android:shape="ring"
+            android:innerRadiusRatio="2.8"
+            android:thicknessRatio="20"
+            android:useLevel="false">
+            <solid android:color="#E0E0E0" />
+        </shape>
+    </item>
+    
+    <!-- Arco de progreso animado -->
+    <item>
+        <rotate
+            android:fromDegrees="0"
+            android:toDegrees="360"
+            android:pivotX="50%"
+            android:pivotY="50%">
+            <shape android:shape="ring"
+                android:innerRadiusRatio="2.8"
+                android:thicknessRatio="20"
+                android:useLevel="false">
+                <gradient
+                    android:type="sweep"
+                    android:startColor="#00ed7971"
+                    android:centerColor="#60ed7971"
+                    android:endColor="#ed7971"
+                    android:angle="0" />
+            </shape>
+        </rotate>
+    </item>
+    
+</layer-list>

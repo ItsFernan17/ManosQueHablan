@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="0dp"
+    android:background="@drawable/fondo_popup_redondeado">
+
+    <!-- Header con título -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="16dp">
+
+        <TextView
+            android:id="@+id/txtTituloAcercaDe"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="Acerca de Manos Que Hablan"
+            android:textColor="@color/rojo"
+            android:textSize="20sp"
+            android:fontFamily="@font/poppins_bold"
+            android:gravity="center" />
+
+    </RelativeLayout>
+
+    <!-- Contenido del diálogo -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="24dp"
+        android:paddingBottom="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Descripción principal -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Manos Que Hablan es una aplicación que traduce la Lengua de Señas Guatemalteca (LSG) a voz y texto en videos mediante técnicas de Inteligencia Artificial."
+                android:textColor="@color/texto_videos"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_regular"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Agradecimientos -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Agradecimientos:"
+                android:textColor="@color/rojo"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Se agradece al Benemérito Comité Pro Ciegos y Sordos de Guatemala por el apoyo y el material de señas utilizado para el entrenamiento del modelo de IA."
+                android:textColor="@color/texto_videos"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_regular"
+                android:lineSpacingExtra="4dp" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>

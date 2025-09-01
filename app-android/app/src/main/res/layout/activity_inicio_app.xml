@@ -28,17 +28,30 @@
             android:src="@drawable/logo_completo" />
 
         <ImageView
+            android:id="@+id/btnBuscar"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_marginEnd="12dp"
             android:src="@drawable/busqueda"
+            android:contentDescription="Buscar"
+            app:tint="@color/rojo" />
+
+        <ImageView
+            android:id="@+id/btnInfo"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/ic_info"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Información"
             app:tint="@color/rojo" />
 
         <ImageView
             android:id="@+id/btnOpciones"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:layout_marginStart="12dp"
             android:src="@drawable/opciones"
             app:tint="@color/rojo" />
     </LinearLayout>

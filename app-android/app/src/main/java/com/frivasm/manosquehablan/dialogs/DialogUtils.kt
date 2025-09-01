@@ -150,4 +150,41 @@ object DialogUtils {
 
         dialog.show()
     }
+
+    fun mostrarDialogoAcercaDe(context: Context) {
+        val inflater = LayoutInflater.from(context)
+        val view = inflater.inflate(R.layout.dialog_acerca_de, null)
+        val txtTitulo = view.findViewById<TextView>(R.id.txtTituloAcercaDe)
+
+        val dialog = AlertDialog.Builder(context)
+            .setView(view)
+            .setCancelable(true)
+            .create()
+            
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        // Animación del título con colores rojo y celeste
+        animarTituloColores(context, txtTitulo)
+
+        dialog.show()
+    }
+    
+    private fun animarTituloColores(context: Context, textView: TextView) {
+        val colorRojo = androidx.core.content.ContextCompat.getColor(context, R.color.rojo)
+        val colorCeleste = androidx.core.content.ContextCompat.getColor(context, R.color.celeste)
+        
+        val animador = android.animation.ValueAnimator.ofFloat(0f, 1f)
+        animador.duration = 3000 // Un poco más rápido pero aún suave
+        animador.repeatCount = android.animation.ValueAnimator.INFINITE
+        animador.repeatMode = android.animation.ValueAnimator.REVERSE
+        animador.interpolator = android.view.animation.AccelerateDecelerateInterpolator() // Interpolador suave
+        
+        animador.addUpdateListener { animation ->
+            val progreso = animation.animatedValue as Float
+            val color = android.animation.ArgbEvaluator().evaluate(progreso, colorRojo, colorCeleste) as Int
+            textView.setTextColor(color)
+        }
+        
+        animador.start()
+    }
 }

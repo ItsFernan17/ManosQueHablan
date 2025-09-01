@@ -8,6 +8,7 @@ import androidx.camera.core.CameraSelector
 import com.frivasm.manosquehablan.databinding.ActivityGrabarVideoBinding
 import com.frivasm.manosquehablan.helpers.*
 import com.frivasm.manosquehablan.ui.PositionValidationBanner
+import com.frivasm.manosquehablan.ui.SmoothPositionModal
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -26,6 +27,7 @@ class GrabarVideoActivity : AppCompatActivity() {
     // Validador de posición
     private lateinit var positionValidator: PositionValidator
     private lateinit var positionBanner: PositionValidationBanner
+    private lateinit var smoothPositionModal: SmoothPositionModal
     private var isRecordingAllowed = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,18 +85,24 @@ class GrabarVideoActivity : AppCompatActivity() {
     }
     
     private fun initializePositionValidator() {
-        // Inicializar banner de validación de posición
+        // Inicializar banner de validación de posición (solo para sin giroscopio)
         positionBanner = PositionValidationBanner(this, binding.guiaManos)
+        
+        // Inicializar modal suave para validación
+        smoothPositionModal = SmoothPositionModal(this, binding.handGuideFrame)
         
         // Inicializar validador de posición
         positionValidator = PositionValidator(
             context = this,
             onPositionChanged = { state, deviation, uxAngle, hasGyroscope ->
-                // Solo actualizar el banner si no hay giroscopio (modo manual)
-                if (!hasGyroscope) {
+                // Usar modal suave para dispositivos con giroscopio
+                if (hasGyroscope) {
+                    smoothPositionModal.updatePosition(state, deviation, uxAngle, hasGyroscope)
+                } else {
+                    // Solo usar banner para dispositivos sin giroscopio
                     positionBanner.updatePosition(state, deviation, uxAngle, hasGyroscope)
                 }
-                // Actualizar texto de indicaciones según el estado
+                // Mantener actualización del texto de indicaciones para consistencia
                 updateIndicationsText(state, uxAngle, hasGyroscope)
             },
             onRecordingAllowed = { allowed ->
@@ -119,28 +127,39 @@ class GrabarVideoActivity : AppCompatActivity() {
     private fun updateIndicationsText(state: PositionValidator.PositionState, uxAngle: Float, hasGyroscope: Boolean) {
         runOnUiThread {
             if (videoRecordingHelper.isRecording()) {
-                // Durante grabación, mantener mensaje de grabación
+                // Durante grabación, mostrar mensaje especial si se mueve
+                if (hasGyroscope && state != PositionValidator.PositionState.GREEN) {
+                    binding.textIndicaciones.text = "Grabando... Si la orientación no está bien, no afecta la traducción"
+                } else {
+                    binding.textIndicaciones.text = "Grabando... Mantén tus manos visibles"
+                }
                 return@runOnUiThread
             }
             
-            when (state) {
+            // Transición suave de mensajes según el estado
+            val newText = when (state) {
                 PositionValidator.PositionState.GREEN -> {
-                    binding.textIndicaciones.text = "Coloca tus manos dentro del marco"
+                    "Coloca tus manos dentro del marco"
                 }
                 PositionValidator.PositionState.RED -> {
                     if (hasGyroscope) {
-                        binding.textIndicaciones.text = "Endereza el teléfono (ideal 79-90°) - Actual: ${String.format("%.0f", uxAngle)}°"
+                        "Endereza el teléfono (ideal 79-90°) - Actual: ${String.format("%.0f", uxAngle)}°"
                     } else {
-                        binding.textIndicaciones.text = "Sin giroscopio: coloca el teléfono verticalmente"
+                        "Sin giroscopio: coloca el teléfono verticalmente"
                     }
                 }
                 PositionValidator.PositionState.CRITICAL -> {
                     if (hasGyroscope) {
-                        binding.textIndicaciones.text = "¡Posición crítica! Pon el teléfono en vertical"
+                        "¡Posición crítica! Pon el teléfono en vertical"
                     } else {
-                        binding.textIndicaciones.text = "Sin giroscopio: coloca el teléfono verticalmente"
+                        "Sin giroscopio: coloca el teléfono verticalmente"
                     }
                 }
+            }
+            
+            // Solo actualizar si el texto cambió para evitar parpadeos
+            if (binding.textIndicaciones.text.toString() != newText) {
+                binding.textIndicaciones.text = newText
             }
         }
     }
@@ -343,6 +362,7 @@ class GrabarVideoActivity : AppCompatActivity() {
             // Limpiar validador de posición
             positionValidator.stopValidation()
             positionBanner.cleanup()
+            smoothPositionModal.cleanup()
         } catch (e: Exception) {
             // Solo logear el error, no mostrar Toast al usuario
             Log.d("Camara", "Limpieza completada: ${e.message}")

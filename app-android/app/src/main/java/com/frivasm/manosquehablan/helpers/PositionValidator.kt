@@ -35,6 +35,10 @@ class PositionValidator(
         private const val CRITICAL_THRESHOLD = 20.0f // ≥20° para CRITICAL
         private const val GREEN_STABLE_TIME = 1750L // 1.75s estable para GREEN
         private const val RED_TIME = 800L // 0.8s para pasar a RED
+        
+        // Nuevos parámetros para suavidad
+        private const val SMOOTH_TRANSITION_THRESHOLD = 2.0f // Grados para transición suave
+        private const val UI_UPDATE_INTERVAL = 200L // Reducir frecuencia de updates UI para suavidad
     }
 
     enum class PositionState {
@@ -50,7 +54,6 @@ class PositionValidator(
 
     private var currentState = PositionState.RED
     private var lastSensorTime = 0L
-    private var lastProcessTime = 0L
 
     // Variables para EMA doble
     private var fastEMA = 0.0f
@@ -65,6 +68,8 @@ class PositionValidator(
 
     private var isActive = false
     private var isRecordingAllowed = false
+    private var lastUIUpdateTime = 0L
+    private var lastNotifiedAngle = 0f
 
     val hasGyroscope: Boolean
         get() = rotationVectorSensor != null
@@ -323,10 +328,9 @@ class PositionValidator(
     }
 
     private fun notifyPositionChange(currentTime: Long) {
-        // Throttle de UI ≥120 ms
-        if (currentTime - lastProcessTime < 120) return
-        lastProcessTime = currentTime
-
+        // Throttle de UI mejorado para suavidad
+        if (currentTime - lastUIUpdateTime < UI_UPDATE_INTERVAL) return
+        
         val deviation = when (currentState) {
             PositionState.GREEN -> slowEMA
             else -> fastEMA
@@ -334,8 +338,18 @@ class PositionValidator(
 
         val uxAngle = 90f - deviation  // Ángulo amigable para el usuario
 
-        handler.post {
-            onPositionChanged(currentState, deviation, uxAngle, hasGyroscope)
+        // Solo notificar si hay cambio significativo de estado o ángulo para suavidad
+        val shouldNotify = lastUIUpdateTime == 0L || 
+                          kotlin.math.abs(uxAngle - lastNotifiedAngle) > SMOOTH_TRANSITION_THRESHOLD ||
+                          currentTime - lastUIUpdateTime > (UI_UPDATE_INTERVAL * 3) // Forzar update cada 600ms
+
+        if (shouldNotify) {
+            lastUIUpdateTime = currentTime
+            lastNotifiedAngle = uxAngle
+
+            handler.post {
+                onPositionChanged(currentState, deviation, uxAngle, hasGyroscope)
+            }
         }
     }
 }

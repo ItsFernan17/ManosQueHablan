@@ -25,6 +25,7 @@ import com.frivasm.manosquehablan.R
 import com.frivasm.manosquehablan.helpers.VideoOrdenamientoAlfabeticoViewHelper
 import com.frivasm.manosquehablan.helpers.VideoViewBuilder
 import com.frivasm.manosquehablan.helpers.VideoSyncCache
+import com.frivasm.manosquehablan.dialogs.DialogUtils
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -43,6 +44,7 @@ class InicioAppActivity : AppCompatActivity() {
     private lateinit var contenedor: LinearLayout
     private lateinit var vistaSinVideos: LinearLayout
     private lateinit var btnOpciones: ImageView
+    private lateinit var btnInfo: ImageView
     private lateinit var btnNuevoVideo: LinearLayout
     
     // Variables para gestión de animaciones
@@ -57,6 +59,7 @@ class InicioAppActivity : AppCompatActivity() {
         contenedor = findViewById(R.id.contenedorVideos)
         vistaSinVideos = findViewById(R.id.vistaSinVideos)
         btnOpciones = findViewById(R.id.btnOpciones)
+        btnInfo = findViewById(R.id.btnInfo)
         btnNuevoVideo = findViewById(R.id.btnNuevoVideo)
 
         btnNuevoVideo.setOnClickListener {
@@ -72,6 +75,10 @@ class InicioAppActivity : AppCompatActivity() {
                     aplicarOrdenamiento(tipo)
                 }
             )
+        }
+
+        btnInfo.setOnClickListener {
+            DialogUtils.mostrarDialogoAcercaDe(this)
         }
 
         aplicarOrdenamientoConAnimacion(PreferenciasHelper.obtenerOrden(this), conTransicion = false)

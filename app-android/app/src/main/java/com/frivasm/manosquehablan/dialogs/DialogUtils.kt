@@ -166,6 +166,12 @@ object DialogUtils {
         // Animación del título con colores rojo y celeste
         animarTituloColores(context, txtTitulo)
 
+        // Cancelar animación cuando el diálogo se cierre
+        dialog.setOnDismissListener {
+            val animador = txtTitulo.tag as? android.animation.ValueAnimator
+            animador?.cancel()
+        }
+
         dialog.show()
     }
     
@@ -185,6 +191,8 @@ object DialogUtils {
             textView.setTextColor(color)
         }
         
+        // Guardar referencia del animador en el tag de la vista para poder cancelarlo después
+        textView.tag = animador
         animador.start()
     }
 }

@@ -42,26 +42,57 @@ class SmoothPositionModal(
     private var lastAngle = 0f
     private var isShowing = false
     private val handler = Handler(Looper.getMainLooper())
-    private var phoneAnimator: ObjectAnimator? = null
+    
+    // Variables para detección de movimiento
+    private var lastMovementTime = 0L
+    private var isMoving = false
+    private var previousAngle = 0f
+    private var verificationRunnable: Runnable? = null
 
     fun updatePosition(state: PositionValidator.PositionState, deviation: Float, uxAngle: Float, hasGyroscope: Boolean) {
         handler.post {
-            when (state) {
-                PositionValidator.PositionState.GREEN -> {
-                    hideModalSmoothly()
+            // Detectar movimiento del teléfono
+            val currentTime = System.currentTimeMillis()
+            val angleChange = kotlin.math.abs(uxAngle - previousAngle)
+            
+            if (angleChange > 2f) { // Threshold para detectar movimiento significativo
+                lastMovementTime = currentTime
+                if (!isMoving) {
+                    isMoving = true
+                    showVerifyingMessage()
                 }
-                PositionValidator.PositionState.RED, PositionValidator.PositionState.CRITICAL -> {
-                    if (hasGyroscope) {
-                        // Solo actualizar si hay cambio significativo para suavidad
-                        if (!isShowing || kotlin.math.abs(uxAngle - lastAngle) > UPDATE_SMOOTHNESS_THRESHOLD || currentState != state) {
-                            showModalSmoothly(state, uxAngle, hasGyroscope)
-                            lastAngle = uxAngle
+                // Cancelar verificación previa si existe
+                verificationRunnable?.let { handler.removeCallbacks(it) }
+                
+                // Programar verificación después de 1 segundo de inactividad
+                verificationRunnable = Runnable {
+                    isMoving = false
+                    checkFinalPosition(state, uxAngle, hasGyroscope)
+                }
+                handler.postDelayed(verificationRunnable!!, 1000)
+            }
+            
+            previousAngle = uxAngle
+            
+            // Si no está en movimiento, usar lógica original
+            if (!isMoving) {
+                when (state) {
+                    PositionValidator.PositionState.GREEN -> {
+                        hideModalSmoothly()
+                    }
+                    PositionValidator.PositionState.RED, PositionValidator.PositionState.CRITICAL -> {
+                        if (hasGyroscope) {
+                            // Solo actualizar si hay cambio significativo para suavidad
+                            if (!isShowing || kotlin.math.abs(uxAngle - lastAngle) > UPDATE_SMOOTHNESS_THRESHOLD || currentState != state) {
+                                showModalSmoothly(state, uxAngle, hasGyroscope)
+                                lastAngle = uxAngle
+                            } else {
+                                // Actualización suave solo del ángulo
+                                updateAngleSmoothly(uxAngle)
+                            }
                         } else {
-                            // Actualización suave solo del ángulo
-                            updateAngleSmoothly(uxAngle)
+                            showModalSmoothly(state, uxAngle, hasGyroscope)
                         }
-                    } else {
-                        showModalSmoothly(state, uxAngle, hasGyroscope)
                     }
                 }
             }
@@ -100,10 +131,9 @@ class SmoothPositionModal(
         if (hasGyroscope) {
             angleText?.text = "Ángulo actual: ${String.format("%.0f", uxAngle)}° (ideal: 79-90°)"
             angleText?.visibility = View.VISIBLE
-            startPhoneAnimation(uxAngle)
+            // Ya no necesitamos animación del ícono warning
         } else {
             angleText?.visibility = View.GONE
-            phoneIcon?.rotation = 0f
         }
 
         // Color según estado
@@ -148,7 +178,6 @@ class SmoothPositionModal(
         if (modalContainer == null || !isShowing) return
 
         isShowing = false
-        phoneAnimator?.cancel()
 
         // Animar fondo
         backgroundOverlay?.let { bg ->
@@ -222,9 +251,9 @@ class SmoothPositionModal(
             gravity = Gravity.CENTER_HORIZONTAL
         }
 
-        // Ícono del teléfono más grande
+        // Ícono de warning más grande
         phoneIcon = ImageView(context).apply {
-            setImageResource(R.drawable.ic_phone_android_24)
+            setImageResource(R.drawable.warning)
             setColorFilter(ContextCompat.getColor(context, android.R.color.white))
         }
         val phoneLayoutParams = LinearLayout.LayoutParams(
@@ -267,25 +296,65 @@ class SmoothPositionModal(
         modalContainer?.addView(contentLayout)
         parentFrameLayout.addView(modalContainer, modalLayoutParams)
     }
-
-    private fun startPhoneAnimation(currentAngle: Float) {
-        phoneAnimator?.cancel()
-
-        val targetRotation = when {
-            // Posición crítica (79° o menos): teléfono acostado (90°)
-            currentAngle <= 79f -> 90f
-            // Posición correcta (79-90°): teléfono vertical (0°)
-            currentAngle in 79f..90f -> 0f
-            // Posición incorrecta (más de 90°): teléfono inclinado hacia atrás (-30°)
-            else -> -30f
+    
+    private fun showVerifyingMessage() {
+        if (modalContainer == null) {
+            createModal()
         }
-
-        phoneAnimator = ObjectAnimator.ofFloat(phoneIcon, "rotation", phoneIcon?.rotation ?: 0f, targetRotation).apply {
-            duration = ANIMATION_DURATION
-            interpolator = DecelerateInterpolator()
-            
-            start()
+        
+        isShowing = true
+        
+        // Mostrar mensaje de verificación
+        messageText?.text = "Verificando ángulo..."
+        angleText?.text = "Espera un momento..."
+        
+        // Color amarillo para indicar verificación
+        val verifyingColor = ContextCompat.getColor(context, R.color.celeste)
+        (modalContainer?.background as? GradientDrawable)?.setColor(verifyingColor)
+        
+        // Mostrar modal si no está visible
+        modalContainer?.let { container ->
+            if (container.alpha == 0f) {
+                container.visibility = View.VISIBLE
+                
+                // Animar fondo
+                backgroundOverlay?.let { bg ->
+                    ObjectAnimator.ofFloat(bg, View.ALPHA, 0f, BACKGROUND_ALPHA).apply {
+                        duration = ANIMATION_DURATION
+                        start()
+                    }
+                }
+                
+                container.animate()
+                    .alpha(1f)
+                    .setDuration(ANIMATION_DURATION)
+                    .start()
+            }
         }
+    }
+    
+    private fun checkFinalPosition(state: PositionValidator.PositionState, uxAngle: Float, hasGyroscope: Boolean) {
+        // Verificar la posición final después del movimiento
+        when (state) {
+            PositionValidator.PositionState.GREEN -> {
+                // Posición correcta - mostrar mensaje de éxito brevemente
+                showSuccessMessage()
+                handler.postDelayed({ hideModalSmoothly() }, 800)
+            }
+            PositionValidator.PositionState.RED, PositionValidator.PositionState.CRITICAL -> {
+                // Posición incorrecta - mostrar error
+                showModalSmoothly(state, uxAngle, hasGyroscope)
+            }
+        }
+    }
+    
+    private fun showSuccessMessage() {
+        messageText?.text = "¡Ángulo correcto!"
+        angleText?.text = "Posición verificada"
+        
+        // Color verde para éxito
+        val successColor = ContextCompat.getColor(context, R.color.violeta)
+        (modalContainer?.background as? GradientDrawable)?.setColor(successColor)
     }
 
     private fun findParentFrameLayout(): FrameLayout? {
@@ -315,7 +384,7 @@ class SmoothPositionModal(
 
     fun cleanup() {
         handler.removeCallbacksAndMessages(null)
-        phoneAnimator?.cancel()
+        verificationRunnable?.let { handler.removeCallbacks(it) }
         removeModal()
     }
 

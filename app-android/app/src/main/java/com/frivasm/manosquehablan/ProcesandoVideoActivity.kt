@@ -5,7 +5,6 @@ import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.app.AlertDialog
 import android.content.Intent
-import android.graphics.*
 import android.media.MediaScannerConnection
 import android.os.Bundle
 import android.os.Handler
@@ -29,7 +28,6 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
 import java.util.*
 
 class ProcesandoVideoActivity : AppCompatActivity() {
@@ -129,111 +127,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         dot2 = findViewById(R.id.dot2)
         dot3 = findViewById(R.id.dot3)
     }
-    
-    // FUNCIONES COMENTADAS - YA NO SE USAN (MINIATURA REMOVIDA)
-    /*
-    private fun loadVideoThumbnailWithBlur(videoPath: String) {
-        try {
-            val retriever = MediaMetadataRetriever()
-            retriever.setDataSource(videoPath)
-            
-            // Obtener frame del video (primer segundo)
-            val bitmap = retriever.getFrameAtTime(1000000) // 1 segundo en microsegundos
-            retriever.release()
-            
-            if (bitmap != null) {
-                // Aplicar blur artístico al bitmap
-                val blurredBitmap = blurBitmap(bitmap)
-                val artisticBitmap = applyWarmFilter(blurredBitmap)
-                
-                // Mostrar la imagen con blur artístico
-                runOnUiThread {
-                    videoPreview.setImageBitmap(artisticBitmap)
-                    videoPreview.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("ProcesandoVideoActivity", "Error al cargar miniatura del video: ${e.message}")
-            // Si falla, mantener el background por defecto
-        }
-    }
-    
-    private fun blurBitmap(bitmap: Bitmap): Bitmap {
-        return try {
-            val renderScript = RenderScript.create(this)
-            val blurInput = Allocation.createFromBitmap(renderScript, bitmap)
-            val blurOutput = Allocation.createTyped(renderScript, blurInput.type)
-            
-            val script = ScriptIntrinsicBlur.create(renderScript, Element.U8_4(renderScript))
-            script.setRadius(25f) // Blur máximo
-            script.setInput(blurInput)
-            script.forEach(blurOutput)
-            
-            val blurredBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, bitmap.config)
-            blurOutput.copyTo(blurredBitmap)
-            
-            // Aplicar filtro oscuro navy-black para el nuevo diseño
-            val darkFilteredBitmap = applyDarkNavyFilter(blurredBitmap)
-            
-            renderScript.destroy()
-            darkFilteredBitmap
-        } catch (e: Exception) {
-            Log.e("ProcesandoVideoActivity", "Error al aplicar blur: ${e.message}")
-            bitmap // Retornar original si falla el blur
-        }
-    }
-    
-    private fun applyDarkNavyFilter(bitmap: Bitmap): Bitmap {
-        val filteredBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
-        val canvas = Canvas(filteredBitmap)
-        
-        // Aplicar filtro navy-black con overlay muy oscuro
-        val paint = Paint().apply {
-            colorFilter = android.graphics.ColorMatrixColorFilter(
-                floatArrayOf(
-                    0.1f, 0.0f, 0.2f, 0.0f, 11f,  // Red con tinte navy
-                    0.0f, 0.1f, 0.3f, 0.0f, 19f,  // Green con tinte navy
-                    0.2f, 0.1f, 0.4f, 0.0f, 43f,  // Blue dominante navy
-                    0.0f, 0.0f, 0.0f, 0.3f, 0.0f  // Alpha reducido para más transparencia
-                )
-            )
-        }
-        
-        canvas.drawBitmap(filteredBitmap, 0f, 0f, paint)
-        return filteredBitmap
-    }
-    
-    private fun applyWarmFilter(bitmap: Bitmap): Bitmap {
-        return try {
-            val width = bitmap.width
-            val height = bitmap.height
-            val warmBitmap = Bitmap.createBitmap(width, height, bitmap.config)
-            
-            val canvas = Canvas(warmBitmap)
-            val paint = Paint()
-            
-            // Aplicar el bitmap original
-            canvas.drawBitmap(bitmap, 0f, 0f, paint)
-            
-            // Overlay muy fuerte para estilo app móvil
-            paint.color = Color.argb(180, 248, 249, 250) // Blanco casi opaco
-            paint.blendMode = BlendMode.OVERLAY
-            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
-            
-            // Capa adicional para difuminado total
-            paint.color = Color.argb(150, 233, 236, 239) // Gris muy claro
-            paint.blendMode = BlendMode.SOFT_LIGHT
-            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
-            
-            warmBitmap
-        } catch (e: Exception) {
-            Log.e("ProcesandoVideoActivity", "Error al aplicar filtro: ${e.message}")
-            bitmap // Retornar original si falla
-        }
-    }
-    */
-    // FIN DE FUNCIONES COMENTADAS
-    
+
     private fun startLoadingAnimation() {
         isAnimating = true
         

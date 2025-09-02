@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@drawable/fondo_popup_redondeado">
+
+    <!-- Título -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Opciones del video"
+        android:textSize="18sp"
+        android:textColor="@color/texto_videos"
+        android:fontFamily="@font/poppins_semibold"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Compartir Video -->
+    <LinearLayout
+        android:id="@+id/opcion_compartir"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="12dp"
+        android:paddingHorizontal="8dp"
+        android:background="?android:attr/selectableItemBackground">
+
+        <ImageView
+            android:id="@+id/icono_compartir"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/compartir"
+            app:tint="@color/violeta" />
+
+        <TextView
+            android:id="@+id/texto_compartir"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Compartir Video"
+            android:textSize="16sp"
+            android:textColor="@color/texto_videos"
+            android:fontFamily="@font/poppins_regular" />
+    </LinearLayout>
+
+    <!-- Ver Texto Traducido -->
+    <LinearLayout
+        android:id="@+id/opcion_ver_traduccion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="12dp"
+        android:paddingHorizontal="8dp"
+        android:background="?android:attr/selectableItemBackground">
+
+        <ImageView
+            android:id="@+id/icono_ver_traduccion"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/ver"
+            app:tint="@color/violeta" />
+
+        <TextView
+            android:id="@+id/texto_ver_traduccion"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Ver Texto Traducido"
+            android:textSize="16sp"
+            android:textColor="@color/texto_videos"
+            android:fontFamily="@font/poppins_regular" />
+    </LinearLayout>
+
+    <!-- Escuchar Traducción -->
+    <LinearLayout
+        android:id="@+id/opcion_escuchar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="12dp"
+        android:paddingHorizontal="8dp"
+        android:background="?android:attr/selectableItemBackground">
+
+        <ImageView
+            android:id="@+id/icono_escuchar"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/escuchar"
+            app:tint="@color/violeta" />
+
+        <TextView
+            android:id="@+id/texto_escuchar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Escuchar Traducción"
+            android:textSize="16sp"
+            android:textColor="@color/texto_videos"
+            android:fontFamily="@font/poppins_regular" />
+    </LinearLayout>
+
+    <!-- Eliminar Video -->
+    <LinearLayout
+        android:id="@+id/opcion_eliminar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="12dp"
+        android:paddingHorizontal="8dp"
+        android:background="?android:attr/selectableItemBackground">
+
+        <ImageView
+            android:id="@+id/icono_eliminar"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/eliminar"
+            app:tint="@color/violeta" />
+
+        <TextView
+            android:id="@+id/texto_eliminar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Eliminar Video"
+            android:textSize="16sp"
+            android:textColor="@color/texto_videos"
+            android:fontFamily="@font/poppins_regular" />
+    </LinearLayout>
+
+</LinearLayout>

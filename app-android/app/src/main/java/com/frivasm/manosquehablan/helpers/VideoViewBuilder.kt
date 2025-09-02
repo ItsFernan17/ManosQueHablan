@@ -25,12 +25,27 @@ object VideoViewBuilder {
         formatoFecha: SimpleDateFormat,
         onRecargar: (File) -> Unit
     ) {
+        construirVistaVideoNormal(context, vista, video, formatoFecha, onRecargar, true, true, false)
+    }
+
+    fun construirVistaVideoNormal(
+        context: Context,
+        vista: View,
+        video: File,
+        formatoFecha: SimpleDateFormat,
+        onRecargar: (File) -> Unit,
+        mostrarFecha: Boolean,
+        mostrarDetalles: Boolean,
+        vistaCompacta: Boolean,
+        tipoVista: String = ""
+    ) {
         val titulo = vista.findViewById<TextView>(R.id.txtTitulo)
         val detalles = vista.findViewById<TextView?>(R.id.txtDetalles)
         val fecha = vista.findViewById<TextView?>(R.id.txtFecha) // ✅ Verificamos si existe el campo de fecha
 
         val miniatura = vista.findViewById<ImageView>(R.id.imgMiniatura)
         val btnReproducir = vista.findViewById<ImageView>(R.id.btnReproducir)
+        val btnOpciones = vista.findViewById<ImageView?>(R.id.btnOpciones) // Botón de opciones
 
         val btnEscuchar = vista.findViewById<ImageView?>(R.id.btnEscuchar)
         val escucharContenedor = vista.findViewById<View?>(R.id.escucharContainer)
@@ -48,18 +63,21 @@ object VideoViewBuilder {
             titulo.text = videoFile.nameWithoutExtension.replace("_", " ").replace("-", " ")
             titulo.isSelected = true // Para marquee
 
-            // ✅ Mostrar fecha de creación si existe el TextView
-            if (fecha != null) {
+            // ✅ Mostrar fecha de creación si existe el TextView y está habilitado
+            if (fecha != null && mostrarFecha) {
                 fecha.text = try {
                     val fechaCreacion = VideoUtils.obtenerFechaCreacionVideo(videoFile.absolutePath)
                     formatoFecha.format(Date(fechaCreacion))
                 } catch (_: Exception) {
                     ""
                 }
+                fecha.visibility = View.VISIBLE
+            } else {
+                fecha?.visibility = View.GONE
             }
 
-            // ✅ Detalles (fecha + peso) si existe el TextView txtDetalles
-            if (detalles != null) {
+            // ✅ Detalles (fecha + peso) si existe el TextView txtDetalles y está habilitado
+            if (detalles != null && mostrarDetalles) {
                 CoroutineScope(Dispatchers.Main).launch {
                     val detallesTexto = withContext(Dispatchers.IO) {
                         VideoUtils.construirDetalles(
@@ -69,7 +87,10 @@ object VideoViewBuilder {
                         )
                     }
                     detalles.text = detallesTexto
+                    detalles.visibility = View.VISIBLE
                 }
+            } else {
+                detalles?.visibility = View.GONE
             }
 
             // ✅ Miniatura desde caché o generar
@@ -188,6 +209,25 @@ object VideoViewBuilder {
                     VideoThumbnailCache.move(videoFile, nuevoArchivo)
                     asignarListeners(nuevoArchivo)
                     onRecargar(nuevoArchivo)
+                }
+            }
+
+            // ✅ Botón de opciones - Solo funciona en vistas específicas
+            btnOpciones?.setOnClickListener {
+                when (tipoVista) {
+                    "fecha" -> VideoViewOptionsHelper.mostrarOpcionesPorFecha(context, videoFile)
+                    "alfabetico" -> VideoViewOptionsHelper.mostrarOpcionesAlfabetico(context, videoFile)
+                    else -> {
+                        // Determinar automáticamente el tipo de vista si no se especifica
+                        val encabezadoFecha = vista.findViewById<TextView?>(R.id.txtEncabezadoFecha)
+                        val encabezadoLetra = vista.findViewById<TextView?>(R.id.txtEncabezadoLetra)
+                        
+                        when {
+                            encabezadoFecha != null -> VideoViewOptionsHelper.mostrarOpcionesPorFecha(context, videoFile)
+                            encabezadoLetra != null -> VideoViewOptionsHelper.mostrarOpcionesAlfabetico(context, videoFile)
+                            // Si no está en una vista específica, no hacer nada o mostrar mensaje
+                        }
+                    }
                 }
             }
         }

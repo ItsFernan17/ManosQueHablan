@@ -31,7 +31,7 @@ object VideoOrdenamientoViewHelper {
                     carpeta.listFiles()?.filter { f ->
                         f.isFile &&
                                 f.extension.equals("mp4", ignoreCase = true) &&
-                                f.length() > 1_000_000
+                                f.length() > 100_000 // Cambiado de 1MB a 100KB para consistencia
                     } ?: emptyList()
                 } ?: emptyList()
 
@@ -53,6 +53,11 @@ object VideoOrdenamientoViewHelper {
                 }
                 vistaSinVideos.visibility = View.GONE
 
+                // Cargar preferencias de configuración
+                val mostrarFecha = PreferenciasHelper.obtenerMostrarFechaEnVista(context)
+                val mostrarDetalles = PreferenciasHelper.obtenerMostrarDetallesEnVista(context)
+                val vistaCompacta = PreferenciasHelper.obtenerVistaCompacta(context)
+
                 for ((claveGrupo, grupo) in agrupados) {
                     val grupoOrdenado = grupo.sortedByDescending { creationMillis(it) }
 
@@ -69,19 +74,21 @@ object VideoOrdenamientoViewHelper {
 
                         vista.findViewById<TextView>(R.id.txtEncabezadoFecha).apply {
                             text = encabezadoTxt
-                            visibility = if (index == 0) View.VISIBLE else View.GONE
+                            visibility = if (index == 0 && mostrarFecha) View.VISIBLE else View.GONE
                         }
 
                         VideoViewBuilder.construirVistaVideoNormal(
-                            context, vista, video, formatoFecha
-                        ) { nuevoArchivo ->
-                            vista.tag = nuevoArchivo
-                            val nuevoTitulo = vista.findViewById<TextView>(R.id.txtTitulo)
-                            nuevoTitulo.text = nuevoArchivo.nameWithoutExtension
-                                .replace("_", " ")
-                                .replace("-", " ")
-                            VideoSyncCache.videosActualizados[videoOriginal.absolutePath] = nuevoArchivo
-                        }
+                            context, vista, video, formatoFecha, 
+                            { nuevoArchivo ->
+                                vista.tag = nuevoArchivo
+                                val nuevoTitulo = vista.findViewById<TextView>(R.id.txtTitulo)
+                                nuevoTitulo.text = nuevoArchivo.nameWithoutExtension
+                                    .replace("_", " ")
+                                    .replace("-", " ")
+                                VideoSyncCache.videosActualizados[videoOriginal.absolutePath] = nuevoArchivo
+                            },
+                            mostrarFecha, mostrarDetalles, vistaCompacta, "fecha"
+                        )
 
                         // Línea divisoria / espacio antes del siguiente encabezado
                         val root = vista as LinearLayout

@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/fondo_popup_redondeado">
+
+    <!-- Título -->
+    <TextView
+        android:id="@+id/txtTituloRecordatorio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Recuerda antes de grabar:"
+        android:textSize="20sp"
+        android:textColor="@color/texto_videos"
+        android:fontFamily="@font/poppins_semibold"
+        android:gravity="center"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Contenido -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:maxHeight="300dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Punto 1 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• "
+                    android:textSize="16sp"
+                    android:textColor="@color/violeta"
+                    android:fontFamily="@font/poppins_semibold" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Mantén tus manos a 30-40 cm del teléfono."
+                    android:textSize="15sp"
+                    android:textColor="@color/texto_videos"
+                    android:fontFamily="@font/poppins_regular" />
+            </LinearLayout>
+
+            <!-- Punto 2 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• "
+                    android:textSize="16sp"
+                    android:textColor="@color/violeta"
+                    android:fontFamily="@font/poppins_semibold" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Usa buena luz frontal, evita contraluz."
+                    android:textSize="15sp"
+                    android:textColor="@color/texto_videos"
+                    android:fontFamily="@font/poppins_regular" />
+            </LinearLayout>
+
+            <!-- Punto 3 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• "
+                    android:textSize="16sp"
+                    android:textColor="@color/violeta"
+                    android:fontFamily="@font/poppins_semibold" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Coloca tus manos dentro del recuadro en pantalla."
+                    android:textSize="15sp"
+                    android:textColor="@color/texto_videos"
+                    android:fontFamily="@font/poppins_regular" />
+            </LinearLayout>
+
+            <!-- Punto 4 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• "
+                    android:textSize="16sp"
+                    android:textColor="@color/violeta"
+                    android:fontFamily="@font/poppins_semibold" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Haz la seña despacio y con estabilidad."
+                    android:textSize="15sp"
+                    android:textColor="@color/texto_videos"
+                    android:fontFamily="@font/poppins_regular" />
+            </LinearLayout>
+
+            <!-- Sección importante -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/fondo_importante"
+                android:padding="12dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="La traducción puede fallar si no se cumplen estas condiciones."
+                    android:textSize="14sp"
+                    android:textColor="@color/rojo"
+                    android:fontFamily="@font/poppins_semibold" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Checkbox para no volver a mostrar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <CheckBox
+            android:id="@+id/checkNoMostrarMas"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:buttonTint="@color/violeta" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="No volver a mostrar este recordatorio"
+            android:textSize="14sp"
+            android:textColor="@color/texto_videos"
+            android:fontFamily="@font/poppins_regular" />
+
+    </LinearLayout>
+
+    <!-- Botón Entendido -->
+    <LinearLayout
+        android:id="@+id/btnEntendidoRecordatorio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingVertical="12dp"
+        android:paddingHorizontal="20dp"
+        android:background="@drawable/boton_redondeado_aceptar"
+        android:layout_marginTop="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Entendido"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:fontFamily="@font/poppins_semibold" />
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -273,4 +273,71 @@ object DialogUtils {
         // Unir las palabras y agregar punto solo al final
         return palabrasFormateadas.joinToString(" ") + "."
     }
+
+    fun mostrarDialogoBienvenida(context: Context) {
+        val inflater = LayoutInflater.from(context)
+        val view = inflater.inflate(R.layout.dialog_bienvenida, null)
+        val btnAceptar = view.findViewById<View>(R.id.btnAceptarBienvenida)
+        val txtTitulo = view.findViewById<TextView>(R.id.txtTituloBienvenida)
+
+        val dialog = AlertDialog.Builder(context)
+            .setView(view)
+            .setCancelable(false)
+            .create()
+            
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        btnAceptar.setOnClickListener {
+            // Marcar que ya se mostró la bienvenida
+            com.frivasm.manosquehablan.helpers.PreferenciasHelper.marcarBienvenidaMostrada(context)
+            dialog.dismiss()
+        }
+
+        // Animación del título con colores rojo y celeste
+        animarTituloColores(context, txtTitulo)
+
+        // Cancelar animación cuando el diálogo se cierre
+        dialog.setOnDismissListener {
+            val animador = txtTitulo.tag as? android.animation.ValueAnimator
+            animador?.cancel()
+        }
+
+        dialog.show()
+    }
+
+    fun mostrarDialogoRecordatorioGrabar(context: Context, onContinuar: () -> Unit) {
+        val inflater = LayoutInflater.from(context)
+        val view = inflater.inflate(R.layout.dialog_recordatorio_grabar, null)
+        val btnEntendido = view.findViewById<View>(R.id.btnEntendidoRecordatorio)
+        val txtTitulo = view.findViewById<TextView>(R.id.txtTituloRecordatorio)
+        val checkNoMostrarMas = view.findViewById<android.widget.CheckBox>(R.id.checkNoMostrarMas)
+
+        val dialog = AlertDialog.Builder(context)
+            .setView(view)
+            .setCancelable(false)
+            .create()
+            
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        btnEntendido.setOnClickListener {
+            // Si el checkbox está marcado, guardar la preferencia
+            if (checkNoMostrarMas.isChecked) {
+                com.frivasm.manosquehablan.helpers.PreferenciasHelper.marcarRecordatorioGrabacionDeshabilitado(context)
+            }
+            
+            dialog.dismiss()
+            onContinuar() // Continuar con la navegación a la cámara
+        }
+
+        // Animación del título con colores rojo y celeste
+        animarTituloColores(context, txtTitulo)
+
+        // Cancelar animación cuando el diálogo se cierre
+        dialog.setOnDismissListener {
+            val animador = txtTitulo.tag as? android.animation.ValueAnimator
+            animador?.cancel()
+        }
+
+        dialog.show()
+    }
 }

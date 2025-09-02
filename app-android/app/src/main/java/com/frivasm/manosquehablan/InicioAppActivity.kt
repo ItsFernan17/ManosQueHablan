@@ -89,6 +89,17 @@ class InicioAppActivity : AppCompatActivity() {
         }
 
         aplicarOrdenamientoConAnimacion(PreferenciasHelper.obtenerOrden(this), conTransicion = false)
+        
+        // Verificar si es la primera vez y mostrar diálogo de bienvenida
+        if (PreferenciasHelper.esPrimeraVez(this)) {
+            // Usar un pequeño delay para que la actividad termine de cargar
+            btnNuevoVideo.postDelayed({
+                DialogUtils.mostrarDialogoBienvenida(this)
+            }, 500)
+        }
+        
+        // PARA PRUEBAS: Descomentar la siguiente línea para resetear y ver el diálogo nuevamente
+        // PreferenciasHelper.marcarBienvenidaMostrada(this) // comentar esta línea para resetear
     }
 
     private fun animateButtonAndNavigate() {
@@ -125,8 +136,21 @@ class InicioAppActivity : AppCompatActivity() {
             playSequentially(scaleDown, scaleUp, scaleNormal)
             addListener(object : android.animation.AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: android.animation.Animator) {
-                    startActivity(Intent(this@InicioAppActivity, GrabarVideoActivity::class.java))
+                    // Verificar si debe mostrar el recordatorio
+                    if (PreferenciasHelper.deberMostrarRecordatorioGrabacion(this@InicioAppActivity)) {
+                        DialogUtils.mostrarDialogoRecordatorioGrabar(this@InicioAppActivity) {
+                            // Continuar a la cámara después del diálogo
+                            startActivity(Intent(this@InicioAppActivity, GrabarVideoActivity::class.java))
+                        }
+                    } else {
+                        // Ir directamente a la cámara
+                        startActivity(Intent(this@InicioAppActivity, GrabarVideoActivity::class.java))
+                    }
                     btnNuevoVideo.isEnabled = true // Reactivar al volver
+                    
+                    // PARA PRUEBAS: Descomentar para resetear y volver a ver el diálogo
+                    // SharedPreferences prefs = getSharedPreferences("preferencias", MODE_PRIVATE);
+                    // prefs.edit().remove("recordatorio_grabacion_deshabilitado").apply();
                 }
             })
             start()

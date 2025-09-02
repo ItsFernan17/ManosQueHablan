@@ -31,7 +31,7 @@ object VideoOrdenamientoAlfabeticoViewHelper {
                     carpeta.listFiles()?.filter { f ->
                         f.isFile &&
                                 f.extension.equals("mp4", ignoreCase = true) &&
-                                f.length() > 1_000_000
+                                f.length() > 100_000 // Cambiado de 1MB a 100KB para consistencia
                     } ?: emptyList()
                 } ?: emptyList()
 
@@ -77,6 +77,11 @@ object VideoOrdenamientoAlfabeticoViewHelper {
                 }
                 vistaSinVideos.visibility = View.GONE
 
+                // Cargar preferencias de configuración
+                val mostrarLetras = PreferenciasHelper.obtenerMostrarLetrasEnVista(context)
+                val mostrarDetalles = PreferenciasHelper.obtenerMostrarDetallesEnVista(context)
+                val vistaCompacta = PreferenciasHelper.obtenerVistaCompacta(context)
+
                 var letraActual: String? = null
 
                 itemsOrdenados.forEachIndexed { idx, item ->
@@ -85,8 +90,8 @@ object VideoOrdenamientoAlfabeticoViewHelper {
 
                     val vista = inflater.inflate(R.layout.item_video_por_letra, contenedor, false)
 
-                    // Encabezado: solo cuando cambia la letra
-                    val mostrarEncabezado = letra != letraActual
+                    // Encabezado: solo cuando cambia la letra y está habilitado
+                    val mostrarEncabezado = letra != letraActual && mostrarLetras
                     letraActual = letra
 
                     vista.findViewById<TextView>(R.id.txtEncabezadoLetra).apply {
@@ -103,30 +108,35 @@ object VideoOrdenamientoAlfabeticoViewHelper {
                         context,
                         vista,
                         vigente,
-                        formatoFecha
-                    ) { nuevoArchivo ->
-                        // Callback tras renombrar
-                        val nuevoTitulo = nuevoArchivo.nameWithoutExtension
-                            .replace("_", " ")
-                            .replace("-", " ")
-                            .trim()
+                        formatoFecha,
+                        { nuevoArchivo ->
+                            // Callback tras renombrar
+                            val nuevoTitulo = nuevoArchivo.nameWithoutExtension
+                                .replace("_", " ")
+                                .replace("-", " ")
+                                .trim()
 
-                        val letraNueva = letraInicial(nuevoTitulo)
+                            val letraNueva = letraInicial(nuevoTitulo)
 
-                        // Actualiza cache de sincronización
-                        VideoSyncCache.videosActualizados[item.file.absolutePath] = nuevoArchivo
+                            // Actualiza cache de sincronización
+                            VideoSyncCache.videosActualizados[item.file.absolutePath] = nuevoArchivo
 
-                        if (letraNueva != letra) {
-                            // Si cambió de letra, reconstruimos la lista para mover el item al bloque correcto
-                            contenedor.post {
-                                ordenarVideosPorLetra(context, contenedor, vistaSinVideos)
+                            if (letraNueva != letra) {
+                                // Si cambió de letra, reconstruimos la lista para mover el item al bloque correcto
+                                contenedor.post {
+                                    ordenarVideosPorLetra(context, contenedor, vistaSinVideos)
+                                }
+                            } else {
+                                // Misma letra: solo actualizamos el título en la vista actual
+                                val tvTitulo = vista.findViewById<TextView>(R.id.txtTitulo)
+                                tvTitulo.text = nuevoTitulo
                             }
-                        } else {
-                            // Misma letra: solo actualizamos el título en la vista actual
-                            val tvTitulo = vista.findViewById<TextView>(R.id.txtTitulo)
-                            tvTitulo.text = nuevoTitulo
-                        }
-                    }
+                        },
+                        mostrarLetras, // Este parámetro controla si mostrar encabezados (no se usa en el VideoViewBuilder)
+                        mostrarDetalles,
+                        vistaCompacta,
+                        "alfabetico"
+                    )
 
                     // Línea divisoria entre items: ocultar si es la última del bloque de la letra
                     val divider = vista.findViewById<View>(R.id.lineaDivisoria)

@@ -80,12 +80,16 @@
 
             <TextView
                 android:id="@+id/txtDetalles"
-                android:layout_width="212dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/poppins_regular"
-                android:text="1/08/2025 · 00:20 de video"
+                android:text="1/08/2025 · 2.5 MB"
                 android:textColor="#777777"
-                android:textSize="14sp" />
+                android:textSize="14sp"
+                android:textAlignment="center"
+                android:layout_marginTop="4dp"
+                android:maxLines="1"
+                android:ellipsize="end" />
         </LinearLayout>
 
         <!-- Botón de opciones -->

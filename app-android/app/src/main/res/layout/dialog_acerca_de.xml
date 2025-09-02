@@ -44,12 +44,12 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Manos Que Hablan es una aplicación que traduce la Lengua de Señas Guatemalteca (LSG) a voz y texto en videos mediante técnicas de Inteligencia Artificial."
+                android:text="Manos Que Hablan es una aplicación que traduce la Lengua de Señas Guatemalteca (LSG) a voz y texto en videos mediante Inteligencia Artificial, promoviendo la inclusión y la comunicación accesible entre la comunidad sorda y oyente en Guatemala."
                 android:textColor="@color/texto_videos"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:fontFamily="@font/poppins_regular"
                 android:lineSpacingExtra="4dp"
-                android:layout_marginBottom="20dp" />
+                android:layout_marginBottom="18dp" />
 
             <!-- Agradecimientos -->
             <TextView
@@ -57,18 +57,102 @@
                 android:layout_height="wrap_content"
                 android:text="Agradecimientos:"
                 android:textColor="@color/rojo"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:fontFamily="@font/poppins_medium"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="6dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Se agradece al Benemérito Comité Pro Ciegos y Sordos de Guatemala por el apoyo y el material de señas utilizado para el entrenamiento del modelo de IA."
                 android:textColor="@color/texto_videos"
-                android:textSize="14sp"
+                android:textSize="13sp"
                 android:fontFamily="@font/poppins_regular"
-                android:lineSpacingExtra="4dp" />
+                android:lineSpacingExtra="3dp"
+                android:layout_marginBottom="18dp" />
+
+            <!-- Privacidad -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Privacidad:"
+                android:textColor="@color/rojo"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Los videos grabados únicamente se utilizan con fines de traducción y no se comparten con terceros."
+                android:textColor="@color/texto_videos"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_regular"
+                android:lineSpacingExtra="3dp"
+                android:layout_marginBottom="18dp" />
+
+            <!-- Contacto -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Contacto:"
+                android:textColor="@color/rojo"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="manosquehablan.app@gmail.com"
+                android:textColor="@color/texto_videos"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_regular"
+                android:lineSpacingExtra="3dp"
+                android:layout_marginBottom="18dp" />
+
+            <!-- Versión -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Versión:"
+                android:textColor="@color/rojo"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1.0.0"
+                android:textColor="@color/texto_videos"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_regular"
+                android:lineSpacingExtra="3dp"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Botón Aceptar -->
+            <LinearLayout
+                android:id="@+id/btnAceptar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="32dp"
+                android:background="@drawable/boton_redondeado_aceptar"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingVertical="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_medium"
+                    android:text="Aceptar"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp" />
+            </LinearLayout>
 
         </LinearLayout>
 

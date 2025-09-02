@@ -96,12 +96,15 @@
 
             <TextView
                 android:id="@+id/txtDetalles"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="1/08/2025 · 00:20 de video"
+                android:text="1/08/2025 · 2.5 MB"
                 android:textSize="14sp"
                 android:textColor="#777777"
-                android:fontFamily="@font/poppins_regular" />
+                android:fontFamily="@font/poppins_regular"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textAlignment="center" />
         </LinearLayout>
 
         <!-- Botón de opciones -->

@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import com.frivasm.manosquehablan.R
@@ -155,6 +156,7 @@ object DialogUtils {
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.dialog_acerca_de, null)
         val txtTitulo = view.findViewById<TextView>(R.id.txtTituloAcercaDe)
+        val btnAceptar = view.findViewById<LinearLayout>(R.id.btnAceptar)
 
         val dialog = AlertDialog.Builder(context)
             .setView(view)
@@ -162,6 +164,11 @@ object DialogUtils {
             .create()
             
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        // Botón para cerrar el diálogo
+        btnAceptar.setOnClickListener {
+            dialog.dismiss()
+        }
 
         // Animación del título con colores rojo y celeste
         animarTituloColores(context, txtTitulo)

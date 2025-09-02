@@ -47,11 +47,27 @@ object VideoViewBuilder {
             titulo.isSelected = true // Para marquee
 
             // ✅ Mostrar fecha de creación si existe el TextView
-            fecha?.text = try {
-                val fechaCreacion = VideoUtils.obtenerFechaCreacionVideo(videoFile.absolutePath)
-                formatoFecha.format(Date(fechaCreacion))
-            } catch (_: Exception) {
-                ""
+            if (fecha != null) {
+                fecha.text = try {
+                    val fechaCreacion = VideoUtils.obtenerFechaCreacionVideo(videoFile.absolutePath)
+                    formatoFecha.format(Date(fechaCreacion))
+                } catch (_: Exception) {
+                    ""
+                }
+            }
+
+            // ✅ Detalles (fecha + peso) si existe el TextView txtDetalles
+            if (detalles != null) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    val detallesTexto = withContext(Dispatchers.IO) {
+                        VideoUtils.construirDetalles(
+                            context,
+                            Date(videoFile.lastModified()),
+                            videoFile.absolutePath
+                        )
+                    }
+                    detalles.text = detallesTexto
+                }
             }
 
             // ✅ Miniatura desde caché o generar
@@ -93,18 +109,6 @@ object VideoViewBuilder {
                         miniatura.setImageBitmap(it)
                     }
                 }
-            }
-
-            // ✅ Detalles
-            CoroutineScope(Dispatchers.Main).launch {
-                val detallesTexto = withContext(Dispatchers.IO) {
-                    VideoUtils.construirDetalles(
-                        context,
-                        Date(videoFile.lastModified()),
-                        videoFile.absolutePath
-                    )
-                }
-                detalles?.text = detallesTexto
             }
 
             // ✅ Acciones

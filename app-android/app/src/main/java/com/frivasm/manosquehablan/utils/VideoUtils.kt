@@ -32,7 +32,7 @@ object VideoUtils {
         }
         
         val tamaño = formatearTamaño(file.length())
-        val formatoFecha = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        val formatoFecha = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         val fechaTexto = formatoFecha.format(fecha)
         
         return "$tamaño • $fechaTexto"

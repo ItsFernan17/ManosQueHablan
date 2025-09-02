@@ -431,7 +431,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 guardarArchivoLocal(
                     ApiCliente.urlAbsoluta(data.video_url!!),
                     carpeta,
-                    "video_traducido.mp4",
+                    "Video_$fecha.mp4",
                     "video/mp4"
                 )
 

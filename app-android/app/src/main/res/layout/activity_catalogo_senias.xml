@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/fondo_popup_redondeado">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Header con botón de regreso y título -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <ImageView
+                android:id="@+id/btnBack"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_arrow_back"
+                android:contentDescription="Volver"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="6dp" />
+
+            <TextView
+                android:id="@+id/txtTituloCatalogo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Catálogo de Señas"
+                android:textColor="@color/rojo"
+                android:textSize="24sp"
+                android:fontFamily="@font/poppins_bold"
+                android:gravity="center"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="52dp" />
+
+        </LinearLayout>
+
+        <!-- Descripción -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Esta sección muestra las señas que la aplicación Manos Que Hablan puede reconocer y traducir a voz y texto.\n\nSi deseas aprender más sobre la Lengua de Señas Guatemalteca (LSG), consulta los recursos disponibles en esta sección."
+            android:textSize="15sp"
+            android:textColor="@color/texto_secundario"
+            android:fontFamily="@font/poppins_regular"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="32dp" />
+
+        <!-- Categorías de señas -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Categorías Disponibles"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/texto_principal"
+            android:fontFamily="@font/poppins_semibold"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Frases de Cortesía -->
+        <LinearLayout
+            android:id="@+id/enlaceFrasesCortesia"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_background"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Frases de Cortesía"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_color"
+                android:fontFamily="@font/poppins_semibold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Hola • Gracias • Por favor • Perdón • Adiós"
+                android:textSize="14sp"
+                android:textColor="@color/texto_secundario"
+                android:fontFamily="@font/poppins_regular"
+                android:gravity="center"
+                android:layout_marginBottom="12dp" />
+
+            <LinearLayout
+                android:id="@+id/botonVocabulario"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/boton_vocabulario_background"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:id="@+id/txtBotonVocabulario"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ver Vocabulario"
+                    android:textSize="14sp"
+                    android:textColor="@color/accent_color"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:gravity="center" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Espacio para más categorías -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Más categorías próximamente..."
+            android:textSize="14sp"
+            android:textColor="@color/texto_terciario"
+            android:fontFamily="@font/poppins_italic"
+            android:gravity="center"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp" />
+
+    </LinearLayout>
+
+</ScrollView>

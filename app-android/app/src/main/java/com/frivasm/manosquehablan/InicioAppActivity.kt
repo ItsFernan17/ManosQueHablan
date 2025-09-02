@@ -45,6 +45,7 @@ class InicioAppActivity : AppCompatActivity() {
     private lateinit var vistaSinVideos: LinearLayout
     private lateinit var btnOpciones: ImageView
     private lateinit var btnInfo: ImageView
+    private lateinit var btnCatalogo: ImageView
     private lateinit var btnNuevoVideo: LinearLayout
     
     // Variables para gestión de animaciones
@@ -60,6 +61,7 @@ class InicioAppActivity : AppCompatActivity() {
         vistaSinVideos = findViewById(R.id.vistaSinVideos)
         btnOpciones = findViewById(R.id.btnOpciones)
         btnInfo = findViewById(R.id.btnInfo)
+        btnCatalogo = findViewById(R.id.btnCatalogo)
         btnNuevoVideo = findViewById(R.id.btnNuevoVideo)
 
         btnNuevoVideo.setOnClickListener {
@@ -79,6 +81,11 @@ class InicioAppActivity : AppCompatActivity() {
 
         btnInfo.setOnClickListener {
             DialogUtils.mostrarDialogoAcercaDe(this)
+        }
+
+        btnCatalogo.setOnClickListener {
+            val intent = Intent(this, CatalogoSeniasActivity::class.java)
+            startActivity(intent)
         }
 
         aplicarOrdenamientoConAnimacion(PreferenciasHelper.obtenerOrden(this), conTransicion = false)

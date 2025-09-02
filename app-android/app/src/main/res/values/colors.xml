@@ -33,4 +33,10 @@
     <color name="overlay_black">#A6000000</color> <!-- 65% black overlay -->
     <color name="error_color">#E53E3E</color>
     <color name="critical_color">#DC2626</color> <!-- Color crítico más intenso -->
+    
+    <!-- Colores adicionales para catálogo -->
+    <color name="primary_color">#0376ED</color>
+    <color name="accent_color">#ed7971</color>
+    <color name="fondo_principal">#F3F2F4</color>
+    <color name="texto_terciario">#9CA3AF</color>
 </resources>

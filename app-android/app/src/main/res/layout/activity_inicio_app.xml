@@ -40,12 +40,24 @@
             android:id="@+id/btnInfo"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:layout_marginEnd="12dp"
+            android:layout_marginEnd="8dp"
             android:src="@drawable/ic_info"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:focusable="true"
             android:contentDescription="Información"
+            app:tint="@color/rojo" />
+
+        <ImageView
+            android:id="@+id/btnCatalogo"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/senia"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Catálogo de Señas"
             app:tint="@color/rojo" />
 
         <ImageView

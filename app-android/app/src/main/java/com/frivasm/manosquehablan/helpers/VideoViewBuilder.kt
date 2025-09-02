@@ -74,8 +74,11 @@ object VideoViewBuilder {
             val cachedBitmap = VideoThumbnailCache.get(videoFile)
             if (cachedBitmap != null) {
                 miniatura.setImageBitmap(cachedBitmap)
+                miniatura.clearAnimation() // Detener animación si existe
             } else {
-                miniatura.setImageResource(R.drawable.video_placeholder)
+                miniatura.setImageResource(R.drawable.video_loading_placeholder)
+                // Agregar animación shimmer mientras carga
+                miniatura.startAnimation(android.view.animation.AnimationUtils.loadAnimation(context, R.anim.shimmer_placeholder))
                 CoroutineScope(Dispatchers.Main).launch {
                     val thumbnail = withContext(Dispatchers.IO) {
                         try {
@@ -106,6 +109,7 @@ object VideoViewBuilder {
                     }
                     thumbnail?.let {
                         VideoThumbnailCache.put(videoFile, it)
+                        miniatura.clearAnimation() // Detener animación cuando carga la miniatura real
                         miniatura.setImageBitmap(it)
                     }
                 }

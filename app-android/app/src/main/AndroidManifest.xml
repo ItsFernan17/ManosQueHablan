@@ -66,6 +66,11 @@
             android:exported="false" />
 
         <activity
+            android:name=".CatalogoSeniasActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
             android:name=".ProcesandoVideoActivity"
             android:exported="false"
             android:screenOrientation="portrait" />

@@ -69,6 +69,14 @@ class GrabarVideoActivity : AppCompatActivity() {
         videoPauseHelper = VideoPauseHelper(this, binding, videoTimerHelper)
         videoFileHelper = VideoFileHelper(this)
         
+        // Configurar callback para el límite de tiempo
+        videoTimerHelper.onTiempoLimiteAlcanzado = {
+            // Detener automáticamente la grabación cuando se alcance 1 minuto
+            if (videoRecordingHelper.isRecording()) {
+                detenerGrabacion()
+            }
+        }
+        
         // Configurar callbacks del helper de grabación
         videoRecordingHelper.onRecordingStarted = {
             onRecordingStarted()

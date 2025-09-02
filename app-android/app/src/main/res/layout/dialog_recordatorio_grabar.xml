@@ -143,7 +143,7 @@
                     android:layout_height="wrap_content"
                     android:text="La traducción puede fallar si no se cumplen estas condiciones."
                     android:textSize="14sp"
-                    android:textColor="@color/rojo"
+                    android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_semibold" />
             </LinearLayout>
 

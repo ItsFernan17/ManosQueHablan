@@ -482,11 +482,11 @@ class ProcesandoVideoActivity : AppCompatActivity() {
             }
 
             val archivoDestino = File(carpetaDestino, nombreArchivo)
-            response.body!!.byteStream().use { input ->
+            response.body?.byteStream()?.use { input ->
                 archivoDestino.outputStream().use { output ->
                     input.copyTo(output)
                 }
-            }
+            } ?: throw Exception("No se pudo obtener el contenido de $nombreArchivo")
             
             // Verificar que el archivo se descargó correctamente
             if (!archivoDestino.exists() || archivoDestino.length() == 0L) {

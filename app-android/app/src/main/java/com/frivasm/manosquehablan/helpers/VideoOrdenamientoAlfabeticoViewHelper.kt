@@ -20,9 +20,10 @@ object VideoOrdenamientoAlfabeticoViewHelper {
     fun ordenarVideosPorLetra(
         context: Context,
         contenedor: LinearLayout,
-        vistaSinVideos: View
+        vistaSinVideos: View,
+        scope: CoroutineScope
     ) {
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch(Dispatchers.IO) {
             val raiz = File(context.getExternalFilesDir(null), "ManosQueHablan")
 
             val videos = raiz.listFiles()
@@ -94,7 +95,7 @@ object VideoOrdenamientoAlfabeticoViewHelper {
                     val mostrarEncabezado = letra != letraActual && mostrarLetras
                     letraActual = letra
 
-                    vista.findViewById<TextView>(R.id.txtEncabezadoLetra).apply {
+                    vista.findViewById<TextView>(R.id.txtEncabezadoLetra)?.apply {
                         text = if (letra == "#") "•" else letra
                         visibility = if (mostrarEncabezado) View.VISIBLE else View.GONE
                     }
@@ -124,7 +125,7 @@ object VideoOrdenamientoAlfabeticoViewHelper {
                             if (letraNueva != letra) {
                                 // Si cambió de letra, reconstruimos la lista para mover el item al bloque correcto
                                 contenedor.post {
-                                    ordenarVideosPorLetra(context, contenedor, vistaSinVideos)
+                                    ordenarVideosPorLetra(context, contenedor, vistaSinVideos, scope)
                                 }
                             } else {
                                 // Misma letra: solo actualizamos el título en la vista actual

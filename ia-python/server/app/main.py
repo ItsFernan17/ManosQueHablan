@@ -1,8 +1,10 @@
+# app/main.py
 import os
 import uuid
 import shutil
 import asyncio
 import tempfile
+import logging
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -18,12 +20,26 @@ from app.utils_ffmpeg import (
     generate_tts_continuous_mp3,
 )
 
+# ==== Imports de los módulos auxiliares ====
+from app.config import MAX_UPLOAD_MB, RESULTS_TTL_SECS
+from app.logging_setup import get_app_logger, RequestIdAndLoggingMiddleware
+from app.middlewares.upload_limit import MaxUploadSizeMiddleware
+from app.concurrency import guarded
+from app.storage import save_upload_to_path, is_valid_media
+from app.cleanup import register_results_cleaner
+# ===========================================
+
 # -----------------------
 # Inicialización
 # -----------------------
 ensure_dirs()
 
 app = FastAPI(title="Sign Translator API", version="2.2.0")
+
+# Logger y middlewares nuevos
+logger = get_app_logger()
+app.add_middleware(RequestIdAndLoggingMiddleware, logger=logger)
+app.add_middleware(MaxUploadSizeMiddleware, max_bytes=MAX_UPLOAD_MB * 1024 * 1024)
 
 # CORS (ajusta origins en producción)
 app.add_middleware(
@@ -40,6 +56,41 @@ app.mount(
     StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),
     name="static",
 )
+
+# Limpieza periódica por TTL (resultados)
+register_results_cleaner(app, RESULTS_TTL_SECS, logger)
+
+# -----------------------
+# Helpers de sesión
+# -----------------------
+def create_session_dir() -> tuple[str, str]:
+    """Crea carpeta por petición: static/results/<uuid>/"""
+    session_id = uuid.uuid4().hex
+    session_path = os.path.join(RESULTS_DIR, session_id)
+    os.makedirs(session_path, exist_ok=True)
+    return session_id, session_path
+
+
+async def schedule_cleanup(path: str, delay_seconds: int = 3):
+    """Borra la carpeta completa luego de delay_seconds."""
+    try:
+        await asyncio.sleep(delay_seconds)
+        shutil.rmtree(path, ignore_errors=True)
+    except Exception:
+        pass
+
+# -----------------------
+# Instrumentación por etapas (para depurar 500s)
+# -----------------------
+async def stage(name: str, func, *args, **kwargs):
+    logger.info(f"stage_start={name}")
+    try:
+        result = await guarded(func, *args, **kwargs)
+        logger.info(f"stage_ok={name}")
+        return result
+    except Exception as e:
+        logger.exception(f"stage_fail={name} error={e}")
+        raise
 
 # -----------------------
 # Endpoints básicos
@@ -63,25 +114,6 @@ def root():
         },
     }
 
-# -----------------------
-# Helpers de sesión
-# -----------------------
-def create_session_dir() -> tuple[str, str]:
-    """Crea carpeta por petición: static/results/<uuid>/"""
-    session_id = uuid.uuid4().hex
-    session_path = os.path.join(RESULTS_DIR, session_id)
-    os.makedirs(session_path, exist_ok=True)
-    return session_id, session_path
-
-
-async def schedule_cleanup(path: str, delay_seconds: int = 3):
-    """Borra la carpeta completa luego de delay_seconds."""
-    try:
-        await asyncio.sleep(delay_seconds)
-        shutil.rmtree(path, ignore_errors=True)
-    except Exception:
-        pass
-
 # -------------------------------------------------------------------
 # 1) TESTING: devuelve detecciones + video con overlays simples
 # -------------------------------------------------------------------
@@ -100,13 +132,24 @@ async def evaluate_video_endpoint(
     input_path = os.path.join(session_dir, input_name)
 
     try:
-        with open(input_path, "wb") as f:
-            f.write(await file.read())
+        # Guardado robusto por chunks + validación
+        await save_upload_to_path(file, input_path)
+        size = os.path.getsize(input_path)
+        logger.info(f"file_saved path={input_path} size={size}B")
+        if size == 0:
+            asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=3))
+            raise HTTPException(status_code=400, detail="No se recibió contenido en el campo 'file'.")
+        if not is_valid_media(input_path):
+            asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=3))
+            raise HTTPException(status_code=400, detail="El video recibido está vacío o corrupto.")
 
         out_name = unique_name("resultado_test", "mp4")
         out_path = os.path.join(session_dir, out_name)
 
-        detections, meta = evaluate_video_to_file(
+        # PROTEGIDO (FFmpeg / pesado)
+        detections, meta = await stage(
+            "evaluate_video_to_file(draw=True)",
+            evaluate_video_to_file,
             video_path=input_path,
             out_mp4_path=out_path,
             threshold=threshold,
@@ -156,15 +199,30 @@ async def upload_video_endpoint(
     input_path = os.path.join(session_dir, input_name)
 
     try:
-        with open(input_path, "wb") as f:
-            f.write(await video.read())
+        # Guardado robusto por chunks + validación
+        await save_upload_to_path(video, input_path)
+        size = os.path.getsize(input_path)
+        logger.info(f"file_saved path={input_path} size={size}B")
+        if size == 0:
+            asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=3))
+            raise HTTPException(status_code=400, detail="No se recibió contenido en el campo 'video'.")
+        
+        logger.info("checking_media_validity")
+        is_valid = is_valid_media(input_path)
+        logger.info(f"media_valid={is_valid}")
+        if not is_valid:
+            asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=3))
+            raise HTTPException(status_code=400, detail="El video recibido está vacío o corrupto.")
 
         # Corre evaluación SIN overlays para obtener detecciones limpias
         with tempfile.NamedTemporaryFile(prefix="tmp_eval_", suffix=".mp4",
                                          dir=session_dir, delete=False) as tmpf:
             tmp_eval_path = tmpf.name
 
-        detections, meta = evaluate_video_to_file(
+        # PROTEGIDO
+        detections, meta = await stage(
+            "evaluate_video_to_file(draw=False)",
+            evaluate_video_to_file,
             video_path=input_path,
             out_mp4_path=tmp_eval_path,
             threshold=threshold,
@@ -191,20 +249,30 @@ async def upload_video_endpoint(
         out_audio_name = unique_name("tts_total", "mp3")
         out_audio_path = os.path.join(session_dir, out_audio_name)
 
-        # MP3 continuo “como leído” (para que el usuario lo pueda escuchar aparte)
-        audio_ok = generate_tts_continuous_mp3(detections, out_audio_path, lang=tts_lang)
+        # MP3 continuo “como leído” (PROTEGIDO)
+        audio_ok = await stage(
+            "generate_tts_continuous_mp3",
+            generate_tts_continuous_mp3,
+            detections, out_audio_path, tts_lang
+        )
 
-        # Render de video con subtítulos + TTS sincronizado por detección
+        # Render de video con subtítulos + TTS sincronizado por detección (PROTEGIDO)
         with tempfile.TemporaryDirectory(dir=session_dir) as tmpdir:
             # 1) Subtítulos (una línea por detección)
             ass_path = os.path.join(tmpdir, "subs.ass")
-            build_ass_file_per_detection(detections, ass_path)
+            await stage("build_ass_file_per_detection", build_ass_file_per_detection, detections, ass_path)
 
             # 2) TTS por detección (para mezcla dentro del video)
-            tts_items = generate_tts_per_detection_items(detections, tmpdir, lang=tts_lang)
+            tts_items = await stage(
+                "generate_tts_per_detection_items",
+                generate_tts_per_detection_items,
+                detections, tmpdir, tts_lang
+            )
 
             # 3) Render final
-            ffmpeg_burn_subs_and_mix_audio(
+            await stage(
+                "ffmpeg_burn_subs_and_mix_audio",
+                ffmpeg_burn_subs_and_mix_audio,
                 src_video=input_path,
                 ass_path=ass_path,
                 tts_items=tts_items,
@@ -251,13 +319,24 @@ async def test_endpoint(
     input_path = os.path.join(session_dir, input_name)
 
     try:
-        with open(input_path, "wb") as f:
-            f.write(await video.read())
+        # Guardado robusto por chunks + validación
+        await save_upload_to_path(video, input_path)
+        size = os.path.getsize(input_path)
+        logger.info(f"file_saved path={input_path} size={size}B")
+        if size == 0:
+            asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=3))
+            raise HTTPException(status_code=400, detail="No se recibió contenido en el campo 'video'.")
+        if not is_valid_media(input_path):
+            asyncio.create_task(schedule_cleanup(session_dir, delay_seconds=3))
+            raise HTTPException(status_code=400, detail="El video recibido está vacío o corrupto.")
 
         out_video_name = unique_name("resultado", "mp4")
         out_video_path = os.path.join(session_dir, out_video_name)
 
-        detections, meta = evaluate_video_to_file(
+        # PROTEGIDO
+        detections, meta = await stage(
+            "evaluate_video_to_file(draw=True)",
+            evaluate_video_to_file,
             video_path=input_path,
             out_mp4_path=out_video_path,
             threshold=threshold,
@@ -283,7 +362,7 @@ async def test_endpoint(
         with open(out_text_path, "w", encoding="utf-8") as tf:
             tf.write("\n".join(transcript_lines))
 
-        # TTS simple
+        # TTS simple (PROTEGIDO)
         out_audio_name = unique_name("audio", "mp3")
         out_audio_path = os.path.join(session_dir, out_audio_name)
         try:
@@ -292,7 +371,11 @@ async def test_endpoint(
                 if detections
                 else "Sin detecciones válidas."
             )
-            gTTS(text=spoken_text, lang=tts_lang).save(out_audio_path)
+            await stage(
+                "gTTS_simple",
+                lambda txt, lang, outp: gTTS(text=txt, lang=lang).save(outp),
+                spoken_text, tts_lang, out_audio_path
+            )
         except Exception:
             out_audio_path = None
 

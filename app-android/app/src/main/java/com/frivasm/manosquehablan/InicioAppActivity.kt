@@ -16,6 +16,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.frivasm.manosquehablan.helpers.VideoLoader
 import com.frivasm.manosquehablan.helpers.VideoOrdenamientoViewHelper
 import com.frivasm.manosquehablan.helpers.PreferenciasHelper
@@ -28,6 +29,7 @@ import com.frivasm.manosquehablan.helpers.VideoSyncCache
 import com.frivasm.manosquehablan.dialogs.DialogUtils
 import java.io.File
 import java.text.SimpleDateFormat
+import kotlinx.coroutines.launch
 import java.util.*
 
 class InicioAppActivity : AppCompatActivity() {
@@ -178,8 +180,8 @@ class InicioAppActivity : AppCompatActivity() {
         val cargarVideos = {
             when (tipo) {
                 ORDEN_RECIENTES -> VideoLoader.cargarVideosRecientes(this, contenedor, vistaSinVideos)
-                ORDEN_FECHA -> VideoOrdenamientoViewHelper.ordenarVideosPorFecha(this, contenedor, vistaSinVideos)
-                ORDEN_ALFABETICO -> VideoOrdenamientoAlfabeticoViewHelper.ordenarVideosPorLetra(this, contenedor, vistaSinVideos)
+                ORDEN_FECHA -> VideoOrdenamientoViewHelper.ordenarVideosPorFecha(this, contenedor, vistaSinVideos, lifecycleScope)
+                ORDEN_ALFABETICO -> VideoOrdenamientoAlfabeticoViewHelper.ordenarVideosPorLetra(this, contenedor, vistaSinVideos, lifecycleScope)
                 else -> VideoLoader.cargarVideosRecientes(this, contenedor, vistaSinVideos)
             }
             // Asegurar layout y redraw

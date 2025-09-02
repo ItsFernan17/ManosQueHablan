@@ -20,9 +20,10 @@ object VideoOrdenamientoViewHelper {
     fun ordenarVideosPorFecha(
         context: Context,
         contenedor: LinearLayout,
-        vistaSinVideos: View
+        vistaSinVideos: View,
+        scope: CoroutineScope
     ) {
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch(Dispatchers.IO) {
             val raiz = File(context.getExternalFilesDir(null), "ManosQueHablan")
 
             val videos = raiz.listFiles()
@@ -72,7 +73,7 @@ object VideoOrdenamientoViewHelper {
                             else -> claveGrupo.replaceFirstChar { it.titlecase(Locale.getDefault()) }
                         }
 
-                        vista.findViewById<TextView>(R.id.txtEncabezadoFecha).apply {
+                        vista.findViewById<TextView>(R.id.txtEncabezadoFecha)?.apply {
                             text = encabezadoTxt
                             visibility = if (index == 0 && mostrarFecha) View.VISIBLE else View.GONE
                         }

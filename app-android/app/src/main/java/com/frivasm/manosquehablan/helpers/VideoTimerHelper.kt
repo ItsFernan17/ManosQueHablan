@@ -10,6 +10,8 @@ class VideoTimerHelper(private val temporizadorView: TextView) {
     private var tiempoPausado = 0L
     private var tiempoInicioPausa = 0L
     private var segundosAcumulados = 0
+    private val LIMITE_TIEMPO_SEGUNDOS = 60 // 1 minuto
+    var onTiempoLimiteAlcanzado: (() -> Unit)? = null
     
     fun iniciarTemporizador() {
         // Si ya hay un timer corriendo, no crear uno nuevo
@@ -32,6 +34,13 @@ class VideoTimerHelper(private val temporizadorView: TextView) {
                     // Actualizar UI en el hilo principal
                     temporizadorView.post {
                         temporizadorView.text = tiempoFormateado
+                    }
+                    
+                    // Verificar si se alcanzó el límite de tiempo
+                    if (segundosReales >= LIMITE_TIEMPO_SEGUNDOS) {
+                        temporizadorView.post {
+                            onTiempoLimiteAlcanzado?.invoke()
+                        }
                     }
                 }
             }

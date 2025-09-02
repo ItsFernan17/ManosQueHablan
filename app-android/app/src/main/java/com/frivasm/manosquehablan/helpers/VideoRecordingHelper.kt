@@ -3,6 +3,8 @@ package com.frivasm.manosquehablan.helpers
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -13,6 +15,7 @@ import com.frivasm.manosquehablan.databinding.ActivityGrabarVideoBinding
 import java.io.File
 import java.util.concurrent.ExecutorService
 
+@ExperimentalCamera2Interop
 class VideoRecordingHelper(
     private val context: Context,
     private val binding: ActivityGrabarVideoBinding,
@@ -26,10 +29,23 @@ class VideoRecordingHelper(
     private var camSelector = CameraSelector.DEFAULT_FRONT_CAMERA
     private var currentTempFile: File? = null
     private var isPaused = false
+    private var camera: Camera? = null
+    
+    // Control de exposición inteligente
+    val exposureControlHelper = ExposureControlHelper(context, binding.previewView, cameraExecutor)
     
     var onRecordingStarted: (() -> Unit)? = null
     var onRecordingStopped: (() -> Unit)? = null
     var onRecordingError: ((String) -> Unit)? = null
+    
+    init {
+        // Configurar callback para notificaciones de exposición
+        exposureControlHelper.onExposureChanged = { luma, evCompensation, torchEnabled ->
+            val supportInfo = if (exposureControlHelper.isExposureSupported()) "EV" else "Solo medición"
+            val torchInfo = if (exposureControlHelper.isTorchSupported()) "linterna" else "sin linterna"
+            Log.d("VideoRecording", "Exposición [$supportInfo,$torchInfo]: luma=${String.format("%.3f", luma)}, EV=$evCompensation, torch=$torchEnabled")
+        }
+    }
     
     fun iniciarCamara() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -46,7 +62,18 @@ class VideoRecordingHelper(
 
             try {
                 provider.unbindAll()
-                provider.bindToLifecycle(lifecycleOwner, camSelector, preview, videoCapture)
+                
+                // Vincular preview, videoCapture y análisis de imagen para exposición
+                val imageAnalysis = exposureControlHelper.getImageAnalysis()
+                if (imageAnalysis != null) {
+                    camera = provider.bindToLifecycle(lifecycleOwner, camSelector, preview, videoCapture, imageAnalysis)
+                } else {
+                    camera = provider.bindToLifecycle(lifecycleOwner, camSelector, preview, videoCapture)
+                }
+                
+                // Configurar control de exposición con la cámara
+                camera?.let { exposureControlHelper.setCamera(it) }
+                
             } catch (e: Exception) {
                 // Solo log, sin toast
             }
@@ -66,22 +93,21 @@ class VideoRecordingHelper(
             }.start(ContextCompat.getMainExecutor(context)) { event ->
                 when (event) {
                     is VideoRecordEvent.Start -> {
+                        // Notificar al control de exposición que inició la grabación
+                        exposureControlHelper.onRecordingStarted()
                         onRecordingStarted?.invoke()
                     }
                     is VideoRecordEvent.Finalize -> {
+                        // Notificar al control de exposición que terminó la grabación
+                        exposureControlHelper.onRecordingStopped()
+                        
+                        // Log telemetría del clip si hay datos
+                        val tempFilePath = currentTempFile?.name ?: "unknown_clip"
+                        exposureControlHelper.logTelemetryForClip(tempFilePath)
+                        
                         if (!event.hasError()) {
                             onRecordingStopped?.invoke()
-                        } else {
-                            // Solo mostrar error si no es una cancelación intencional
-                            val errorMessage = event.error?.toString() ?: "Error al grabar video"
-                            if (!errorMessage.contains("cancelled", ignoreCase = true) && 
-                                !errorMessage.contains("cancelado", ignoreCase = true)) {
-                                onRecordingError?.invoke("Error al grabar video")
-                            } else {
-                                Log.d("VideoRecording", "Grabación cancelada intencionalmente")
-                            }
                         }
-                        recording = null
                     }
                 }
             }
@@ -93,7 +119,6 @@ class VideoRecordingHelper(
     
     fun detenerGrabacion() {
         try {
-            // Si hay una grabación activa, detenerla de forma silenciosa
             recording?.let { currentRecording ->
                 try {
                     currentRecording.stop()
@@ -153,6 +178,9 @@ class VideoRecordingHelper(
     
     fun cleanup() {
         try {
+            // Limpiar control de exposición
+            exposureControlHelper.cleanup()
+            
             // Detener grabación de forma silenciosa
             recording?.let { currentRecording ->
                 try {
@@ -165,6 +193,7 @@ class VideoRecordingHelper(
             recording = null
             currentTempFile = null
             isPaused = false
+            camera = null
             cameraExecutor.shutdown()
         } catch (e: Exception) {
             // Solo logear el error, no mostrar Toast al usuario

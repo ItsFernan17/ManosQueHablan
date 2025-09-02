@@ -5,7 +5,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 
+@ExperimentalCamera2Interop
 class InicioSplashScreenActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {

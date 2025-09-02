@@ -16,6 +16,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.lifecycle.lifecycleScope
 import com.frivasm.manosquehablan.helpers.VideoLoader
 import com.frivasm.manosquehablan.helpers.VideoOrdenamientoViewHelper
@@ -32,6 +33,7 @@ import java.text.SimpleDateFormat
 import kotlinx.coroutines.launch
 import java.util.*
 
+@ExperimentalCamera2Interop
 class InicioAppActivity : AppCompatActivity() {
 
     companion object {

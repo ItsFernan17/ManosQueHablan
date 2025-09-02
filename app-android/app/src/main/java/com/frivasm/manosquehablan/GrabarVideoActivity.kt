@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraSelector
 import com.frivasm.manosquehablan.databinding.ActivityGrabarVideoBinding
 import com.frivasm.manosquehablan.helpers.*
@@ -12,6 +13,7 @@ import com.frivasm.manosquehablan.ui.SmoothPositionModal
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
+@ExperimentalCamera2Interop
 class GrabarVideoActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityGrabarVideoBinding
@@ -89,6 +91,11 @@ class GrabarVideoActivity : AppCompatActivity() {
         videoRecordingHelper.onRecordingError = { error ->
             // Solo log para errores de grabación
             Log.e("GrabarVideo", "Error de grabación: $error")
+        }
+        
+        // Configurar callback de exposición para mostrar información sutil
+        videoRecordingHelper.exposureControlHelper.onExposureChanged = { luma, evCompensation, torchEnabled ->
+            updateExposureIndicator(luma, evCompensation, torchEnabled)
         }
     }
     
@@ -189,6 +196,54 @@ class GrabarVideoActivity : AppCompatActivity() {
                 binding.btnGrabar.isEnabled = false
                 binding.btnGrabar.alpha = 0.5f
                 Log.d("GrabarVideo", "Botón de grabar DESHABILITADO - Posición incorrecta")
+            }
+        }
+    }
+    
+    private fun updateExposureIndicator(luma: Float, evCompensation: Int, torchEnabled: Boolean) {
+        runOnUiThread {
+            val indicator = binding.exposureIndicator
+            
+            // Verificar soporte del dispositivo
+            val hasEvSupport = videoRecordingHelper.exposureControlHelper.isExposureSupported()
+            val hasTorchSupport = videoRecordingHelper.exposureControlHelper.isTorchSupported()
+            
+            // Solo mostrar durante la grabación o si hay ajustes significativos
+            val shouldShow = videoRecordingHelper.isRecording() || 
+                           (hasEvSupport && evCompensation != 0) || 
+                           (hasTorchSupport && torchEnabled) || 
+                           luma < 0.3f || 
+                           luma > 0.7f
+            
+            if (shouldShow) {
+                indicator.visibility = android.view.View.VISIBLE
+                
+                // Actualizar texto basado en estado y soporte
+                val text = when {
+                    torchEnabled && hasTorchSupport -> "🔦"
+                    evCompensation > 0 && hasEvSupport -> "+$evCompensation"
+                    evCompensation < 0 && hasEvSupport -> "$evCompensation"
+                    luma < 0.3f && !hasEvSupport -> "◐" // Oscuro pero sin control EV
+                    luma > 0.7f && !hasEvSupport -> "◑" // Brillante pero sin control EV
+                    luma < 0.3f -> "◐"
+                    luma > 0.7f -> "◑"
+                    !hasEvSupport -> "○" // Modo solo medición
+                    else -> "●"
+                }
+                
+                // Color basado en calidad de exposición
+                val color = when {
+                    !hasEvSupport -> getColor(android.R.color.holo_blue_light) // Azul para solo medición
+                    luma >= 0.47f && luma <= 0.60f -> getColor(android.R.color.holo_green_light)
+                    luma >= 0.35f && luma <= 0.70f -> getColor(android.R.color.holo_orange_light)
+                    else -> getColor(android.R.color.holo_red_light)
+                }
+                
+                indicator.text = text
+                indicator.setTextColor(color)
+                
+            } else {
+                indicator.visibility = android.view.View.GONE
             }
         }
     }

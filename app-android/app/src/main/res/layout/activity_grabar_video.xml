@@ -110,6 +110,22 @@
                 android:textColor="#FFFFFF"
                 android:textSize="20sp" />
 
+            <!-- Indicador de exposición (sutil) -->
+            <TextView
+                android:id="@+id/exposureIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/boton_cuadrado_redondeado"
+                android:fontFamily="@font/poppins_medium"
+                android:gravity="center"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:text="●"
+                android:textColor="#90FFFFFF"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
             <View
                 android:layout_width="0dp"
                 android:layout_height="1dp"

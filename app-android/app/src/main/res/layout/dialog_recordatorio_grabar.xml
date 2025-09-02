@@ -74,7 +74,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Usa buena luz frontal, evita contraluz."
+                    android:text="Usa buena luz frontal, evita contraluz. La app ajustará automáticamente la exposición tocando la pantalla."
                     android:textSize="15sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />

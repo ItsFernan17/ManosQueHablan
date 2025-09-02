@@ -27,18 +27,18 @@ class PositionValidator(
 
     companion object {
         private const val TAG = "PositionValidator"
-        private const val TARGET_FREQUENCY_MS = 100L // 10 Hz
-        private const val FAST_EMA_ALPHA = 0.6f // Para salir a rojo
-        private const val SLOW_EMA_ALPHA = 0.18f // Para entrar a verde
+        private const val TARGET_FREQUENCY_MS = 80L // Más frecuente para mayor responsividad (12.5 Hz)
+        private const val FAST_EMA_ALPHA = 0.7f // Para salir a rojo (más reactivo)
+        private const val SLOW_EMA_ALPHA = 0.25f // Para entrar a verde (ligeramente más reactivo)
         private const val GREEN_THRESHOLD = 11.0f // ≤11° para GREEN (79-90° rango)
         private const val RED_THRESHOLD = 13.0f // >13° para RED
         private const val CRITICAL_THRESHOLD = 20.0f // ≥20° para CRITICAL
-        private const val GREEN_STABLE_TIME = 1750L // 1.75s estable para GREEN
-        private const val RED_TIME = 800L // 0.8s para pasar a RED
+        private const val GREEN_STABLE_TIME = 1200L // 1.2s estable para GREEN (reducido para mayor responsividad)
+        private const val RED_TIME = 600L // 0.6s para pasar a RED (reducido para mayor responsividad)
         
         // Nuevos parámetros para suavidad
         private const val SMOOTH_TRANSITION_THRESHOLD = 2.0f // Grados para transición suave
-        private const val UI_UPDATE_INTERVAL = 200L // Reducir frecuencia de updates UI para suavidad
+        private const val UI_UPDATE_INTERVAL = 150L // Reducir frecuencia de updates UI para mayor responsividad
     }
 
     enum class PositionState {

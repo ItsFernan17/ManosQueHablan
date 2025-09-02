@@ -382,6 +382,56 @@ class SmoothPositionModal(
         currentState = null
     }
 
+    /**
+     * Fuerza la aparición inmediata del banner para dar feedback instantáneo al usuario
+     * cuando toca el botón de grabar
+     */
+    fun forceShowBannerOnButtonPress() {
+        handler.post {
+            if (modalContainer == null) {
+                createModal()
+            }
+            
+            // Mostrar mensaje de verificación inmediata
+            messageText?.text = "Verificando posición del teléfono..."
+            angleText?.text = "Espera un momento..."
+            angleText?.visibility = View.VISIBLE
+            
+            // Color de verificación (azul)
+            val verifyingColor = ContextCompat.getColor(context, R.color.celeste)
+            (modalContainer?.background as? GradientDrawable)?.setColor(verifyingColor)
+            
+            isShowing = true
+            
+            // Mostrar modal inmediatamente
+            modalContainer?.let { container ->
+                container.visibility = View.VISIBLE
+                container.alpha = 0f
+                
+                // Animar fondo
+                backgroundOverlay?.let { bg ->
+                    bg.visibility = View.VISIBLE
+                    ObjectAnimator.ofFloat(bg, View.ALPHA, 0f, BACKGROUND_ALPHA).apply {
+                        duration = ANIMATION_DURATION
+                        start()
+                    }
+                }
+                
+                // Animar modal con entrada rápida y suave
+                val fadeIn = ObjectAnimator.ofFloat(container, View.ALPHA, 0f, 1f)
+                val scaleX = ObjectAnimator.ofFloat(container, View.SCALE_X, 0.8f, 1f)
+                val scaleY = ObjectAnimator.ofFloat(container, View.SCALE_Y, 0.8f, 1f)
+
+                AnimatorSet().apply {
+                    playTogether(fadeIn, scaleX, scaleY)
+                    duration = ANIMATION_DURATION
+                    interpolator = DecelerateInterpolator()
+                    start()
+                }
+            }
+        }
+    }
+
     fun cleanup() {
         handler.removeCallbacksAndMessages(null)
         verificationRunnable?.let { handler.removeCallbacks(it) }

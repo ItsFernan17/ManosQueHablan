@@ -38,7 +38,7 @@ class GrabarVideoActivity : AppCompatActivity() {
         // Inicializar helpers
         initializeHelpers()
         
-        // Inicializar validador de posición
+        // Inicializar validador de posición ANTES de verificar permisos
         initializePositionValidator()
         
         // Configurar listeners
@@ -119,7 +119,7 @@ class GrabarVideoActivity : AppCompatActivity() {
             }
         )
         
-        // Iniciar validación de posición
+        // Iniciar validación de posición INMEDIATAMENTE
         positionValidator.startValidation()
         
         // Estado inicial: bloquear grabación hasta que esté en posición correcta
@@ -195,6 +195,11 @@ class GrabarVideoActivity : AppCompatActivity() {
     
     private fun setupListeners() {
         binding.btnGrabar.setOnClickListener {
+            // Mostrar banner inmediatamente para dar feedback visual instantáneo
+            if (positionValidator.hasGyroscope && !isRecordingAllowed && !videoRecordingHelper.isRecording()) {
+                smoothPositionModal.forceShowBannerOnButtonPress()
+            }
+            
             // Verificar posición antes de permitir grabar
             if (!isRecordingAllowed && !videoRecordingHelper.isRecording()) {
                 Log.w("GrabarVideo", "Intento de grabación bloqueado - Posición incorrecta")

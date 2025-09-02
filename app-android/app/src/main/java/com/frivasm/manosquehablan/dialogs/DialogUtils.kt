@@ -90,34 +90,46 @@ object DialogUtils {
         val dialog = AlertDialog.Builder(context).setView(view).setCancelable(false).create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-        val mediaPlayer = MediaPlayer().apply {
-            setDataSource(audioFile.absolutePath)
-            prepare()
-        }
+        var mediaPlayer: MediaPlayer? = null
 
-        mediaPlayer.setOnCompletionListener {
-            btnReproducir.setImageResource(R.drawable.reproducir)
-            mediaPlayer.seekTo(0)
-        }
-
-        btnReproducir.setOnClickListener {
-            if (mediaPlayer.isPlaying) {
-                mediaPlayer.pause()
-                mediaPlayer.seekTo(0)
-                btnReproducir.setImageResource(R.drawable.reproducir)
-            } else {
-                mediaPlayer.start()
-                btnReproducir.setImageResource(R.drawable.pausa)
+        try {
+            mediaPlayer = MediaPlayer().apply {
+                setDataSource(audioFile.absolutePath)
+                prepare()
             }
-        }
 
-        btnCerrar.setOnClickListener {
-            if (mediaPlayer.isPlaying) mediaPlayer.stop()
-            mediaPlayer.release()
-            dialog.dismiss()
-        }
+            mediaPlayer.setOnCompletionListener {
+                btnReproducir.setImageResource(R.drawable.reproducir)
+                mediaPlayer?.seekTo(0)
+            }
 
-        dialog.show()
+            btnReproducir.setOnClickListener {
+                mediaPlayer?.let { player ->
+                    if (player.isPlaying) {
+                        player.pause()
+                        player.seekTo(0)
+                        btnReproducir.setImageResource(R.drawable.reproducir)
+                    } else {
+                        player.start()
+                        btnReproducir.setImageResource(R.drawable.pausa)
+                    }
+                }
+            }
+
+            btnCerrar.setOnClickListener {
+                mediaPlayer?.let { player ->
+                    if (player.isPlaying) player.stop()
+                    player.release()
+                }
+                dialog.dismiss()
+            }
+
+            dialog.show()
+            
+        } catch (e: Exception) {
+            mediaPlayer?.release()
+            return
+        }
     }
 
     fun mostrarDialogoEliminar(
@@ -201,5 +213,64 @@ object DialogUtils {
         // Guardar referencia del animador en el tag de la vista para poder cancelarlo después
         textView.tag = animador
         animador.start()
+    }
+    
+    fun mostrarDialogoTranscripcion(context: Context, archivoTranscripcion: File) {
+        if (!archivoTranscripcion.exists()) {
+            return
+        }
+
+        try {
+            val inflater = LayoutInflater.from(context)
+            val view = inflater.inflate(R.layout.dialog_ver_transcripcion, null)
+            val txtTranscripcion = view.findViewById<TextView>(R.id.txtTranscripcion)
+            val btnCerrar = view.findViewById<View>(R.id.btnCerrarTranscripcion)
+
+            val dialog = AlertDialog.Builder(context).setView(view).setCancelable(false).create()
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+            // Leer el contenido del archivo de transcripción
+            val contenidoOriginal = archivoTranscripcion.readText(Charsets.UTF_8)
+            
+            // Transformar el texto para que se vea como oración
+            val textoTransformado = transformarTextoTranscripcion(contenidoOriginal)
+            txtTranscripcion.text = textoTransformado
+
+            btnCerrar.setOnClickListener {
+                dialog.dismiss()
+            }
+
+            dialog.show()
+            
+        } catch (e: Exception) {
+            // Si hay error, no mostrar nada (igual que el diálogo de audio)
+            return
+        }
+    }
+    
+    private fun transformarTextoTranscripcion(texto: String): String {
+        if (texto.isBlank()) return texto
+        
+        // Limpiar espacios extra y dividir en palabras
+        val palabras = texto.trim().replace(Regex("\\s+"), " ").split(" ")
+        
+        // Procesar cada palabra: quitar puntos existentes y convertir a minúsculas
+        val palabrasLimpias = palabras.map { palabra ->
+            palabra.replace(".", "").lowercase()
+        }.filter { it.isNotEmpty() }
+        
+        if (palabrasLimpias.isEmpty()) return ""
+        
+        // Capitalizar primera letra de la primera palabra
+        val palabrasFormateadas = palabrasLimpias.mapIndexed { index, palabra ->
+            if (index == 0 && palabra.isNotEmpty()) {
+                palabra.first().uppercase() + palabra.drop(1)
+            } else {
+                palabra
+            }
+        }
+        
+        // Unir las palabras y agregar punto solo al final
+        return palabrasFormateadas.joinToString(" ") + "."
     }
 }

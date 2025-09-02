@@ -64,7 +64,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintWidth_percent="0.45"
+                app:layout_constraintWidth_percent="0.40"
                 app:layout_constraintDimensionRatio="1:1">
 
                 <com.google.android.material.imageview.ShapeableImageView
@@ -119,19 +119,25 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Exportar Video"
+                        android:text="Compartir Video"
                         android:textColor="@color/texto_videos"
-                        android:textSize="16sp"
-                        android:fontFamily="@font/poppins_regular" />
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
                 </LinearLayout>
 
                 <!-- Ver Traducción -->
                 <LinearLayout
+                    android:id="@+id/verTraduccionContainer"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
 
                     <ImageView
                         android:id="@+id/btnVerTraduccion"
@@ -146,8 +152,10 @@
                         android:layout_height="wrap_content"
                         android:text="Ver Texto Traducido"
                         android:textColor="@color/texto_videos"
-                        android:textSize="16sp"
-                        android:fontFamily="@font/poppins_regular" />
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
                 </LinearLayout>
 
                 <!-- Escuchar -->
@@ -157,7 +165,10 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
 
                     <ImageView
                         android:id="@+id/btnEscuchar"
@@ -172,8 +183,10 @@
                         android:layout_height="wrap_content"
                         android:text="Escuchar Traducción"
                         android:textColor="@color/texto_videos"
-                        android:textSize="15.8sp"
-                        android:fontFamily="@font/poppins_regular" />
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
                 </LinearLayout>
 
                 <!-- Eliminar -->
@@ -182,7 +195,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
 
                     <ImageView
                         android:id="@+id/btnEliminar"
@@ -197,9 +213,12 @@
                         android:layout_height="wrap_content"
                         android:text="Eliminar Video"
                         android:textColor="@color/texto_videos"
-                        android:textSize="16sp"
-                        android:fontFamily="@font/poppins_regular" />
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
                 </LinearLayout>
+
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>

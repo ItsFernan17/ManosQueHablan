@@ -34,6 +34,8 @@ object VideoViewBuilder {
 
         val btnEscuchar = vista.findViewById<ImageView?>(R.id.btnEscuchar)
         val escucharContenedor = vista.findViewById<View?>(R.id.escucharContainer)
+        val btnVerTraduccion = vista.findViewById<ImageView?>(R.id.btnVerTraduccion)
+        val verTraduccionContenedor = vista.findViewById<View?>(R.id.verTraduccionContainer)
         val btnExportar = vista.findViewById<ImageView?>(R.id.btnExportar)
         val exportarContenedor = vista.findViewById<View?>(R.id.exportarContainer)
         val btnEliminar = vista.findViewById<ImageView?>(R.id.btnEliminar)
@@ -125,13 +127,23 @@ object VideoViewBuilder {
             }
 
             btnEscuchar?.setOnClickListener {
-                val audio = File(videoFile.parentFile, "audio.mp3")
+                val audio = File(videoFile.parentFile, "audio_traducido.mp3")
                 DialogUtils.mostrarDialogoAudio(context, audio)
             }
 
             escucharContenedor?.setOnClickListener {
-                val audio = File(videoFile.parentFile, "audio.mp3")
+                val audio = File(videoFile.parentFile, "audio_traducido.mp3")
                 DialogUtils.mostrarDialogoAudio(context, audio)
+            }
+
+            btnVerTraduccion?.setOnClickListener {
+                val transcripcion = File(videoFile.parentFile, "transcripcion.txt")
+                DialogUtils.mostrarDialogoTranscripcion(context, transcripcion)
+            }
+
+            verTraduccionContenedor?.setOnClickListener {
+                val transcripcion = File(videoFile.parentFile, "transcripcion.txt")
+                DialogUtils.mostrarDialogoTranscripcion(context, transcripcion)
             }
 
             btnExportar?.setOnClickListener {

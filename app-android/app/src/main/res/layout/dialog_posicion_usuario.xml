@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/fondo_popup_redondeado">
+
+    <!-- Título -->
+    <TextView
+        android:id="@+id/txtTituloPosicion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Posición correcta para grabar"
+        android:textSize="20sp"
+        android:textColor="@color/texto_videos"
+        android:fontFamily="@font/poppins_semibold"
+        android:gravity="center"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Imagen de posición del usuario -->
+    <ImageView
+        android:id="@+id/imgPosicionUsuario"
+        android:layout_width="match_parent"
+        android:layout_height="320dp"
+        android:src="@drawable/posicion_usuario"
+        android:scaleType="centerInside"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Texto explicativo -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Colócate como se muestra en la imagen para obtener los mejores resultados en la grabación de tu seña."
+        android:textSize="16sp"
+        android:textColor="@color/texto_videos"
+        android:fontFamily="@font/poppins_regular"
+        android:gravity="center"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Recordatorio de distancia -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/fondo_advertencia_redondeado"
+        android:padding="12dp"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚠️"
+            android:textSize="18sp"
+            android:layout_marginEnd="8dp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Recuerda mantener la distancia de 30-40 cm mencionada anteriormente. No te alejes mucho solo por encuadrar en el marco."
+            android:textSize="14sp"
+            android:textColor="@color/texto_videos"
+            android:fontFamily="@font/poppins_medium" />
+
+    </LinearLayout>
+
+    <!-- Checkbox para no volver a mostrar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <CheckBox
+            android:id="@+id/checkNoMostrarMasPosicion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:buttonTint="@color/violeta" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="No volver a mostrar este recordatorio"
+            android:textSize="14sp"
+            android:textColor="@color/texto_videos"
+            android:fontFamily="@font/poppins_regular" />
+
+    </LinearLayout>
+
+    <!-- Botón Entendido -->
+    <LinearLayout
+        android:id="@+id/btnEntendidoPosicion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingVertical="12dp"
+        android:paddingHorizontal="20dp"
+        android:background="@drawable/boton_redondeado_aceptar"
+        android:layout_marginTop="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Entendido"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:fontFamily="@font/poppins_semibold" />
+
+    </LinearLayout>
+
+</LinearLayout>

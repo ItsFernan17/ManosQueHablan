@@ -5,35 +5,56 @@ plugins {
 
 android {
     namespace = "com.frivasm.manosquehablan"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.frivasm.manosquehablan"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled = true
 
-        // Configuración de la URL base de la API
         buildConfigField("String", "DEFAULT_BASE_URL", "\"http://192.168.1.100:5000/\"")
-
-        // ✅ Para pruebas: solo un ABI compatible real (quita esto para producción si todo está alineado a 16KB)
-        ndk {
-            abiFilters += listOf("armeabi-v7a")
+    }
+    
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = true
         }
     }
-    packagingOptions {
+    
+    packaging {
         jniLibs {
-            excludes += setOf("lib/x86_64/libimage_processing_util_jni.so")
+            excludes += setOf(
+                "lib/x86_64/libimage_processing_util_jni.so",
+                "lib/x86/libimage_processing_util_jni.so",
+                "lib/arm64-v8a/libimage_processing_util_jni.so",
+                "lib/armeabi-v7a/libimage_processing_util_jni.so"
+            )
+        }
+        resources {
+            excludes += setOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/androidx.*.version"
+            )
         }
     }
-
-    // ✅ Excluir librería incompatible con 16KB en x86_64 (solo necesaria si alguna dependencia la trae aún)
 
     buildTypes {
+        debug {
+            buildConfigField("String", "BASE_URL", "\"http://192.168.1.13:8001/\"")
+            buildConfigField("boolean", "ENABLE_LOGGING", "true")
+        }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            buildConfigField("String", "BASE_URL", "\"https://your-production-domain.com/\"")
+            buildConfigField("boolean", "ENABLE_LOGGING", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -44,6 +65,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -57,34 +79,29 @@ android {
 }
 
 dependencies {
-    // Glide
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
-    // AndroidX core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
-    // UI y compatibilidad
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
 
-    // Cámara
-    implementation("androidx.camera:camera-camera2:1.2.3")
-    implementation("androidx.camera:camera-lifecycle:1.2.3")
-    implementation("androidx.camera:camera-video:1.2.3")
-    implementation("androidx.camera:camera-view:1.2.3")
+    implementation("androidx.camera:camera-camera2:1.4.0-rc01")
+    implementation("androidx.camera:camera-lifecycle:1.4.0-rc01")
+    implementation("androidx.camera:camera-video:1.4.0-rc01")
+    implementation("androidx.camera:camera-view:1.4.0-rc01")
 
-    // Retrofit + OkHttp
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-
-    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

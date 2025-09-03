@@ -1,5 +1,6 @@
 package com.frivasm.manosquehablan.api
 
+import com.frivasm.manosquehablan.BuildConfig
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -7,20 +8,31 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiCliente {
-    const val BASE_URL = "http://192.168.1.13:8001/" // Ajusta host/puerto
+    // Usar URL desde BuildConfig según el tipo de build
+    val BASE_URL = BuildConfig.BASE_URL
 
     private val logging = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        // Solo habilitar logging en debug builds
+        level = if (BuildConfig.ENABLE_LOGGING) {
+            HttpLoggingInterceptor.Level.BODY
+        } else {
+            HttpLoggingInterceptor.Level.NONE
+        }
     }
 
     // Exponemos el client para reutilizar en descargas
     val httpClient: OkHttpClient by lazy {
-        OkHttpClient.Builder()
-            .addInterceptor(logging)
+        val builder = OkHttpClient.Builder()
             .connectTimeout(60, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.MINUTES)
             .writeTimeout(5, TimeUnit.MINUTES)
-            .build()
+        
+        // Solo agregar logging interceptor si está habilitado
+        if (BuildConfig.ENABLE_LOGGING) {
+            builder.addInterceptor(logging)
+        }
+        
+        builder.build()
     }
 
     val instance: ApiServicio by lazy {

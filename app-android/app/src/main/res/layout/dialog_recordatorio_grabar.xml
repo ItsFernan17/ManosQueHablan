@@ -200,35 +200,9 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- Checkbox para no volver a mostrar -->
+    <!-- Botón Siguiente -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="16dp">
-
-        <CheckBox
-            android:id="@+id/checkNoMostrarMas"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:buttonTint="@color/violeta" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="No volver a mostrar este recordatorio"
-            android:textSize="14sp"
-            android:textColor="@color/texto_videos"
-            android:fontFamily="@font/poppins_regular" />
-
-    </LinearLayout>
-
-    <!-- Botón Entendido -->
-    <LinearLayout
-        android:id="@+id/btnEntendidoRecordatorio"
+        android:id="@+id/btnSiguienteRecordatorio"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -241,7 +215,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Entendido"
+            android:text="Siguiente"
             android:textColor="@android:color/white"
             android:textSize="16sp"
             android:fontFamily="@font/poppins_semibold" />

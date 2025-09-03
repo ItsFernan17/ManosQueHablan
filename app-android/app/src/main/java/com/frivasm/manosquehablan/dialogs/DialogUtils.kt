@@ -306,11 +306,49 @@ object DialogUtils {
     }
 
     fun mostrarDialogoRecordatorioGrabar(context: Context, onContinuar: () -> Unit) {
+        // Mostrar primer diálogo con recordatorios
+        mostrarPrimerDialogoRecordatorio(context) {
+            // Cuando se presiona "Siguiente", mostrar segundo diálogo con imagen de posición
+            mostrarSegundoDialogoPosicion(context, onContinuar)
+        }
+    }
+    
+    private fun mostrarPrimerDialogoRecordatorio(context: Context, onSiguiente: () -> Unit) {
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.dialog_recordatorio_grabar, null)
-        val btnEntendido = view.findViewById<View>(R.id.btnEntendidoRecordatorio)
+        val btnSiguiente = view.findViewById<View>(R.id.btnSiguienteRecordatorio)
         val txtTitulo = view.findViewById<TextView>(R.id.txtTituloRecordatorio)
-        val checkNoMostrarMas = view.findViewById<android.widget.CheckBox>(R.id.checkNoMostrarMas)
+
+        val dialog = AlertDialog.Builder(context)
+            .setView(view)
+            .setCancelable(false)
+            .create()
+            
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        btnSiguiente.setOnClickListener {
+            dialog.dismiss()
+            onSiguiente() // Ir al segundo diálogo
+        }
+
+        // Animación del título con colores rojo y celeste
+        animarTituloColores(context, txtTitulo)
+
+        // Cancelar animación cuando el diálogo se cierre
+        dialog.setOnDismissListener {
+            val animador = txtTitulo.tag as? android.animation.ValueAnimator
+            animador?.cancel()
+        }
+
+        dialog.show()
+    }
+    
+    private fun mostrarSegundoDialogoPosicion(context: Context, onContinuar: () -> Unit) {
+        val inflater = LayoutInflater.from(context)
+        val view = inflater.inflate(R.layout.dialog_posicion_usuario, null)
+        val btnEntendido = view.findViewById<View>(R.id.btnEntendidoPosicion)
+        val txtTitulo = view.findViewById<TextView>(R.id.txtTituloPosicion)
+        val checkNoMostrarMas = view.findViewById<android.widget.CheckBox>(R.id.checkNoMostrarMasPosicion)
 
         val dialog = AlertDialog.Builder(context)
             .setView(view)

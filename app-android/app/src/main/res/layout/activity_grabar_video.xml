@@ -167,37 +167,32 @@
 
 
     <!-- Controles inferiores estilo iPhone -->
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/controlesInferiores"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:paddingBottom="40dp"
         android:paddingStart="24dp"
         android:paddingEnd="24dp"
-        android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent">
 
-                 <!-- Botón eliminar -->
-         <ImageView
-             android:id="@+id/btnEliminar"
-             android:layout_width="64dp"
-             android:layout_height="64dp"
-             android:src="@drawable/icono_papelera"
-             android:contentDescription="Eliminar"
-             android:background="@drawable/boton_cuadrado_redondeado"
-             android:padding="16dp" />
+        <!-- Botón eliminar (oculto) -->
+        <ImageView
+            android:id="@+id/btnEliminar"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/icono_papelera"
+            android:contentDescription="Eliminar"
+            android:background="@drawable/boton_cuadrado_redondeado"
+            android:padding="16dp"
+            android:visibility="gone"
+            android:layout_gravity="start|center_vertical" />
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
-
-                 <!-- Botón grabar principal estilo iPhone -->
-         <FrameLayout
-             android:layout_width="100dp"
-             android:layout_height="100dp"
-             android:layout_marginHorizontal="32dp">
+        <!-- Botón grabar principal ABSOLUTAMENTE CENTRADO -->
+        <FrameLayout
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_gravity="center">
 
              <!-- Círculo exterior -->
              <View
@@ -224,16 +219,13 @@
                  android:visibility="gone" />
 
          </FrameLayout>
-         
-         <View
-             android:layout_width="0dp"
-             android:layout_height="1dp"
-             android:layout_weight="1" />
 
-                 <!-- Botón pausar -->
-         <FrameLayout
-             android:layout_width="64dp"
-             android:layout_height="64dp">
+        <!-- Botón pausar posicionado independientemente a la derecha -->
+        <FrameLayout
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="16dp">
              
              <ImageView
                  android:id="@+id/btnPausar"
@@ -261,6 +253,6 @@
                  
          </FrameLayout>
 
-    </LinearLayout>
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

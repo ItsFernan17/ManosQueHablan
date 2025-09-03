@@ -31,6 +31,7 @@ class GrabarVideoActivity : AppCompatActivity() {
     private lateinit var positionBanner: PositionValidationBanner
     private lateinit var smoothPositionModal: SmoothPositionModal
     private var isRecordingAllowed = false
+    private var isManualRestart = false // Bandera para reinicio manual
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -231,20 +232,62 @@ class GrabarVideoActivity : AppCompatActivity() {
                     else -> "●"
                 }
                 
-                // Color basado en calidad de exposición
-                val color = when {
-                    !hasEvSupport -> getColor(android.R.color.holo_blue_light) // Azul para solo medición
-                    luma >= 0.47f && luma <= 0.60f -> getColor(android.R.color.holo_green_light)
-                    luma >= 0.35f && luma <= 0.70f -> getColor(android.R.color.holo_orange_light)
-                    else -> getColor(android.R.color.holo_red_light)
+                // Color y mensaje contextual basado en calidad de exposición
+                val color: Int
+                val contextMessage: String
+                
+                when {
+                    !hasEvSupport -> {
+                        color = getColor(android.R.color.holo_blue_light)
+                        contextMessage = if (luma < 0.35f) "Busca mejor luz" else "Solo medición"
+                    }
+                    luma >= 0.47f && luma <= 0.60f -> {
+                        color = getColor(android.R.color.holo_green_light)
+                        contextMessage = "Iluminación óptima"
+                    }
+                    luma >= 0.35f && luma <= 0.70f -> {
+                        color = getColor(android.R.color.holo_orange_light)
+                        contextMessage = "Sistema ajustando"
+                    }
+                    luma < 0.35f -> {
+                        color = getColor(android.R.color.holo_red_light)
+                        contextMessage = "Necesitas más luz"
+                    }
+                    else -> {
+                        color = getColor(android.R.color.holo_red_light)
+                        contextMessage = "Evita luz directa"
+                    }
                 }
                 
                 indicator.text = text
                 indicator.setTextColor(color)
                 
+                // Actualizar las indicaciones con contexto de iluminación
+                if (!videoRecordingHelper.isRecording()) {
+                    updateIndicationsWithExposureContext(contextMessage, luma, hasEvSupport)
+                }
+                
             } else {
                 indicator.visibility = android.view.View.GONE
             }
+        }
+    }
+    
+    private fun updateIndicationsWithExposureContext(contextMessage: String, luma: Float, hasEvSupport: Boolean) {
+        val currentText = binding.textIndicaciones.text.toString()
+        
+        // Solo actualizar si no estamos en un mensaje crítico de posición
+        if (!currentText.contains("¡Posición crítica!") && !currentText.contains("Endereza el teléfono")) {
+            val baseMessage = "Coloca tus manos dentro del marco"
+            val exposureHint = when {
+                luma < 0.35f && !hasEvSupport -> " • Busca mejor luz ambiente"
+                luma < 0.35f && hasEvSupport -> " • Sistema mejorando brillo automáticamente"
+                luma > 0.7f -> " • Evita luz directa o reflectores"
+                luma >= 0.47f && luma <= 0.60f -> " • Iluminación perfecta ✓"
+                else -> " • $contextMessage"
+            }
+            
+            binding.textIndicaciones.text = "$baseMessage$exposureHint"
         }
     }
     
@@ -289,7 +332,9 @@ class GrabarVideoActivity : AppCompatActivity() {
         binding.btnCerrar.setOnClickListener {
             try {
                 if (videoRecordingHelper.isRecording()) {
-                    detenerGrabacion()
+                    // Cancelar grabación (no enviar video)
+                    isManualRestart = true
+                    videoRecordingHelper.detenerGrabacion()
                 }
                 finish()
             } catch (e: Exception) {
@@ -297,6 +342,7 @@ class GrabarVideoActivity : AppCompatActivity() {
                 finish()
             }
         }
+        
     }
     
     private fun iniciarGrabacion() {
@@ -305,6 +351,8 @@ class GrabarVideoActivity : AppCompatActivity() {
     
     private fun detenerGrabacion() {
         try {
+            // Asegurar que NO es un reinicio manual (detención normal)
+            isManualRestart = false
             videoRecordingHelper.detenerGrabacion()
             // onRecordingStopped() ya se llama desde el callback del helper
         } catch (e: Exception) {
@@ -323,6 +371,65 @@ class GrabarVideoActivity : AppCompatActivity() {
     private fun reanudarGrabacion() {
         videoRecordingHelper.reanudarGrabacion()
         videoPauseHelper.reanudarGrabacion()
+    }
+    
+    private fun reiniciarVideo() {
+        try {
+            Log.i("GrabarVideo", "Reiniciando video - Eliminar y empezar de nuevo")
+            
+            // Marcar que es un reinicio manual para evitar envío al servidor
+            isManualRestart = true
+            
+            // Detener grabación actual si está activa
+            if (videoRecordingHelper.isRecording()) {
+                videoRecordingHelper.detenerGrabacion()
+            }
+            
+            // Resetear helpers de pausa y timer
+            videoPauseHelper.resetPauseState()
+            videoTimerHelper.resetTemporizador()
+            
+            // Reiniciar UI a estado inicial
+            resetUIToInitialState()
+            
+            // Log para debugging
+            Log.i("GrabarVideo", "Video reiniciado exitosamente - Listo para nueva grabación")
+            
+        } catch (e: Exception) {
+            Log.e("GrabarVideo", "Error al reiniciar video: ${e.message}")
+            // En caso de error, intentar resetear UI de todas formas
+            resetUIToInitialState()
+        } finally {
+            // Asegurar que la bandera se resetee
+            isManualRestart = false
+        }
+    }
+    
+    private fun resetUIToInitialState() {
+        runOnUiThread {
+            // Resetear temporizador
+            binding.temporizador.text = "00:00"
+            binding.temporizador.background = getDrawable(R.drawable.contador_background)
+            binding.temporizador.setTextColor(getColor(android.R.color.white))
+            
+            // Resetear botones a estado inicial
+            binding.btnGrabar.isEnabled = isRecordingAllowed
+            binding.btnGrabar.alpha = if (isRecordingAllowed) 1.0f else 0.5f
+            
+            binding.btnPausar.isEnabled = false
+            binding.btnPausar.alpha = 0.5f
+            
+            binding.btnRotarCamara.isEnabled = true
+            binding.btnRotarCamara.alpha = 1.0f
+            
+            // Resetear indicaciones de texto
+            binding.textIndicaciones.text = "Coloca tus manos dentro del marco"
+            
+            // Ocultar indicador de exposición si no es necesario
+            binding.exposureIndicator.visibility = android.view.View.GONE
+            
+            Log.d("GrabarVideo", "UI reseteada a estado inicial")
+        }
     }
     
     private fun onRecordingStarted() {
@@ -380,14 +487,20 @@ class GrabarVideoActivity : AppCompatActivity() {
         
         Log.i("GrabarVideo", "Grabación detenida - Control de posición restaurado")
         
-        // Ocultar la vista de cámara y mostrar solo el diálogo de carga
-        binding.previewView.visibility = android.view.View.GONE
-        binding.fondoCamara.visibility = android.view.View.GONE
-        
-        // Enviar video a API
-        val path = videoRecordingHelper.getRecordingPath()
-        if (path != null) {
-            videoFileHelper.enviarVideoAPI(path)
+        // Solo enviar video si NO es un reinicio manual
+        if (!isManualRestart) {
+            // Ocultar la vista de cámara y mostrar solo el diálogo de carga
+            binding.previewView.visibility = android.view.View.GONE
+            binding.fondoCamara.visibility = android.view.View.GONE
+            
+            // Enviar video a API
+            val path = videoRecordingHelper.getRecordingPath()
+            if (path != null) {
+                videoFileHelper.enviarVideoAPI(path)
+            }
+        } else {
+            // Si es reinicio manual, solo logear y mantener UI
+            Log.i("GrabarVideo", "Reinicio manual - Video NO enviado al servidor")
         }
     }
 

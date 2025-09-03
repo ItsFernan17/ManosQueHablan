@@ -118,13 +118,139 @@
 - **Memory pressure**: Cleanup proactivo de recursos
 - **Threading issues**: Sincronización robusta
 
-## 📱 Uso Para el Usuario (Sin Cambios)
+## 📱 Uso Para el Usuario - RESPONSABILIDADES CLARAS
 
-1. **Automático**: El sistema funciona sin intervención del usuario
-2. **Toque puntual**: Toca la pantalla para enfocar exposición en ese punto
-3. **Indicador visual**: Pequeño indicador muestra estado de exposición
-4. **Sin interrupciones**: Todo funciona durante la grabación normal
-5. **Persistencia**: Recuerda configuraciones preferidas
+### 🤖 **Lo que HACE el Sistema Automáticamente**
+- ✅ **Mide la luz** al tocar la pantalla
+- ✅ **Ajusta la exposición (EV)** entre -2 y +2 automáticamente
+- ✅ **Enciende la linterna** si es necesario como último recurso
+- ✅ **Bloquea la exposición** durante la grabación para evitar parpadeos
+- ✅ **Optimiza el brillo** para que MediaPipe detecte mejor las manos
+- ✅ **Muestra indicadores visuales** del estado de la exposición
+
+### 👤 **Lo que DEBE HACER el Usuario**
+- ⚠️ **Ubicarse en un lugar con luz adecuada** (natural o artificial)
+- ⚠️ **Evitar contraluz** (no grabar contra ventanas o luces fuertes)
+- ⚠️ **Mantener distancia** de 30-40 cm del teléfono
+- ⚠️ **Evitar sombras** sobre las manos
+- ⚠️ **No depender solo del ajuste automático** si el ambiente es muy oscuro
+
+### 🎯 **Responsabilidades Compartidas**
+
+#### **Ambiente Óptimo** (Responsabilidad del Usuario)
+```
+✅ Luz natural de ventana (sin contraluz)
+✅ Luz artificial uniforme (lámparas de techo)  
+✅ Evitar sombras propias sobre las manos
+✅ Fondo sin reflejos o brillos
+```
+
+#### **Optimización Técnica** (Responsabilidad del Sistema)
+```
+✅ Ajuste automático de EV según la medición puntual
+✅ Control de linterna para casos extremos
+✅ Bloqueo de exposición durante grabación
+✅ Prevención de sobreexposición (clipping)
+```
+
+### 📊 **Indicadores en Tiempo Real**
+
+#### **Indicador Visual de Exposición**
+- **●** Verde = Iluminación perfecta ✓
+- **+1/+2** Naranja = Sistema subiendo brillo
+- **-1/-2** Naranja = Sistema bajando brillo  
+- **🔦** = Linterna activada (ambiente muy oscuro)
+- **◐/◑** Rojo = Condiciones críticas → **Usuario debe cambiar ubicación**
+- **○** Azul = Solo medición (dispositivo sin control EV)
+
+#### **Mensajes Contextuales en Pantalla**
+- **"Iluminación óptima"** = Todo perfecto, continúa
+- **"Sistema ajustando"** = El automático está trabajando
+- **"Necesitas más luz"** = **Usuario debe cambiar ubicación**
+- **"Evita luz directa"** = **Usuario debe alejarse de reflectores**
+- **"Busca mejor luz"** = **Usuario responsable de encontrar mejor ambiente**
+
+### ⚖️ **¿Cuándo es Problema del Usuario vs. del Sistema?**
+
+#### **🚨 Problema del Usuario** (Debe cambiar ubicación)
+- Ambiente demasiado oscuro (luma < 0.35 constantemente)
+- Contraluz directo (ventana de fondo, reflectores)
+- Sombras fuertes sobre las manos
+- Falta de luz natural o artificial en el lugar
+
+#### **🤖 Problema del Sistema** (Se maneja automáticamente)
+- Pequeños ajustes de exposición (EV ±1, ±2)
+- Variaciones normales de luz durante el día
+- Optimización para detección de MediaPipe
+- Estabilización durante la grabación
+
+### 💡 **Recomendaciones Prácticas**
+
+#### **Mejores Ubicaciones para Grabar**
+1. **Cerca de ventana** (sin sol directo, luz lateral)
+2. **Sala bien iluminada** (luz de techo uniforme)
+3. **Exterior en sombra** (luz natural difusa)
+4. **Con lámpara auxiliar** (si es interior nocturno)
+
+#### **Ubicaciones a Evitar**
+1. **Contra ventanas** (contraluz)
+2. **Rincones oscuros** (sin luz suficiente)
+3. **Bajo luz directa** (sombras duras)
+4. **Con fondos brillantes** (confunde al sensor)
+
+### 🎬 **Flujo de Trabajo Óptimo**
+
+```
+1. Usuario se ubica en lugar con buena luz ← RESPONSABILIDAD DEL USUARIO
+2. Abre la app y ve las indicaciones ← SISTEMA INFORMA
+3. Toca la pantalla para medición puntual ← ACCIÓN MANUAL  
+4. Sistema ajusta automáticamente EV ← RESPONSABILIDAD DEL SISTEMA
+5. Indicador muestra "Iluminación óptima" ← CONFIRMACIÓN AUTOMÁTICA
+6. Usuario graba con confianza ← COLABORACIÓN EXITOSA
+7. [NUEVO] Opción de reiniciar con botón 🗑️ ← CONTROL TOTAL DEL USUARIO
+```
+
+### 🗑️ **Nueva Funcionalidad: Botón Eliminar/Reiniciar**
+
+#### **Cuándo Aparece**
+- ✅ **Durante la grabación** (activa y grabando)
+- ✅ **Durante la pausa** (grabación pausada)
+- ❌ **Antes de grabar** (oculto hasta que inicie)
+- ❌ **Después de enviar** (oculto una vez procesado)
+
+#### **Qué Hace**
+- 🔄 **Reinicia completamente** el proceso de grabación
+- 🗑️ **Elimina el video actual** sin enviarlo a la API
+- ⏱️ **Resetea el temporizador** a 00:00
+- 🎬 **Vuelve al estado inicial** listo para nueva grabación
+- 💡 **Mantiene configuraciones** de exposición y posición
+
+#### **Flujo de Uso**
+```
+1. Usuario inicia grabación → Botón 🗑️ aparece
+2. Usuario toca 🗑️ durante grabación o pausa
+3. Sistema detiene grabación actual SIN enviar
+4. Todo vuelve al estado inicial
+5. Usuario puede grabar nuevamente desde cero
+```
+
+#### **Beneficios**
+- **Control total** del usuario sobre el video
+- **No penaliza errores** - puede empezar de nuevo
+- **No consume datos** innecesarios en la API
+- **Experiencia fluida** sin salir de la pantalla
+
+### 🛡️ **Limitaciones Técnicas (Usuario Debe Entender)**
+
+- **El sistema NO puede** crear luz donde no existe
+- **El sistema NO puede** eliminar contraluz severo
+- **El sistema NO puede** compensar sombras externas fuertes
+- **El sistema SÍ puede** optimizar la luz disponible automáticamente
+- **El sistema SÍ puede** mantener exposición estable durante grabación
+
+## 🎯 **Resultado: Colaboración Inteligente**
+
+**El sistema automático maximiza la calidad de la luz disponible, pero el usuario es responsable de ubicarse en un ambiente con luz adecuada. Esta división de responsabilidades asegura los mejores resultados para MediaPipe.**
 
 ## 📋 Archivos Modificados (V2)
 
@@ -160,12 +286,31 @@
 - **Menos fallos**: Condiciones de luz más predecibles
 - **Mejor detección**: Manos mejor iluminadas
 
-## 🚀 Estado Actual: LISTO PARA PRODUCCIÓN
+## 🚀 Estado Actual: LISTO PARA PRODUCCIÓN + NUEVA FUNCIONALIDAD
 
 - ✅ **Compilación exitosa** en Debug y Release
 - ✅ **Compatibilidad verificada** con dispositivos sin soporte completo
 - ✅ **Integración sin conflictos** con lógica existente
 - ✅ **Optimizaciones aplicadas** según mejores prácticas
 - ✅ **Documentación completa** para mantenimiento futuro
+- ✅ **[NUEVO] Botón eliminar/reiniciar** para control total del usuario
 
-El sistema mejorado mantiene **100% de compatibilidad** con la lógica existente mientras añade optimizaciones significativas de rendimiento, estabilidad y experiencia de usuario.
+### 🆕 **Funcionalidad Agregada: Control de Video**
+
+#### **Botón Eliminar (🗑️)**
+- **Ubicación**: Esquina inferior izquierda durante grabación/pausa
+- **Comportamiento**: Visible solo cuando hay video para eliminar
+- **Función**: Reinicia completamente el proceso SIN enviar video
+- **Beneficio**: Usuario tiene control total, puede empezar de nuevo
+
+#### **Estados del Botón**
+- **Oculto**: Estado inicial (sin grabación)
+- **Visible + Activo**: Durante grabación o pausa
+- **Oculto**: Después de enviar video exitosamente
+
+#### **Integración Limpia**
+- **SIN ROMPER LÓGICA**: Mantiene toda funcionalidad existente
+- **SIN CONFLICTOS**: Funciona con control de exposición, validación de posición, etc.
+- **SIN EFECTOS SECUNDARIOS**: Solo afecta el estado del video actual
+
+El sistema mejorado mantiene **100% de compatibilidad** con la lógica existente mientras añade optimizaciones significativas de rendimiento, estabilidad, experiencia de usuario **y control completo del proceso de grabación**.

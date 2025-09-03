@@ -74,7 +74,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Usa buena luz frontal, evita contraluz. La app ajustará automáticamente la exposición tocando la pantalla."
+                    android:text="Usa buena luz frontal y evita contraluz. El sistema ajustará automáticamente la exposición, pero tú debes ubicarte en un lugar con luz adecuada."
                     android:textSize="15sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
@@ -155,6 +155,31 @@
                     android:fontFamily="@font/poppins_regular" />
             </LinearLayout>
 
+            <!-- Punto 6 - Responsabilidad del entorno -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• "
+                    android:textSize="16sp"
+                    android:textColor="@color/violeta"
+                    android:fontFamily="@font/poppins_semibold" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="🎯 El sistema optimiza automáticamente la cámara, pero la calidad final depende de tu ubicación y la luz del ambiente."
+                    android:textSize="14sp"
+                    android:textColor="@color/texto_videos"
+                    android:fontFamily="@font/poppins_medium" />
+            </LinearLayout>
+
             <!-- Sección importante -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -166,7 +191,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="La traducción puede fallar si no se cumplen estas condiciones."
+                    android:text="⚠️ La traducción puede fallar si no hay suficiente luz natural o artificial en tu ubicación, incluso con el ajuste automático."
                     android:textSize="14sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_semibold" />

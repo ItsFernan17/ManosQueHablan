@@ -77,6 +77,18 @@ class PositionValidator(
     val canRecord: Boolean
         get() = isRecordingAllowed || !hasGyroscope // Permitir grabación si no hay giroscopio
 
+    /**
+     * Método para notificar que la verificación de ángulo ha sido completada por la UI
+     * Solo debe ser llamado desde SmoothPositionModal
+     */
+    fun completeAngleVerification() {
+        if (isVerifyingAngle && currentState == PositionState.GREEN) {
+            isVerifyingAngle = false
+            updateRecordingAllowed(true)
+            Log.i(TAG, "Verificación de ángulo completada por UI - ¡GRABACIÓN PERMITIDA!")
+        }
+    }
+
     fun startValidation() {
         if (!hasGyroscope) {
             // Modo manual - sin giroscopio, permitir grabación
@@ -293,8 +305,17 @@ class PositionValidator(
                         currentState = PositionState.GREEN
                         isInGreenThreshold = false
                         isInRedThreshold = false
-                        updateRecordingAllowed(true)
-                        Log.i(TAG, "Transición a GREEN completada tras ${GREEN_STABLE_TIME}ms - ¡GRABACIÓN PERMITIDA!")
+                        
+                        // Para dispositivos con giroscopio, marcar como verificando y no habilitar grabación aún
+                        if (hasGyroscope) {
+                            isVerifyingAngle = true
+                            Log.i(TAG, "Transición a GREEN completada - Iniciando verificación de ángulo (grabación diferida)")
+                        } else {
+                            // Sin giroscopio, habilitar inmediatamente
+                            updateRecordingAllowed(true)
+                            Log.i(TAG, "Transición a GREEN completada - ¡GRABACIÓN PERMITIDA! (sin giroscopio)")
+                        }
+                        
                         notifyPositionChange(currentTime)
                     } else {
                         // Log de progreso hacia GREEN
@@ -317,12 +338,26 @@ class PositionValidator(
         }
     }
 
+    // Bandera para saber si estamos en proceso de verificación de ángulo
+    var isVerifyingAngle = false
+    
+    // Propiedad para acceder al estado de grabación permitida desde fuera
+    val isRecordingAllowedState: Boolean
+        get() = isRecordingAllowed
+    
     private fun updateRecordingAllowed(allowed: Boolean) {
         if (isRecordingAllowed != allowed) {
             isRecordingAllowed = allowed
             Log.i(TAG, "Estado de grabación cambiado: ${if (allowed) "PERMITIDA" else "BLOQUEADA"}")
-            handler.post {
-                onRecordingAllowed(allowed)
+            
+            // Si estamos habilitando la grabación y estamos verificando el ángulo,
+            // no notificamos el cambio inmediatamente (se notificará cuando termine la verificación)
+            if (!allowed || !isVerifyingAngle) {
+                handler.post {
+                    onRecordingAllowed(allowed)
+                }
+            } else {
+                Log.i(TAG, "Notificación de grabación permitida retrasada - esperando verificación completa")
             }
         }
     }

@@ -333,13 +333,31 @@ class SmoothPositionModal(
         }
     }
     
+    // Callback para notificar cuando el flujo de verificación está completo
+    var onVerificationComplete: (() -> Unit)? = null
+    
+    // Referencia al validador de posición para poder notificar la finalización
+    var positionValidator: PositionValidator? = null
+    
     private fun checkFinalPosition(state: PositionValidator.PositionState, uxAngle: Float, hasGyroscope: Boolean) {
         // Verificar la posición final después del movimiento
         when (state) {
             PositionValidator.PositionState.GREEN -> {
                 // Posición correcta - mostrar mensaje de éxito brevemente
                 showSuccessMessage()
-                handler.postDelayed({ hideModalSmoothly() }, 800)
+                
+                // Primero mostrar el mensaje de éxito durante 800ms
+                // y luego notificar que el flujo está completo y ocultar el modal
+                handler.postDelayed({ 
+                    // Notificar al validador de posición que la verificación está completa
+                    positionValidator?.completeAngleVerification()
+                    
+                    // Notificar que el flujo está completo (callback adicional si es necesario)
+                    onVerificationComplete?.invoke()
+                    
+                    // Ocultar el modal
+                    hideModalSmoothly() 
+                }, 800)
             }
             PositionValidator.PositionState.RED, PositionValidator.PositionState.CRITICAL -> {
                 // Posición incorrecta - mostrar error

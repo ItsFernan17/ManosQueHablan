@@ -122,10 +122,19 @@ class GrabarVideoActivity : AppCompatActivity() {
                 updateIndicationsText(state, uxAngle, hasGyroscope)
             },
             onRecordingAllowed = { allowed ->
+                // Actualizar directamente el estado del botón de grabar
                 isRecordingAllowed = allowed
                 updateRecordButtonState()
             }
         )
+        
+        // Establecer la referencia del validador en la modal para que pueda notificar cuando termine
+        smoothPositionModal.positionValidator = positionValidator
+        
+        // Configurar callback opcional (puede ser útil para logs o otros propósitos)
+        smoothPositionModal.onVerificationComplete = {
+            Log.i("GrabarVideo", "Verificación de ángulo completada desde modal")
+        }
         
         // Iniciar validación de posición INMEDIATAMENTE
         positionValidator.startValidation()
@@ -305,11 +314,25 @@ class GrabarVideoActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             
+            // Deshabilitar temporalmente el botón para evitar doble clic
+            binding.btnGrabar.isEnabled = false
+            
             if (videoRecordingHelper.isRecording()) {
                 detenerGrabacion()
+                // El botón se habilitará en onRecordingStopped() según la posición
             } else {
                 iniciarGrabacion()
+                // El botón se habilitará en onRecordingStarted()
             }
+            
+            // Habilitar el botón después de un pequeño retraso como precaución
+            binding.btnGrabar.postDelayed({
+                if (videoRecordingHelper.isRecording()) {
+                    binding.btnGrabar.isEnabled = true
+                } else {
+                    updateRecordButtonState()
+                }
+            }, 1000) // 1 segundo de retraso para evitar clics accidentales
         }
 
         binding.btnPausar.setOnClickListener {
@@ -472,8 +495,12 @@ class GrabarVideoActivity : AppCompatActivity() {
         binding.btnPausar.isEnabled = false
         binding.btnPausar.alpha = 0.5f
         
+        // Asegurar que no estamos en estado de grabación
+        // No es necesario establecer recording a null aquí, eso se maneja en videoRecordingHelper
+        
         // Restaurar control del botón de grabar basado en posición
-        updateRecordButtonState()
+        // Deshabilitar temporalmente para evitar clics accidentales
+        binding.btnGrabar.isEnabled = false
         
         // Detener temporizador
         videoTimerHelper.resetTemporizador()
@@ -501,7 +528,17 @@ class GrabarVideoActivity : AppCompatActivity() {
         } else {
             // Si es reinicio manual, solo logear y mantener UI
             Log.i("GrabarVideo", "Reinicio manual - Video NO enviado al servidor")
+            
+            // Restaurar estado del botón de grabar después de un breve retraso
+            binding.btnGrabar.postDelayed({
+                updateRecordButtonState()
+            }, 500)
         }
+        
+        // Restaurar estado del botón de grabar después de un breve retraso
+        binding.btnGrabar.postDelayed({
+            updateRecordButtonState()
+        }, 500)
     }
 
     override fun onRequestPermissionsResult(

@@ -1,20 +1,26 @@
 package com.frivasm.manosquehablan
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
-import android.app.AlertDialog
 import android.content.Intent
+import android.media.RingtoneManager
 import android.media.MediaScannerConnection
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.LinearInterpolator
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.frivasm.manosquehablan.api.ApiCliente
 import com.frivasm.manosquehablan.api.RespuestaProcesamiento
@@ -375,6 +381,9 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                         // Detener animación
                         stopLoadingAnimation()
                         
+                        // ✅ REPRODUCIR SONIDO SUAVE DE CONFIRMACIÓN
+                        reproducirSonidoConfirmacion()
+                        
                         // Mostrar toast de éxito y navegar con delay más corto
                         Toast.makeText(
                             this@ProcesandoVideoActivity,
@@ -540,6 +549,25 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         // Bloquear el botón de retroceso durante el procesamiento
         // Llamamos super pero no hacemos nada más
         super.onBackPressed()
+    }
+    
+    /**
+     * Reproduce un sonido suave y agradable para confirmar que el video se guardó exitosamente
+     * Especialmente útil para personas sin problemas auditivos como complemento a las señas
+     */
+    private fun reproducirSonidoConfirmacion() {
+        try {
+            Log.d("ProcesandoVideoActivity", "🔊 Reproduciendo sonido de confirmación...")
+            
+            val toneG = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            val r = RingtoneManager.getRingtone(applicationContext, toneG)
+            r.play()
+            
+            Log.d("ProcesandoVideoActivity", "✅ Sonido de confirmación reproducido exitosamente")
+            
+        } catch (e: Exception) {
+            Log.w("ProcesandoVideoActivity", "❌ Error reproduciendo sonido de confirmación: ${e.message}")
+        }
     }
     
     override fun onDestroy() {

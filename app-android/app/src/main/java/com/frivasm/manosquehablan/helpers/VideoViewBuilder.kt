@@ -235,4 +235,32 @@ object VideoViewBuilder {
         // ✅ Carga inicial
         asignarListeners(video)
     }
+
+    fun construirVistaVideoPorFecha(
+        context: Context,
+        vista: View,
+        video: File,
+        formatoFecha: SimpleDateFormat,
+        onRecargar: (File) -> Unit,
+        mostrarEncabezadoFecha: Boolean = true
+    ) {
+        // Ocultar el encabezado de fecha si no se requiere (para búsqueda)
+        val encabezadoFecha = vista.findViewById<TextView?>(R.id.txtEncabezadoFecha)
+        if (!mostrarEncabezadoFecha) {
+            encabezadoFecha?.visibility = View.GONE
+        }
+
+        // Usar la lógica existente para construir el video
+        construirVistaVideoNormal(
+            context = context,
+            vista = vista,
+            video = video,
+            formatoFecha = formatoFecha,
+            onRecargar = onRecargar,
+            mostrarFecha = true,
+            mostrarDetalles = true,
+            vistaCompacta = false,
+            tipoVista = "fecha"
+        )
+    }
 }

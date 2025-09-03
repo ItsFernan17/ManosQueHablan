@@ -50,6 +50,7 @@ class InicioAppActivity : AppCompatActivity() {
     private lateinit var btnOpciones: ImageView
     private lateinit var btnInfo: ImageView
     private lateinit var btnCatalogo: ImageView
+    private lateinit var btnBuscar: ImageView
     private lateinit var btnNuevoVideo: LinearLayout
     
     // Variables para gestión de animaciones
@@ -66,6 +67,7 @@ class InicioAppActivity : AppCompatActivity() {
         btnOpciones = findViewById(R.id.btnOpciones)
         btnInfo = findViewById(R.id.btnInfo)
         btnCatalogo = findViewById(R.id.btnCatalogo)
+        btnBuscar = findViewById(R.id.btnBuscar)
         btnNuevoVideo = findViewById(R.id.btnNuevoVideo)
 
         btnNuevoVideo.setOnClickListener {
@@ -89,6 +91,11 @@ class InicioAppActivity : AppCompatActivity() {
 
         btnCatalogo.setOnClickListener {
             val intent = Intent(this, CatalogoSeniasActivity::class.java)
+            startActivity(intent)
+        }
+
+        btnBuscar.setOnClickListener {
+            val intent = Intent(this, SearchVideoActivity::class.java)
             startActivity(intent)
         }
 

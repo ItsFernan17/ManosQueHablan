@@ -6,9 +6,6 @@
     <!-- Permisos de cámara y micrófono -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    
-    <!-- Permiso de vibración para feedback táctil -->
-    <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- Acceso a Internet para comunicar con la API -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -67,6 +64,11 @@
 
         <activity
             android:name=".CatalogoSeniasActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".SearchVideoActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 

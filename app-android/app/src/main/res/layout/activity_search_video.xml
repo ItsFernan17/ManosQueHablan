@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background_color">
+
+    <!-- Header con botón de regreso y campo de búsqueda -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:background="@android:color/white"
+        android:elevation="4dp">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_arrow_back"
+            android:contentDescription="Volver"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp"
+            app:tint="@color/rojo" />
+
+        <EditText
+            android:id="@+id/editTextSearch"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:background="@android:color/transparent"
+            android:hint="Nombre del video"
+            android:textColorHint="@color/texto_secundario"
+            android:textColor="@color/texto_principal"
+            android:textSize="18sp"
+            android:fontFamily="@font/poppins_medium"
+            android:inputType="text"
+            android:imeOptions="actionSearch"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:drawablePadding="8dp" />
+
+        <ImageView
+            android:id="@+id/iconSearch"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/busqueda"
+            android:contentDescription="Buscar"
+            android:layout_marginStart="8dp"
+            app:tint="@color/rojo"
+            android:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/iconClear"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:contentDescription="Limpiar búsqueda"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp"
+            app:tint="@color/rojo"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!-- Línea divisoria -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0" />
+
+    <!-- Contador de resultados con estilo mejorado -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:background="@color/background_color"
+        android:visibility="gone"
+        android:id="@+id/contenedorContador">
+
+        <View
+            android:layout_width="4dp"
+            android:layout_height="20dp"
+            android:background="@color/rojo"
+            android:layout_marginEnd="12dp" />
+
+        <TextView
+            android:id="@+id/txtConteoResultados"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="5 resultados encontrados"
+            android:textSize="15sp"
+            android:textColor="@color/texto_principal"
+            android:fontFamily="@font/poppins_medium" />
+
+    </LinearLayout>
+
+    <!-- Contenedor principal con scroll -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- Contenedor de resultados -->
+            <LinearLayout
+                android:id="@+id/contenedorResultados"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp" />
+
+            <!-- Vista cuando no hay resultados -->
+            <LinearLayout
+                android:id="@+id/vistaSinResultados"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="visible">
+
+                <ImageView
+                    android:layout_width="160dp"
+                    android:layout_height="160dp"
+                    android:src="@drawable/busqueda_video"
+                    android:alpha="0.5"
+                    android:layout_marginBottom="24dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Búsqueda de Videos"
+                    android:textSize="20sp"
+                    android:textColor="@color/texto_principal"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:textAlignment="center"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/txtSinResultados"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ingrese el nombre del video para encontrarlo"
+                    android:textSize="16sp"
+                    android:textColor="@color/texto_secundario"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textAlignment="center"
+                    android:lineSpacingExtra="4dp"
+                    android:paddingHorizontal="16dp" />
+
+            </LinearLayout>
+
+        </FrameLayout>
+
+    </ScrollView>
+
+</LinearLayout>

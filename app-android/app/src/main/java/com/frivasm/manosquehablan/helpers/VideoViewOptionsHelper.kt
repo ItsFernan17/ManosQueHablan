@@ -24,7 +24,7 @@ object VideoViewOptionsHelper {
 
         // Compartir Video
         opcionCompartir?.setOnClickListener {
-            VideoActionsHelper.exportarVideo(context, videoFile)
+            VideoActionsHelper.compartirVideo(context, videoFile)
             dialog.dismiss()
         }
 

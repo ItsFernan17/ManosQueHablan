@@ -168,11 +168,11 @@ object VideoViewBuilder {
             }
 
             btnExportar?.setOnClickListener {
-                VideoActionsHelper.exportarVideo(context, videoFile)
+                VideoActionsHelper.compartirVideo(context, videoFile)
             }
 
             exportarContenedor?.setOnClickListener {
-                VideoActionsHelper.exportarVideo(context, videoFile)
+                VideoActionsHelper.compartirVideo(context, videoFile)
             }
 
             btnEliminar?.setOnClickListener {

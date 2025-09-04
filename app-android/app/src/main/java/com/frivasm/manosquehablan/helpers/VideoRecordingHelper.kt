@@ -39,6 +39,9 @@ class VideoRecordingHelper(
     var onRecordingError: ((String) -> Unit)? = null
     
     init {
+        // Configurar tipo de cámara inicial (frontal por defecto)
+        exposureControlHelper.setFrontCamera(lensFacing == CameraSelector.LENS_FACING_FRONT)
+        
         // Configurar callback para notificaciones de exposición
         exposureControlHelper.onExposureChanged = { luma, evCompensation, torchEnabled ->
             val supportInfo = if (exposureControlHelper.isExposureSupported()) "EV" else "Solo medición"
@@ -72,7 +75,11 @@ class VideoRecordingHelper(
                 }
                 
                 // Configurar control de exposición con la cámara
-                camera?.let { exposureControlHelper.setCamera(it) }
+                camera?.let { 
+                    // IMPORTANTE: Configurar tipo de cámara ANTES de setCamera para evitar race condition
+                    exposureControlHelper.setFrontCamera(lensFacing == CameraSelector.LENS_FACING_FRONT)
+                    exposureControlHelper.setCamera(it) 
+                }
                 
             } catch (e: Exception) {
                 // Solo log, sin toast

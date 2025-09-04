@@ -25,8 +25,6 @@ class VideoPauseHelper(
             timerHelper.pausarTemporizador()
             actualizarBotonPausar()
             binding.textIndicaciones.text = "Grabación pausada - Toca el botón naranja para continuar"
-            // Vibración de feedback
-            vibrar()
         } catch (e: Exception) {
             Log.e("VideoPause", "Error al pausar grabación: ${e.message}")
         }
@@ -40,8 +38,6 @@ class VideoPauseHelper(
             timerHelper.reanudarTemporizador()
             actualizarBotonPausar()
             binding.textIndicaciones.text = "Grabando... Mantén tus manos visibles"
-            // Vibración de feedback
-            vibrar()
         } catch (e: Exception) {
             Log.e("VideoPause", "Error al reanudar grabación: ${e.message}")
         }
@@ -124,30 +120,6 @@ class VideoPauseHelper(
             // Restaurar color normal del temporizador al estilo inicial (rojo)
             binding.temporizador.setTextColor(ContextCompat.getColor(context, android.R.color.white))
             binding.temporizador.background = ContextCompat.getDrawable(context, R.drawable.contador_background)
-        }
-    }
-    
-    private fun vibrar() {
-        try {
-            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                context.getSystemService(android.os.VibratorManager::class.java)?.defaultVibrator
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.getSystemService(android.os.Vibrator::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                context.getSystemService(android.os.Vibrator::class.java)
-            }
-            
-            vibrator?.let { v ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    v.vibrate(android.os.VibrationEffect.createOneShot(100, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
-                } else {
-                    @Suppress("DEPRECATION")
-                    v.vibrate(100)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("VideoPause", "Error al vibrar: ${e.message}")
         }
     }
 }

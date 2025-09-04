@@ -79,6 +79,7 @@ object DialogUtils {
 
     fun mostrarDialogoAudio(context: Context, audioFile: File) {
         if (!audioFile.exists()) {
+            Toast.makeText(context, "Audio no disponible", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -217,6 +218,7 @@ object DialogUtils {
     
     fun mostrarDialogoTranscripcion(context: Context, archivoTranscripcion: File) {
         if (!archivoTranscripcion.exists()) {
+            Toast.makeText(context, "Transcripción no disponible", Toast.LENGTH_SHORT).show()
             return
         }
 

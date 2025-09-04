@@ -18,6 +18,7 @@ import android.view.animation.LinearInterpolator
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -36,6 +37,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+@ExperimentalCamera2Interop
 class ProcesandoVideoActivity : AppCompatActivity() {
     
     // Views para la animación de loading

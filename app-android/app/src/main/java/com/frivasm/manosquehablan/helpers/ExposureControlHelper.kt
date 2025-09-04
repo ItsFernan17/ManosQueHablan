@@ -45,6 +45,9 @@ class ExposureControlHelper(
     private var camera2CameraControl: Camera2CameraControl? = null
     private var camera2CameraInfo: Camera2CameraInfo? = null
     
+    // Variable para identificar si está usando la cámara frontal
+    private var isFrontCamera = true
+    
     // SharedPreferences para persistir configuración del usuario
     private val sharedPrefs: SharedPreferences = context.getSharedPreferences("exposure_settings", Context.MODE_PRIVATE)
     
@@ -52,18 +55,19 @@ class ExposureControlHelper(
     private var isExposureCompensationSupported = false
     private var isTorchSupported = false
     
-    // Parámetros de exposición según especificaciones
-    private val TARGET_LUMA_MIN = 0.50f
-    private val TARGET_LUMA_MAX = 0.58f
-    private val HYSTERESIS_MIN = 0.47f
-    private val HYSTERESIS_MAX = 0.60f
-    private val CRITICAL_LOW_LUMA = 0.45f
-    private val CRITICAL_HIGH_LUMA = 0.62f
-    private val TORCH_ENABLE_THRESHOLD = 0.35f
-    private val TORCH_DISABLE_THRESHOLD = 0.48f
-    private val RECORDING_LOCK_MIN = 0.48f
-    private val RECORDING_LOCK_MAX = 0.60f
-    private val CLIPPING_THRESHOLD = 0.015f // 1.5%
+    // Parámetros de exposición optimizados para MediaPipe y detección de keypoints
+    // Rangos más estrictos para mejor detección de manos y poses
+    private val TARGET_LUMA_MIN = 0.40f    // Reducido para mejor contraste
+    private val TARGET_LUMA_MAX = 0.50f    // Reducido para evitar sobreexposición
+    private val HYSTERESIS_MIN = 0.38f     // Ajustado para detección más sensible
+    private val HYSTERESIS_MAX = 0.52f     // Ajustado para evitar bombeo
+    private val CRITICAL_LOW_LUMA = 0.30f  // Muy oscuro, keypoints no visibles
+    private val CRITICAL_HIGH_LUMA = 0.55f // Muy brillante, keypoints se pierden
+    private val TORCH_ENABLE_THRESHOLD = 0.25f // Activar linterna antes
+    private val TORCH_DISABLE_THRESHOLD = 0.35f // Mantener equilibrio
+    private val RECORDING_LOCK_MIN = 0.38f // Rango de bloqueo durante grabación
+    private val RECORDING_LOCK_MAX = 0.52f
+    private val CLIPPING_THRESHOLD = 0.010f // 1% - Más estricto para MediaPipe
     
     // Rango de compensación EV
     private val MIN_EV_COMPENSATION = -2
@@ -81,7 +85,7 @@ class ExposureControlHelper(
     private var imageAnalysis: ImageAnalysis? = null
     private var currentLuma = 0.5f
     private var lastLumaUpdateTime = 0L
-    private val LUMA_UPDATE_INTERVAL = 200L // Actualizar cada 200ms
+    private val LUMA_UPDATE_INTERVAL = 150L // Más frecuente para MediaPipe
     
     // Telemetría ligera para debugging
     private var clipTelemetry = mutableMapOf<String, Any>()
@@ -89,9 +93,9 @@ class ExposureControlHelper(
     // Callback para notificar cambios
     var onExposureChanged: ((luma: Float, evCompensation: Int, torchEnabled: Boolean) -> Unit)? = null
     
-    // Variables para evitar ajustes excesivos
+    // Variables para evitar ajustes excesivos (optimizado para MediaPipe)
     private var lastAdjustmentTime = 0L
-    private val MIN_ADJUSTMENT_INTERVAL = 1000L // 1 segundo entre ajustes automáticos
+    private val MIN_ADJUSTMENT_INTERVAL = 600L // Más rápido para mejor detección
     private var consecutiveTouchCount = 0
     private var lastTouchTime = 0L
     private val TOUCH_RESET_TIME = 3000L // Reset contador de toques después de 3 segundos
@@ -112,6 +116,11 @@ class ExposureControlHelper(
             }
             false
         }
+    }
+    
+    fun setFrontCamera(isFront: Boolean) {
+        isFrontCamera = isFront
+        Log.d("ExposureControl", "Configurado para cámara: ${if (isFront) "frontal" else "trasera"} - Control automático MediaPipe ${if (isFront) "ACTIVADO" else "DESACTIVADO"}")
     }
     
     fun setCamera(camera: Camera) {
@@ -309,6 +318,13 @@ class ExposureControlHelper(
         try {
             val currentTime = System.currentTimeMillis()
             
+            // Solo activar control automático para la cámara frontal
+            if (!isFrontCamera) {
+                // Log de debug para detectar si hay problemas de inicialización
+                Log.v("ExposureControl", "Control automático desactivado - cámara trasera (luma: ${String.format("%.3f", luma)})")
+                return
+            }
+            
             // Si estamos grabando y AE está bloqueado, no hacer ajustes
             if (isRecording && isAeLocked) {
                 return
@@ -326,20 +342,21 @@ class ExposureControlHelper(
             
             // Manejar clipping primero
             if (clippingPercentage > CLIPPING_THRESHOLD && currentEvCompensation > MIN_EV_COMPENSATION) {
-                Log.i("ExposureControl", "Detectado clipping: ${String.format("%.2f", clippingPercentage * 100)}%, bajando EV")
+                Log.i("ExposureControl", "Detectado clipping: ${String.format("%.2f", clippingPercentage * 100)}%, bajando EV (MediaPipe activo)")
                 lastAdjustmentTime = currentTime
                 adjustEvCompensation(currentEvCompensation - 1)
                 return
             }
             
-            // Aplicar histéresis para evitar bombeo
+            // Aplicar histéresis optimizada para MediaPipe
             val shouldAdjust = when {
+                // Condiciones críticas - ajuste inmediato para MediaPipe
                 luma < CRITICAL_LOW_LUMA -> true
                 luma > CRITICAL_HIGH_LUMA -> true
-                luma < HYSTERESIS_MIN || luma > HYSTERESIS_MAX -> {
-                    // Solo ajustar si estamos fuera del rango objetivo
-                    luma < TARGET_LUMA_MIN || luma > TARGET_LUMA_MAX
-                }
+                // Condiciones problemáticas para detección de keypoints
+                luma < TARGET_LUMA_MIN && luma > CRITICAL_LOW_LUMA -> true
+                luma > TARGET_LUMA_MAX && luma < CRITICAL_HIGH_LUMA -> true
+                // Dentro del rango aceptable
                 else -> false
             }
             
@@ -347,15 +364,21 @@ class ExposureControlHelper(
                 return
             }
             
-            // Determinar ajuste de EV
+            // Determinar ajuste de EV optimizado para MediaPipe
             val newEvCompensation = when {
-                luma < CRITICAL_LOW_LUMA -> min(currentEvCompensation + 1, MAX_EV_COMPENSATION)
-                luma > CRITICAL_HIGH_LUMA -> max(currentEvCompensation - 1, MIN_EV_COMPENSATION)
+                // Muy oscuro - subir exposición agresivamente
+                luma < CRITICAL_LOW_LUMA -> min(currentEvCompensation + 2, MAX_EV_COMPENSATION)
+                // Muy brillante - bajar exposición agresivamente  
+                luma > CRITICAL_HIGH_LUMA -> max(currentEvCompensation - 2, MIN_EV_COMPENSATION)
+                // Ajustes graduales para llegar al rango óptimo
+                luma < TARGET_LUMA_MIN -> min(currentEvCompensation + 1, MAX_EV_COMPENSATION)
+                luma > TARGET_LUMA_MAX -> max(currentEvCompensation - 1, MIN_EV_COMPENSATION)
                 else -> currentEvCompensation
             }
             
             // Aplicar ajuste de EV si cambió
             if (newEvCompensation != currentEvCompensation) {
+                Log.d("ExposureControl", "MediaPipe ajuste automático: EV $currentEvCompensation → $newEvCompensation (luma: ${String.format("%.3f", luma)})")
                 lastAdjustmentTime = currentTime
                 adjustEvCompensation(newEvCompensation)
             }
@@ -382,7 +405,17 @@ class ExposureControlHelper(
             currentEvCompensation = clampedEv
             // Guardar en SharedPreferences para persistir la configuración del usuario
             sharedPrefs.edit().putInt("last_ev_compensation", clampedEv).apply()
-            Log.i("ExposureControl", "EV ajustado a: $clampedEv (luma: ${String.format("%.3f", currentLuma)})")
+            
+            // Log específico para MediaPipe optimización
+            val mediaPipeStatus = when {
+                currentLuma < CRITICAL_LOW_LUMA -> "CRITICO-OSCURO (keypoints no detectables)"
+                currentLuma > CRITICAL_HIGH_LUMA -> "CRITICO-BRILLANTE (keypoints saturados)"
+                currentLuma < TARGET_LUMA_MIN -> "SUB-OPTIMO (mejorando contraste)"
+                currentLuma > TARGET_LUMA_MAX -> "SOBRE-OPTIMO (reduciendo brillo)"
+                else -> "OPTIMO (ideal para MediaPipe)"
+            }
+            
+            Log.i("ExposureControl", "EV ajustado a: $clampedEv (luma: ${String.format("%.3f", currentLuma)}) - MediaPipe: $mediaPipeStatus")
             notifyExposureChanged()
         }, ContextCompat.getMainExecutor(context))
     }

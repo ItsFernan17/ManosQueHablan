@@ -69,9 +69,9 @@ class ExposureControlHelper(
     private val RECORDING_LOCK_MAX = 0.52f
     private val CLIPPING_THRESHOLD = 0.010f // 1% - Más estricto para MediaPipe
     
-    // Rango de compensación EV
-    private val MIN_EV_COMPENSATION = -2
-    private val MAX_EV_COMPENSATION = 2
+    // Rango de compensación EV (se actualizará con los límites del dispositivo)
+    private var MIN_EV_COMPENSATION = -2
+    private var MAX_EV_COMPENSATION = 2
     
     // Estado actual
     private var currentEvCompensation = 0
@@ -80,6 +80,15 @@ class ExposureControlHelper(
     private var isRecording = false
     private var lastTouchX = 0f
     private var lastTouchY = 0f
+    
+    // EMA para suavizar luma (α≈0.4)
+    private var smoothedLuma = 0.5f
+    private val EMA_ALPHA = 0.4f
+    
+    // AE Lock automático
+    private var stableTimestamp = 0L
+    private val STABLE_DURATION_MS = 1200L // 1.2 segundos
+    private var lastStableLuma = 0f
     
     // Análisis de imagen para medición de luma
     private var imageAnalysis: ImageAnalysis? = null
@@ -153,8 +162,16 @@ class ExposureControlHelper(
     private fun checkCameraCapabilities() {
         try {
             camera2CameraInfo?.let { info ->
-                val cameraCharacteristics = info.getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE)
-                isExposureCompensationSupported = cameraCharacteristics != null
+                // Obtener rango real de exposición del dispositivo
+                val exposureRange = info.getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE)
+                if (exposureRange != null) {
+                    MIN_EV_COMPENSATION = exposureRange.lower
+                    MAX_EV_COMPENSATION = exposureRange.upper
+                    isExposureCompensationSupported = true
+                    Log.i("ExposureControl", "Rango EV del dispositivo: $MIN_EV_COMPENSATION a $MAX_EV_COMPENSATION")
+                } else {
+                    isExposureCompensationSupported = false
+                }
                 
                 val flashAvailable = info.getCameraCharacteristic(CameraCharacteristics.FLASH_INFO_AVAILABLE)
                 isTorchSupported = flashAvailable == true
@@ -178,16 +195,23 @@ class ExposureControlHelper(
             try {
                 val currentTime = System.currentTimeMillis()
                 if (currentTime - lastLumaUpdateTime >= LUMA_UPDATE_INTERVAL) {
-                    val (luma, clippingPercentage) = calculateLumaWithHistogram(imageProxy)
-                    if (luma > 0) {
-                        currentLuma = luma
+                    val (rawLuma, clippingPercentage) = calculateLumaWithHistogram(imageProxy)
+                    if (rawLuma > 0) {
+                        // Aplicar EMA para suavizar luma
+                        smoothedLuma = if (smoothedLuma == 0.5f) {
+                            rawLuma // Primera medición
+                        } else {
+                            EMA_ALPHA * rawLuma + (1 - EMA_ALPHA) * smoothedLuma
+                        }
+                        
+                        currentLuma = smoothedLuma
                         lastLumaUpdateTime = currentTime
                         
                         // Actualizar telemetría
-                        updateTelemetry(luma, clippingPercentage)
+                        updateTelemetry(smoothedLuma, clippingPercentage)
                         
-                        // Procesar ajustes automáticos de exposición
-                        processExposureAdjustment(luma, clippingPercentage)
+                        // Procesar ajustes automáticos de exposición con luma suavizada
+                        processExposureAdjustment(smoothedLuma, clippingPercentage)
                     }
                 }
             } catch (e: Exception) {
@@ -344,35 +368,52 @@ class ExposureControlHelper(
             if (clippingPercentage > CLIPPING_THRESHOLD && currentEvCompensation > MIN_EV_COMPENSATION) {
                 Log.i("ExposureControl", "Detectado clipping: ${String.format("%.2f", clippingPercentage * 100)}%, bajando EV (MediaPipe activo)")
                 lastAdjustmentTime = currentTime
+                resetStableTimer() // Reset timer al hacer ajuste
                 adjustEvCompensation(currentEvCompensation - 1)
                 return
             }
             
-            // Aplicar histéresis optimizada para MediaPipe
+            // Chequear AE Lock automático
+            checkAutoAeLock(luma, currentTime)
+            
+            // Si AE está bloqueado automáticamente, no hacer ajustes
+            if (isAeLocked) {
+                return
+            }
+            
+            // Histéresis simple para evitar oscilaciones alrededor de 0.40/0.50
+            val inTargetRange = luma >= TARGET_LUMA_MIN && luma <= TARGET_LUMA_MAX
+            val nearTargetRange = luma >= (TARGET_LUMA_MIN - 0.03f) && luma <= (TARGET_LUMA_MAX + 0.03f)
+            
             val shouldAdjust = when {
-                // Condiciones críticas - ajuste inmediato para MediaPipe
+                // Condiciones críticas - ajuste inmediato
                 luma < CRITICAL_LOW_LUMA -> true
                 luma > CRITICAL_HIGH_LUMA -> true
-                // Condiciones problemáticas para detección de keypoints
-                luma < TARGET_LUMA_MIN && luma > CRITICAL_LOW_LUMA -> true
-                luma > TARGET_LUMA_MAX && luma < CRITICAL_HIGH_LUMA -> true
-                // Dentro del rango aceptable
-                else -> false
+                // Si estamos en rango objetivo, no hacer nada
+                inTargetRange -> false
+                // Si estamos cerca del rango objetivo, solo ajustar si es significativo
+                nearTargetRange -> false
+                // Fuera del rango, necesita ajuste
+                // Fuera del rango, necesita ajuste
+                else -> true
             }
             
             if (!shouldAdjust) {
                 return
             }
             
-            // Determinar ajuste de EV optimizado para MediaPipe
+            // Reset timer cuando hacemos ajustes
+            resetStableTimer()
+            
+            // Determinar ajuste de EV con límites del dispositivo
             val newEvCompensation = when {
                 // Muy oscuro - subir exposición agresivamente
-                luma < CRITICAL_LOW_LUMA -> min(currentEvCompensation + 2, MAX_EV_COMPENSATION)
+                luma < CRITICAL_LOW_LUMA -> kotlin.math.min(currentEvCompensation + 2, MAX_EV_COMPENSATION)
                 // Muy brillante - bajar exposición agresivamente  
-                luma > CRITICAL_HIGH_LUMA -> max(currentEvCompensation - 2, MIN_EV_COMPENSATION)
+                luma > CRITICAL_HIGH_LUMA -> kotlin.math.max(currentEvCompensation - 2, MIN_EV_COMPENSATION)
                 // Ajustes graduales para llegar al rango óptimo
-                luma < TARGET_LUMA_MIN -> min(currentEvCompensation + 1, MAX_EV_COMPENSATION)
-                luma > TARGET_LUMA_MAX -> max(currentEvCompensation - 1, MIN_EV_COMPENSATION)
+                luma < TARGET_LUMA_MIN -> kotlin.math.min(currentEvCompensation + 1, MAX_EV_COMPENSATION)
+                luma > TARGET_LUMA_MAX -> kotlin.math.max(currentEvCompensation - 1, MIN_EV_COMPENSATION)
                 else -> currentEvCompensation
             }
             
@@ -393,13 +434,39 @@ class ExposureControlHelper(
         }
     }
     
+    private fun checkAutoAeLock(luma: Float, currentTime: Long) {
+        val inStableRange = luma >= TARGET_LUMA_MIN && luma <= TARGET_LUMA_MAX
+        val outsideUnlockRange = luma > 0.55f || luma < 0.35f
+        
+        if (inStableRange) {
+            if (stableTimestamp == 0L) {
+                stableTimestamp = currentTime
+                lastStableLuma = luma
+            } else if (currentTime - stableTimestamp >= STABLE_DURATION_MS && !isAeLocked) {
+                lockAutoExposure(true)
+                Log.i("ExposureControl", "AE bloqueado automáticamente tras ${STABLE_DURATION_MS}ms estable (luma: ${String.format("%.3f", luma)})")
+            }
+        } else if (outsideUnlockRange && isAeLocked) {
+            lockAutoExposure(false)
+            resetStableTimer()
+            Log.i("ExposureControl", "AE desbloqueado automáticamente (luma fuera de rango: ${String.format("%.3f", luma)})")
+        } else if (!inStableRange) {
+            resetStableTimer()
+        }
+    }
+    
+    private fun resetStableTimer() {
+        stableTimestamp = 0L
+        lastStableLuma = 0f
+    }
+    
     private fun adjustEvCompensation(newEv: Int) {
         if (!isExposureCompensationSupported) {
             Log.w("ExposureControl", "Compensación EV no soportada en este dispositivo")
             return
         }
         
-        val clampedEv = max(MIN_EV_COMPENSATION, min(MAX_EV_COMPENSATION, newEv))
+        val clampedEv = kotlin.math.max(MIN_EV_COMPENSATION, kotlin.math.min(MAX_EV_COMPENSATION, newEv))
         
         cameraControl?.setExposureCompensationIndex(clampedEv)?.addListener({
             currentEvCompensation = clampedEv

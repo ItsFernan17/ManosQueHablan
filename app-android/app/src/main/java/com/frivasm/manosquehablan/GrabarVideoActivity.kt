@@ -292,7 +292,7 @@ class GrabarVideoActivity : AppCompatActivity() {
                 luma < 0.35f && !hasEvSupport -> " • Busca mejor luz ambiente"
                 luma < 0.35f && hasEvSupport -> " • Sistema mejorando brillo automáticamente"
                 luma > 0.7f -> " • Evita luz directa o reflectores"
-                luma >= 0.47f && luma <= 0.60f -> " • Iluminación perfecta ✓"
+                luma >= 0.47f && luma <= 0.60f -> " • Iluminación perfecta"
                 else -> " • $contextMessage"
             }
             

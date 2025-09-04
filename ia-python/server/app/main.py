@@ -258,15 +258,24 @@ async def upload_video_endpoint(
 
         # Render de video con subtítulos + TTS sincronizado por detección (PROTEGIDO)
         with tempfile.TemporaryDirectory(dir=session_dir) as tmpdir:
-            # 1) Subtítulos (una línea por detección)
+            # 1) Subtítulos (una línea por detección) - timing dinámico inteligente
             ass_path = os.path.join(tmpdir, "subs.ass")
-            await stage("build_ass_file_per_detection", build_ass_file_per_detection, detections, ass_path)
+            await stage(
+                "build_ass_file_per_detection", 
+                build_ass_file_per_detection, 
+                detections, 
+                ass_path, 
+                subtitle_delay=0.0  # Delay base 0, usa cálculo dinámico interno
+            )
 
-            # 2) TTS por detección (para mezcla dentro del video)
+            # 2) TTS por detección (para mezcla dentro del video) - timing dinámico inteligente
             tts_items = await stage(
                 "generate_tts_per_detection_items",
                 generate_tts_per_detection_items,
-                detections, tmpdir, tts_lang
+                detections, 
+                tmpdir, 
+                tts_lang, 
+                voice_offset=0.0  # Delay base 0, usa cálculo dinámico interno
             )
 
             # 3) Render final

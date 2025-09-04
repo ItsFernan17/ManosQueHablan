@@ -73,14 +73,11 @@ def _natural_join_es(words: List[str]) -> str:
 
 def _build_sentence_for_group(group: List[Dict[str, Any]]) -> str:
     labels = [str(d.get("label", "")).lower() for d in group]
-    # dedupe consecutivos
-    out, prev = [], None
+    # NO eliminamos duplicados consecutivos - preservamos TODAS las palabras detectadas
+    out = []
     for l in labels:
-        if not l:
-            continue
-        if l != prev:
-            out.append(l)
-        prev = l
+        if l and l.strip():
+            out.append(l.strip())
     sent = _natural_join_es(out)
     if sent:
         sent = sent[0].upper() + sent[1:]
@@ -96,7 +93,8 @@ def build_ass_file_per_detection(
     ass_path: str,
     font: str = "Poppins",     # caerá a una fuente del sistema si no existe
     font_size: int = 50,
-    margin_v: int = 50
+    margin_v: int = 50,
+    subtitle_delay: float = 0.0  # retraso en segundos para mostrar subtítulos después de la seña
 ) -> None:
     header = f"""[Script Info]
 Title: Subs estilo Poppins
@@ -121,12 +119,38 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         return f"{h:d}:{m:02d}:{sec:05.2f}"
 
     lines = []
+    subtitle_times = []  # Para evitar overlaps: [(start, end), ...]
+    
     for d in sorted(detections or [], key=lambda x: x.get("start_time", 0.0)):
         label = _clean_label(str(d.get("label", "")))
         if not label: continue
-        start = float(d.get("start_time", 0.0))
-        end = max(float(d.get("end_time", start)), start + 0.8)
-        lines.append(f"Dialogue: 0,{_to_ass_time(start)},{_to_ass_time(end)},Default,,0,0,0,,{label}")
+        
+        # Calcular delay dinámico basado en duración de la seña
+        sign_duration = float(d.get("end_time", 0.0)) - float(d.get("start_time", 0.0))
+        
+        # Para señas rápidas (< 0.5s): delay mínimo
+        # Para señas normales (0.5-2s): delay proporcional pequeño 
+        # Para señas largas (>2s): delay fijo pequeño
+        if sign_duration < 0.5:
+            dynamic_delay = 0.01  # 10ms para señas muy rápidas
+        elif sign_duration < 2.0:
+            dynamic_delay = sign_duration * 0.02  # 2% de la duración de la seña
+        else:
+            dynamic_delay = 0.04  # 40ms máximo para señas largas
+        
+        # Los subtítulos aparecen DESPUÉS de que termine la seña con delay dinámico
+        start_subtitle = float(d.get("end_time", 0.0)) + max(subtitle_delay, dynamic_delay)
+        end_subtitle = start_subtitle + min(1.2, max(0.8, sign_duration * 0.8))  # Duración proporcional a la seña
+        
+        # Evitar overlaps con subtítulos anteriores
+        for prev_start, prev_end in subtitle_times:
+            if start_subtitle < prev_end:
+                # Si hay overlap, mover el inicio después del anterior (gap mínimo)
+                start_subtitle = prev_end + 0.02  # Gap de solo 20ms
+                end_subtitle = start_subtitle + min(1.2, max(0.8, sign_duration * 0.8))
+        
+        subtitle_times.append((start_subtitle, end_subtitle))
+        lines.append(f"Dialogue: 0,{_to_ass_time(start_subtitle)},{_to_ass_time(end_subtitle)},Default,,0,0,0,,{label}")
 
     with open(ass_path, "w", encoding="utf-8") as f:
         f.write(header + "\n".join(lines))
@@ -141,19 +165,45 @@ def generate_tts_per_detection_items(
     tmpdir: str,
     lang: str = "es",
     tld: str = "com.mx",
-    voice_offset: float = 0.0,  # desplazar voz vs start_time si quieres
+    voice_offset: float = 0.0,  # retraso adicional en segundos después del end_time
 ) -> List[Dict[str, Any]]:
     """
     Crea un MP3 por detección con el label capitalizado para sincronia en el VIDEO.
+    La voz aparece DESPUÉS de que termine cada seña (end_time + voice_offset).
     Devuelve [{'start_time': s, 'end_time': e, 'audio_path': mp3}, ...]
     """
     items: List[Dict[str, Any]] = []
+    audio_times = []  # Para evitar overlaps de audio: [(start, end), ...]
+    
     for i, d in enumerate(sorted(detections or [], key=lambda x: x.get("start_time", 0.0)), start=1):
         label = _clean_label(str(d.get("label", "")))
         if not label:
             continue
-        start = max(0.0, float(d.get("start_time", 0.0)) + voice_offset)
-        end = float(d.get("end_time", start))
+        
+        # Calcular delay dinámico basado en duración de la seña (igual que subtítulos)
+        sign_duration = float(d.get("end_time", 0.0)) - float(d.get("start_time", 0.0))
+        
+        if sign_duration < 0.5:
+            dynamic_delay = 0.01  # 10ms para señas muy rápidas
+        elif sign_duration < 2.0:
+            dynamic_delay = sign_duration * 0.02  # 2% de la duración de la seña
+        else:
+            dynamic_delay = 0.04  # 40ms máximo para señas largas
+        
+        # La voz aparece DESPUÉS de que termine la seña con delay dinámico
+        start = max(0.0, float(d.get("end_time", 0.0)) + max(voice_offset, dynamic_delay))
+        # Duración del audio proporcional a la longitud de la palabra
+        audio_duration = min(1.5, max(0.6, len(label) * 0.1 + 0.4))  # 0.4s base + 0.1s por carácter
+        end = start + audio_duration
+        
+        # Evitar overlaps con audios anteriores
+        for prev_start, prev_end in audio_times:
+            if start < prev_end:
+                # Si hay overlap, mover el inicio después del anterior (gap mínimo)
+                start = prev_end + 0.02  # Gap de solo 20ms
+                end = start + audio_duration  # Mantener duración dinámica
+        
+        audio_times.append((start, end))
         audio_path = os.path.join(tmpdir, f"tts_det_{i:03d}.mp3")
         try:
             gTTS(text=label, lang=lang, tld=tld, slow=False).save(audio_path)
@@ -291,7 +341,7 @@ def build_ffmpeg_filter_and_inputs(
 
     for idx, item in enumerate(tts_items, start=1):
         delay_ms = max(0, int(round(float(item.get("start_time", 0.0)) * 1000)))
-        a_parts.append(f"[{idx}:a]adelay={delay_ms}|{delay_ms}[a{idx}]")
+        a_parts.append(f"[{idx}:a]volume=12dB,adelay={delay_ms}|{delay_ms}[a{idx}]")  # Subido a 12dB para mejor audibilidad
         out_labels.append(f"[a{idx}]")
 
     if out_labels:

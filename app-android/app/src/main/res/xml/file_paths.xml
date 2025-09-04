@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Archivos externos privados existentes -->
     <external-files-path
         name="videos"
         path="ManosQueHablan/" />
     <external-files-path
         name="all_files"
         path="." />
+    
+    <!-- Archivos privados internos para nuevo sistema -->
+    <files-path name="private_files" path="." />
+    <files-path name="manos_que_hablan" path="ManosQueHablan/" />
+    
+    <!-- Movies públicos para compatibilidad legacy -->
+    <external-path name="movies" path="Movies/ManosQueHablan/" />
 </paths>

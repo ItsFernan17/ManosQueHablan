@@ -1,11 +1,15 @@
 package com.frivasm.manosquehablan.helpers
 
 import android.content.Context
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.frivasm.manosquehablan.R
+import com.frivasm.manosquehablan.helpers.VideoSyncCache
+import com.frivasm.manosquehablan.helpers.VideoViewBuilder
+import com.frivasm.manosquehablan.helpers.VideoStorageManager
 import com.frivasm.manosquehablan.utils.VideoUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,17 +28,13 @@ object VideoOrdenamientoViewHelper {
         scope: CoroutineScope
     ) {
         scope.launch(Dispatchers.IO) {
-            val raiz = File(context.getExternalFilesDir(null), "ManosQueHablan")
-
-            val videos = raiz.listFiles()
-                ?.filter { it.isDirectory }
-                ?.flatMap { carpeta ->
-                    carpeta.listFiles()?.filter { f ->
-                        f.isFile &&
-                                f.extension.equals("mp4", ignoreCase = true) &&
-                                f.length() > 100_000 // Cambiado de 1MB a 100KB para consistencia
-                    } ?: emptyList()
-                } ?: emptyList()
+            // Cargar desde ambos sistemas: viejo (externo) y nuevo (privado)
+            val videosLegacy = cargarVideosLegacy(context)
+            val videosNuevos = cargarVideosPrivados(context)
+            
+            val videos = (videosLegacy + videosNuevos)
+                .distinctBy { it.absolutePath } // Evitar duplicados
+                .filter { it.length() > 100_000 } // Filtro de tamaño consistente
 
             val agrupados = OrdenamientoHelper.agruparVideosPorFecha(videos)
 
@@ -128,4 +128,33 @@ object VideoOrdenamientoViewHelper {
 
     private fun Int.dpToPx(context: Context): Int =
         (this * context.resources.displayMetrics.density).toInt()
+
+    /**
+     * Carga videos del sistema legacy (external files)
+     */
+    private fun cargarVideosLegacy(context: Context): List<File> {
+        val raiz = File(context.getExternalFilesDir(null), "ManosQueHablan")
+        if (!raiz.exists() || !raiz.isDirectory) {
+            return emptyList()
+        }
+
+        return raiz.listFiles()?.filter { it.isDirectory }?.flatMap { carpeta ->
+            carpeta.listFiles()?.filter {
+                it.isFile && it.extension.equals("mp4", ignoreCase = true)
+            } ?: emptyList()
+        } ?: emptyList()
+    }
+
+    /**
+     * Carga videos del nuevo sistema (private files)
+     */
+    private fun cargarVideosPrivados(context: Context): List<File> {
+        return try {
+            val storageManager = VideoStorageManager(context)
+            storageManager.getAllSavedVideos()
+        } catch (e: Exception) {
+            Log.w("VideoOrdenamientoViewHelper", "Error cargando videos privados: ${e.message}")
+            emptyList()
+        }
+    }
 }

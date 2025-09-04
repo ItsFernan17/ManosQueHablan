@@ -25,6 +25,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.frivasm.manosquehablan.api.ApiCliente
 import com.frivasm.manosquehablan.api.RespuestaProcesamiento
+import com.frivasm.manosquehablan.helpers.VideoStorageManager
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -429,91 +430,108 @@ class ProcesandoVideoActivity : AppCompatActivity() {
     private suspend fun guardarArchivosEnCarpeta(data: RespuestaProcesamiento) =
         withContext(Dispatchers.IO) {
             try {
-                Log.d("ProcesandoVideoActivity", "Iniciando guardado de archivos...")
-                val fecha = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
-                val nombreCarpeta = "ManosQueHablan/Sesion_$fecha"
-                val carpeta = File(this@ProcesandoVideoActivity.getExternalFilesDir(null), nombreCarpeta)
-                if (!carpeta.exists()) carpeta.mkdirs()
+                Log.d("ProcesandoVideoActivity", "Iniciando guardado seguro de archivos...")
                 
-                Log.d("ProcesandoVideoActivity", "Carpeta creada: ${carpeta.absolutePath}")
+                // Crear gestor de almacenamiento
+                val storageManager = VideoStorageManager(this@ProcesandoVideoActivity)
+                
+                val fecha = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+                val sessionName = "Sesion_$fecha"
+                
+                Log.d("ProcesandoVideoActivity", "Sesión: $sessionName")
 
-                // Guardar video con nombre personalizado
-                Log.d("ProcesandoVideoActivity", "Guardando video...")
-                guardarArchivoLocal(
+                // Guardar video en carpeta privada con referencia en galería
+                Log.d("ProcesandoVideoActivity", "Guardando video seguro...")
+                val videoInfo = guardarArchivoSeguro(
+                    storageManager,
                     ApiCliente.urlAbsoluta(data.video_url!!),
-                    carpeta,
+                    sessionName,
                     "Video_$fecha.mp4",
                     "video/mp4"
                 )
+                Log.d("ProcesandoVideoActivity", "Video guardado: ${videoInfo.privateFile.absolutePath}")
+                if (videoInfo.galleryUri != null) {
+                    Log.d("ProcesandoVideoActivity", "Video registrado en galería: ${videoInfo.galleryUri}")
+                }
 
-                // Guardar audio
+                // Guardar audio en carpeta privada
                 Log.d("ProcesandoVideoActivity", "Guardando audio...")
-                guardarArchivoLocal(
+                val audioInfo = guardarArchivoSeguro(
+                    storageManager,
                     ApiCliente.urlAbsoluta(data.audio_url!!),
-                    carpeta,
+                    sessionName,
                     "audio_traducido.mp3",
                     "audio/mp3"
                 )
+                Log.d("ProcesandoVideoActivity", "Audio guardado: ${audioInfo.privateFile.absolutePath}")
 
-                // Guardar texto
+                // Guardar texto en carpeta privada
                 Log.d("ProcesandoVideoActivity", "Guardando texto...")
-                guardarArchivoLocal(
+                val textoInfo = guardarArchivoSeguro(
+                    storageManager,
                     ApiCliente.urlAbsoluta(data.texto_url!!),
-                    carpeta,
+                    sessionName,
                     "transcripcion.txt",
                     "text/plain"
                 )
+                Log.d("ProcesandoVideoActivity", "Texto guardado: ${textoInfo.privateFile.absolutePath}")
 
-                Log.d("ProcesandoVideoActivity", "Todos los archivos guardados exitosamente")
+                Log.d("ProcesandoVideoActivity", "Todos los archivos guardados exitosamente en carpeta privada")
+                Log.i("ProcesandoVideoActivity", "🔒 Archivos seguros en: ${storageManager.getSessionPrivateDir(sessionName).absolutePath}")
+                
             } catch (e: Exception) {
                 Log.e("ProcesandoVideoActivity", "Error en guardarArchivosEnCarpeta: ${e.message}")
                 throw e
             }
         }
     
-    private suspend fun guardarArchivoLocal(
+    /**
+     * Guarda un archivo de forma segura usando el VideoStorageManager
+     * Mantiene compatibilidad con la lógica existente
+     */
+    private suspend fun guardarArchivoSeguro(
+        storageManager: VideoStorageManager,
         url: String,
-        carpetaDestino: File,
-        nombreArchivo: String,
+        sessionName: String,
+        fileName: String,
         mimeType: String
-    ) = withContext(Dispatchers.IO) {
+    ): VideoStorageManager.SavedFileInfo = withContext(Dispatchers.IO) {
         try {
-            Log.d("ProcesandoVideoActivity", "Descargando $nombreArchivo desde: $url")
+            Log.d("ProcesandoVideoActivity", "Descargando $fileName desde: $url")
             
             val request = okhttp3.Request.Builder().url(url).build()
             val response = ApiCliente.httpClient.newCall(request).execute()
             
             if (!response.isSuccessful) {
-                throw Exception("Error al descargar $nombreArchivo: ${response.code}")
+                throw Exception("Error al descargar $fileName: ${response.code}")
             }
             
             if (response.body == null) {
-                Log.e("ProcesandoVideoActivity", "Respuesta vacía para $nombreArchivo")
-                throw Exception("El servidor devolvió contenido vacío para $nombreArchivo")
+                Log.e("ProcesandoVideoActivity", "Respuesta vacía para $fileName")
+                throw Exception("El servidor devolvió contenido vacío para $fileName")
             }
 
-            val archivoDestino = File(carpetaDestino, nombreArchivo)
-            response.body?.byteStream()?.use { input ->
-                archivoDestino.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            } ?: throw Exception("No se pudo obtener el contenido de $nombreArchivo")
+            // Usar el VideoStorageManager para guardar de forma segura
+            val savedFileInfo = response.body?.byteStream()?.use { inputStream ->
+                storageManager.saveFileWithGalleryReference(
+                    inputStream = inputStream,
+                    fileName = fileName,
+                    mimeType = mimeType,
+                    sessionFolder = sessionName
+                )
+            } ?: throw Exception("No se pudo obtener el contenido de $fileName")
             
-            // Verificar que el archivo se descargó correctamente
-            if (!archivoDestino.exists() || archivoDestino.length() == 0L) {
-                throw Exception("El archivo $nombreArchivo se descargó pero está vacío o corrupto")
+            // Verificar que el archivo se guardó correctamente
+            if (!savedFileInfo.privateFile.exists() || savedFileInfo.privateFile.length() == 0L) {
+                throw Exception("El archivo $fileName se descargó pero está vacío o corrupto")
             }
 
-            MediaScannerConnection.scanFile(
-                this@ProcesandoVideoActivity,
-                arrayOf(archivoDestino.absolutePath),
-                arrayOf(mimeType),
-                null
-            )
-
-            Log.d("ProcesandoVideoActivity", "Archivo guardado exitosamente: ${archivoDestino.absolutePath} (${archivoDestino.length()} bytes)")
+            Log.d("ProcesandoVideoActivity", "Archivo guardado exitosamente: ${savedFileInfo.privateFile.absolutePath} (${savedFileInfo.privateFile.length()} bytes)")
+            
+            savedFileInfo
+            
         } catch (e: Exception) {
-            Log.e("ProcesandoVideoActivity", "Error al guardar $nombreArchivo: ${e.message}")
+            Log.e("ProcesandoVideoActivity", "Error al guardar $fileName: ${e.message}")
             throw e // Re-lanzar la excepción para que se maneje en el nivel superior
         }
     }

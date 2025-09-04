@@ -1,11 +1,15 @@
 package com.frivasm.manosquehablan.helpers
 
 import android.content.Context
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.frivasm.manosquehablan.R
+import com.frivasm.manosquehablan.helpers.VideoSyncCache
+import com.frivasm.manosquehablan.helpers.VideoViewBuilder
+import com.frivasm.manosquehablan.helpers.VideoStorageManager
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -17,32 +21,26 @@ object VideoLoader {
         contenedor: LinearLayout,
         vistaSinVideos: View
     ) {
-        val raiz = File(context.getExternalFilesDir(null), "ManosQueHablan")
-        if (!raiz.exists() || !raiz.isDirectory) {
-            contenedor.removeAllViews()
-            vistaSinVideos.visibility = View.VISIBLE
-            return
-        }
-
-        val videos = raiz.listFiles()?.filter { it.isDirectory }?.flatMap { carpeta ->
-            carpeta.listFiles()?.filter {
-                it.isFile && it.extension.equals("mp4", ignoreCase = true) && it.length() > 100_000 // Reducido de 1MB a 100KB
-            } ?: emptyList()
-        } ?: emptyList()
+        // Cargar desde ambos sistemas: viejo (externo) y nuevo (privado)
+        val videosLegacy = cargarVideosLegacy(context)
+        val videosNuevos = cargarVideosPrivados(context)
+        
+        val todosLosVideos = (videosLegacy + videosNuevos)
+            .distinctBy { it.absolutePath } // Evitar duplicados
+            .sortedByDescending { it.lastModified() } // Más recientes primero
 
         contenedor.removeAllViews()
 
-        if (videos.isEmpty()) {
+        if (todosLosVideos.isEmpty()) {
             vistaSinVideos.visibility = View.VISIBLE
             return
         }
 
         vistaSinVideos.visibility = View.GONE
         val inflater = LayoutInflater.from(context)
-        val videosOrdenados = videos.sortedByDescending { it.lastModified() }
         val formatoFecha = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
-        for ((index, videoOriginal) in videosOrdenados.withIndex()) {
+        for ((index, videoOriginal) in todosLosVideos.withIndex()) {
             val archivoFinal = VideoSyncCache.videosActualizados[videoOriginal.absolutePath] ?: videoOriginal
 
             val layout = if (index == 0)
@@ -63,6 +61,35 @@ object VideoLoader {
             }
 
             contenedor.addView(vista)
+        }
+    }
+
+    /**
+     * Carga videos del sistema legacy (external files)
+     */
+    private fun cargarVideosLegacy(context: Context): List<File> {
+        val raiz = File(context.getExternalFilesDir(null), "ManosQueHablan")
+        if (!raiz.exists() || !raiz.isDirectory) {
+            return emptyList()
+        }
+
+        return raiz.listFiles()?.filter { it.isDirectory }?.flatMap { carpeta ->
+            carpeta.listFiles()?.filter {
+                it.isFile && it.extension.equals("mp4", ignoreCase = true) && it.length() > 100_000
+            } ?: emptyList()
+        } ?: emptyList()
+    }
+
+    /**
+     * Carga videos del nuevo sistema (private files)
+     */
+    private fun cargarVideosPrivados(context: Context): List<File> {
+        return try {
+            val storageManager = VideoStorageManager(context)
+            storageManager.getAllSavedVideos()
+        } catch (e: Exception) {
+            Log.w("VideoLoader", "Error cargando videos privados: ${e.message}")
+            emptyList()
         }
     }
 }

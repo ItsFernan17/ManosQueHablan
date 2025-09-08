@@ -182,7 +182,10 @@ object VideoOrdenamientoAlfabeticoViewHelper {
 
         return raiz.listFiles()?.filter { it.isDirectory }?.flatMap { carpeta ->
             carpeta.listFiles()?.filter {
-                it.isFile && it.extension.equals("mp4", ignoreCase = true)
+                it.isFile && 
+                it.extension.equals("mp4", ignoreCase = true) &&
+                it.exists() && // ✅ Verificar que el archivo aún existe
+                it.length() > 100_000 // ✅ Filtro de tamaño consistente
             } ?: emptyList()
         } ?: emptyList()
     }
@@ -193,7 +196,8 @@ object VideoOrdenamientoAlfabeticoViewHelper {
     private fun cargarVideosPrivados(context: Context): List<File> {
         return try {
             val storageManager = VideoStorageManager(context)
-            storageManager.getAllSavedVideos()
+            // ✅ Filtrar solo archivos que aún existen
+            storageManager.getAllSavedVideos().filter { it.exists() && it.length() > 100_000 }
         } catch (e: Exception) {
             Log.w("VideoOrdenamientoAlfabeticoViewHelper", "Error cargando videos privados: ${e.message}")
             emptyList()

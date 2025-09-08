@@ -21,6 +21,9 @@ object VideoLoader {
         contenedor: LinearLayout,
         vistaSinVideos: View
     ) {
+        // ✅ Limpiar cache de archivos que ya no existen
+        VideoSyncCache.limpiarArchivosInexistentes()
+        
         // Cargar desde ambos sistemas: viejo (externo) y nuevo (privado)
         val videosLegacy = cargarVideosLegacy(context)
         val videosNuevos = cargarVideosPrivados(context)
@@ -75,7 +78,10 @@ object VideoLoader {
 
         return raiz.listFiles()?.filter { it.isDirectory }?.flatMap { carpeta ->
             carpeta.listFiles()?.filter {
-                it.isFile && it.extension.equals("mp4", ignoreCase = true) && it.length() > 100_000
+                it.isFile && 
+                it.extension.equals("mp4", ignoreCase = true) && 
+                it.exists() && // ✅ Verificar que el archivo aún existe
+                it.length() > 100_000
             } ?: emptyList()
         } ?: emptyList()
     }
@@ -86,7 +92,8 @@ object VideoLoader {
     private fun cargarVideosPrivados(context: Context): List<File> {
         return try {
             val storageManager = VideoStorageManager(context)
-            storageManager.getAllSavedVideos()
+            // ✅ Filtrar solo archivos que aún existen
+            storageManager.getAllSavedVideos().filter { it.exists() }
         } catch (e: Exception) {
             Log.w("VideoLoader", "Error cargando videos privados: ${e.message}")
             emptyList()

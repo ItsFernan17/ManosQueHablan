@@ -21,10 +21,11 @@ import java.util.*
 /**
  * Gestor de Almacenamiento de Videos para Manos Que Hablan
  * 
- * Estrategia:
- * - Guarda archivos en carpeta privada de la app (seguridad)
- * - Los registra en MediaStore para visibilidad en galería
- * - No duplica archivos, solo crea referencias
+ * Estrategia de Privacidad Total:
+ * - Guarda TODOS los archivos en carpeta privada de la app (máxima seguridad)
+ * - NO los registra en MediaStore (no aparecen en galería)
+ * - Videos solo visibles dentro de la aplicación
+ * - Privacidad y seguridad garantizadas
  * - Compatible con todos los niveles de API
  */
 class VideoStorageManager(private val context: Context) {
@@ -36,12 +37,12 @@ class VideoStorageManager(private val context: Context) {
     }
 
     /**
-     * Información de archivo guardado con referencia en galería
+     * Información de archivo guardado (solo privado, sin referencia en galería)
      */
     data class SavedFileInfo(
         val privateFile: File,           // Archivo real en carpeta privada
-        val galleryUri: Uri?,           // URI en MediaStore para galería
-        val displayName: String,        // Nombre visible en galería
+        val galleryUri: Uri?,           // Siempre null - no hay registro en galería
+        val displayName: String,        // Nombre del archivo
         val mimeType: String           // Tipo MIME
     )
 
@@ -78,14 +79,9 @@ class VideoStorageManager(private val context: Context) {
         
         Log.d(TAG, "Archivo privado guardado: ${privateFile.length()} bytes")
         
-        // 4. Registrar en galería solo para videos
-        val galleryUri = if (mimeType.startsWith("video/")) {
-            registerVideoInGallery(privateFile, fileName, mimeType)
-        } else {
-            // Para audio y texto, solo scan tradicional
-            scanFileTraditional(privateFile, mimeType)
-            null
-        }
+        // 4. NO registrar en galería - mantener videos privados en la app únicamente
+        // Los videos permanecen seguros y solo visibles dentro de la aplicación
+        val galleryUri: Uri? = null
         
         SavedFileInfo(
             privateFile = privateFile,
@@ -96,14 +92,18 @@ class VideoStorageManager(private val context: Context) {
     }
 
     /**
-     * Registra un video en MediaStore para que aparezca en galería
-     * sin duplicar el archivo físico
+     * [DESHABILITADO] Registra un video en MediaStore para que aparezca en galería
+     * Función mantenida para referencia futura si se requiere habilitar galería
      */
     private suspend fun registerVideoInGallery(
         privateFile: File,
         displayName: String,
         mimeType: String
     ): Uri? = withContext(Dispatchers.IO) {
+        // FUNCIÓN DESHABILITADA - Videos permanecen privados en la app
+        return@withContext null
+        
+        /* CÓDIGO ORIGINAL COMENTADO PARA REFERENCIA FUTURA
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 // Android 10+ - Usar MediaStore con referencias
@@ -117,6 +117,7 @@ class VideoStorageManager(private val context: Context) {
             // Continuar sin error - el archivo sigue en carpeta privada
             null
         }
+        */
     }
 
     /**
@@ -213,9 +214,14 @@ class VideoStorageManager(private val context: Context) {
     }
 
     /**
-     * Escaneo tradicional de archivos
+     * [DESHABILITADO] Escaneo tradicional de archivos
+     * Función mantenida para referencia futura si se requiere visibilidad en galería
      */
     private fun scanFileTraditional(file: File, mimeType: String) {
+        // FUNCIÓN DESHABILITADA - Archivos permanecen completamente privados
+        Log.d(TAG, "Escaneo deshabilitado - archivo privado: ${file.absolutePath}")
+        
+        /* CÓDIGO ORIGINAL COMENTADO PARA REFERENCIA FUTURA
         MediaScannerConnection.scanFile(
             context,
             arrayOf(file.absolutePath),
@@ -224,6 +230,7 @@ class VideoStorageManager(private val context: Context) {
                 Log.d(TAG, "Archivo escaneado: $path -> $uri")
             }
         )
+        */
     }
 
     /**

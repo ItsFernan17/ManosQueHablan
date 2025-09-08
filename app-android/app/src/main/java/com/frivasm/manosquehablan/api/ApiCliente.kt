@@ -1,6 +1,7 @@
 package com.frivasm.manosquehablan.api
 
 import com.frivasm.manosquehablan.BuildConfig
+import com.frivasm.manosquehablan.config.ServerConfig
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -8,8 +9,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiCliente {
-    // Usar URL desde BuildConfig según el tipo de build
-    val BASE_URL = BuildConfig.BASE_URL
+    // Usar URL desde ServerConfig
+    val BASE_URL = ServerConfig.BASE_URL
 
     private val logging = HttpLoggingInterceptor().apply {
         // Solo habilitar logging en debug builds
@@ -23,9 +24,9 @@ object ApiCliente {
     // Exponemos el client para reutilizar en descargas
     val httpClient: OkHttpClient by lazy {
         val builder = OkHttpClient.Builder()
-            .connectTimeout(60, TimeUnit.SECONDS)
-            .readTimeout(5, TimeUnit.MINUTES)
-            .writeTimeout(5, TimeUnit.MINUTES)
+            .connectTimeout(ServerConfig.Timeouts.CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            .readTimeout(ServerConfig.Timeouts.READ_TIMEOUT, TimeUnit.SECONDS)
+            .writeTimeout(ServerConfig.Timeouts.WRITE_TIMEOUT, TimeUnit.SECONDS)
         
         // Solo agregar logging interceptor si está habilitado
         if (BuildConfig.ENABLE_LOGGING) {
@@ -44,7 +45,8 @@ object ApiCliente {
             .create(ApiServicio::class.java)
     }
 
-    fun urlAbsoluta(maybeRelative: String): String =
-        if (maybeRelative.startsWith("http")) maybeRelative
-        else BASE_URL.trimEnd('/') + (if (maybeRelative.startsWith("/")) "" else "/") + maybeRelative
+    /**
+     * Convierte una URL relativa o completa en absoluta
+     */
+    fun urlAbsoluta(maybeRelative: String): String = ServerConfig.makeAbsoluteUrl(maybeRelative)
 }

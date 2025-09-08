@@ -65,63 +65,12 @@
             android:fontFamily="@font/poppins_semibold"
             android:layout_marginBottom="16dp" />
 
-        <!-- Frases de Cortesía -->
+        <!-- Contenedor dinámico para categorías cargadas desde JSON -->
         <LinearLayout
-            android:id="@+id/enlaceFrasesCortesia"
+            android:id="@+id/contenedorCategorias"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="16dp"
-            android:layout_marginBottom="12dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackground">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Frases de Cortesía"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@color/primary_color"
-                android:fontFamily="@font/poppins_semibold"
-                android:layout_marginBottom="8dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Hola • Gracias • Por favor • Perdón • Adiós"
-                android:textSize="14sp"
-                android:textColor="@color/texto_secundario"
-                android:fontFamily="@font/poppins_regular"
-                android:gravity="center"
-                android:layout_marginBottom="12dp" />
-
-            <LinearLayout
-                android:id="@+id/botonVocabulario"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="@drawable/boton_vocabulario_background"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="8dp">
-
-                <TextView
-                    android:id="@+id/txtBotonVocabulario"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Ver Vocabulario"
-                    android:textSize="14sp"
-                    android:textColor="@color/accent_color"
-                    android:fontFamily="@font/poppins_semibold"
-                    android:gravity="center" />
-
-            </LinearLayout>
-
-        </LinearLayout>
+            android:orientation="vertical" />
 
         <!-- Espacio para más categorías -->
         <TextView

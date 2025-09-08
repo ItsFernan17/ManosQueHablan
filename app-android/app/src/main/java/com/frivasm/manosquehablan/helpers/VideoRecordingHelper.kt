@@ -40,6 +40,7 @@ class VideoRecordingHelper(
     
     init {
         // Configurar tipo de cámara inicial (frontal por defecto)
+        Log.d("VideoRecording", "🔧 INIT: Configurando cámara frontal por defecto")
         exposureControlHelper.setFrontCamera(lensFacing == CameraSelector.LENS_FACING_FRONT)
         
         // Configurar callback para notificaciones de exposición
@@ -77,6 +78,7 @@ class VideoRecordingHelper(
                 // Configurar control de exposición con la cámara
                 camera?.let { 
                     // IMPORTANTE: Configurar tipo de cámara ANTES de setCamera para evitar race condition
+                    Log.d("VideoRecording", "📷 CÁMARA LISTA: Configurando exposición para ${if (lensFacing == CameraSelector.LENS_FACING_FRONT) "FRONTAL" else "TRASERA"}")
                     exposureControlHelper.setFrontCamera(lensFacing == CameraSelector.LENS_FACING_FRONT)
                     exposureControlHelper.setCamera(it) 
                 }

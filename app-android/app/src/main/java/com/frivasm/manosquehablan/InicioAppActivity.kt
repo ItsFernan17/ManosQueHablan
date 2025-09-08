@@ -28,6 +28,7 @@ import com.frivasm.manosquehablan.helpers.VideoOrdenamientoAlfabeticoViewHelper
 import com.frivasm.manosquehablan.helpers.VideoViewBuilder
 import com.frivasm.manosquehablan.helpers.VideoSyncCache
 import com.frivasm.manosquehablan.dialogs.DialogUtils
+import com.frivasm.manosquehablan.config.ServerConfig
 import java.io.File
 import java.text.SimpleDateFormat
 import kotlinx.coroutines.launch
@@ -62,6 +63,9 @@ class InicioAppActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_inicio_app)
 
+        // Log de configuración de servidor
+        Log.i("ServerConfig", ServerConfig.getServerInfo())
+
         contenedor = findViewById(R.id.contenedorVideos)
         vistaSinVideos = findViewById(R.id.vistaSinVideos)
         btnOpciones = findViewById(R.id.btnOpciones)
@@ -69,6 +73,15 @@ class InicioAppActivity : AppCompatActivity() {
         btnCatalogo = findViewById(R.id.btnCatalogo)
         btnBuscar = findViewById(R.id.btnBuscar)
         btnNuevoVideo = findViewById(R.id.btnNuevoVideo)
+
+        // Verificar si debe mostrar diálogo de mal traducido
+        val mostrarDialogoMalTraducido = intent.getBooleanExtra("MOSTRAR_DIALOGO_MAL_TRADUCIDO", false)
+        if (mostrarDialogoMalTraducido) {
+            // Mostrar el diálogo después de que la interfaz esté lista
+            findViewById<View>(android.R.id.content).post {
+                DialogUtils.mostrarDialogoVideoMalTraducido(this)
+            }
+        }
 
         btnNuevoVideo.setOnClickListener {
             // Animar el botón antes de navegar

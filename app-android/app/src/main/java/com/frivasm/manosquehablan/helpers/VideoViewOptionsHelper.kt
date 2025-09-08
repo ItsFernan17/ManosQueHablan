@@ -22,26 +22,38 @@ object VideoViewOptionsHelper {
         val opcionEscuchar = view.findViewById<LinearLayout>(R.id.opcion_escuchar)
         val opcionEliminar = view.findViewById<LinearLayout>(R.id.opcion_eliminar)
 
-        // Compartir Video
+        // Verificar disponibilidad de contenido válido
+        val tieneAudioValido = VideoTranslationStatusHelper.esAudioValido(videoFile)
+        val tieneTextoValido = VideoTranslationStatusHelper.esTextoValido(videoFile)
+
+        // Configurar habilitación de botones basándose en contenido disponible
+        configurarEstadoBoton(opcionVerTraduccion, tieneTextoValido)
+        configurarEstadoBoton(opcionEscuchar, tieneAudioValido)
+
+        // Compartir Video (siempre habilitado)
         opcionCompartir?.setOnClickListener {
             VideoActionsHelper.compartirVideo(context, videoFile)
             dialog.dismiss()
         }
 
-        // Ver Texto Traducido
+        // Ver Texto Traducido - habilitado solo si hay texto válido
         opcionVerTraduccion?.setOnClickListener {
-            videoFile.parentFile?.let { parentDir ->
-                val transcripcion = File(parentDir, "transcripcion.txt")
-                DialogUtils.mostrarDialogoTranscripcion(context, transcripcion)
+            if (tieneTextoValido) {
+                videoFile.parentFile?.let { parentDir ->
+                    val transcripcion = File(parentDir, "transcripcion.txt")
+                    DialogUtils.mostrarDialogoTranscripcion(context, transcripcion)
+                }
             }
             dialog.dismiss()
         }
 
-        // Escuchar Traducción
+        // Escuchar Traducción - habilitado solo si hay audio válido
         opcionEscuchar?.setOnClickListener {
-            videoFile.parentFile?.let { parentDir ->
-                val audio = File(parentDir, "audio_traducido.mp3")
-                DialogUtils.mostrarDialogoAudio(context, audio)
+            if (tieneAudioValido) {
+                videoFile.parentFile?.let { parentDir ->
+                    val audio = File(parentDir, "audio_traducido.mp3")
+                    DialogUtils.mostrarDialogoAudio(context, audio)
+                }
             }
             dialog.dismiss()
         }
@@ -68,6 +80,23 @@ object VideoViewOptionsHelper {
         }
 
         dialog.show()
+    }
+    
+    /**
+     * Configura el estado visual de un botón según su disponibilidad
+     */
+    private fun configurarEstadoBoton(boton: LinearLayout?, habilitado: Boolean) {
+        boton?.apply {
+            alpha = if (habilitado) 1.0f else 0.5f
+            isEnabled = habilitado
+            
+            // Opcional: cambiar el color del texto/icono si es necesario
+            val iconoTexto = findViewById<TextView?>(android.R.id.text1)
+            val icono = findViewById<ImageView?>(android.R.id.icon)
+            
+            iconoTexto?.alpha = if (habilitado) 1.0f else 0.5f
+            icono?.alpha = if (habilitado) 1.0f else 0.5f
+        }
     }
 
     // Método para mantener compatibilidad con las llamadas existentes

@@ -26,6 +26,8 @@ import androidx.lifecycle.lifecycleScope
 import com.frivasm.manosquehablan.api.ApiCliente
 import com.frivasm.manosquehablan.api.RespuestaProcesamiento
 import com.frivasm.manosquehablan.helpers.VideoStorageManager
+import com.frivasm.manosquehablan.helpers.VideoTranslationStatusHelper
+import com.frivasm.manosquehablan.dialogs.DialogUtils
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -341,6 +343,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         
         isApiCallInProgress = true
         Log.d("ProcesandoVideoActivity", "Iniciando llamada al API...")
+        Log.i("ProcesandoVideoActivity", "🌐 URL del servidor: ${ApiCliente.BASE_URL}")
         
         val videoFile = File(path)
         val requestFile = videoFile.asRequestBody("video/mp4".toMediaTypeOrNull())
@@ -367,39 +370,55 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                     
                     if (data.audio_url.isNullOrBlank()) {
                         Log.e("ProcesandoVideoActivity", "El servidor no proporcionó URL del audio")
-                        mostrarErrorYRegresarInicio("Error: el servidor no generó el audio")
+                        // Marcar como mal traducido y mostrar diálogo
+                        marcarVideoComoMalTraducidoYMostrarDialogo()
                         return@launch
                     }
                     
                     if (data.texto_url.isNullOrBlank()) {
                         Log.e("ProcesandoVideoActivity", "El servidor no proporcionó URL del texto")
-                        mostrarErrorYRegresarInicio("Error: el servidor no generó la transcripción")
+                        // Marcar como mal traducido y mostrar diálogo
+                        marcarVideoComoMalTraducidoYMostrarDialogo()
                         return@launch
                     }
                     
                     try {
                         Log.d("ProcesandoVideoActivity", "Todos los archivos disponibles, guardando...")
-                        guardarArchivosEnCarpeta(data)
+                        val esMalTraducido = guardarArchivosEnCarpeta(data)
                         
                         // Detener animación
                         stopLoadingAnimation()
                         
-                        // ✅ REPRODUCIR SONIDO SUAVE DE CONFIRMACIÓN
-                        reproducirSonidoConfirmacion()
-                        
-                        // Mostrar toast de éxito y navegar con delay más corto
-                        Toast.makeText(
-                            this@ProcesandoVideoActivity,
-                            "Video guardado correctamente",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        
-                        // Delay optimizado para que el usuario vea el toast pero no espere demasiado
-                        delay(800)
-                        val intent = Intent(this@ProcesandoVideoActivity, InicioAppActivity::class.java)
-                        startActivity(intent)
-                        isApiCallInProgress = false // Reset flag
-                        finish()
+                        if (esMalTraducido) {
+                            // Video marcado como mal traducido pero archivos guardados
+                            Log.w("ProcesandoVideoActivity", "Video completado pero marcado como mal traducido")
+                            
+                            runOnUiThread {
+                                // Ir a la pantalla principal primero
+                                val intent = Intent(this@ProcesandoVideoActivity, InicioAppActivity::class.java)
+                                intent.putExtra("MOSTRAR_DIALOGO_MAL_TRADUCIDO", true)
+                                startActivity(intent)
+                                isApiCallInProgress = false
+                                finish()
+                            }
+                        } else {
+                            // ✅ REPRODUCIR SONIDO SUAVE DE CONFIRMACIÓN
+                            reproducirSonidoConfirmacion()
+                            
+                            // Mostrar toast de éxito y navegar con delay más corto
+                            Toast.makeText(
+                                this@ProcesandoVideoActivity,
+                                "Video guardado correctamente",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            
+                            // Delay optimizado para que el usuario vea el toast pero no espere demasiado
+                            delay(800)
+                            val intent = Intent(this@ProcesandoVideoActivity, InicioAppActivity::class.java)
+                            startActivity(intent)
+                            isApiCallInProgress = false // Reset flag
+                            finish()
+                        }
                         
                     } catch (e: Exception) {
                         Log.e("ProcesandoVideoActivity", "Error al guardar archivos: ${e.message}")
@@ -427,7 +446,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         }
     }
     
-    private suspend fun guardarArchivosEnCarpeta(data: RespuestaProcesamiento) =
+    private suspend fun guardarArchivosEnCarpeta(data: RespuestaProcesamiento): Boolean =
         withContext(Dispatchers.IO) {
             try {
                 Log.d("ProcesandoVideoActivity", "Iniciando guardado seguro de archivos...")
@@ -476,8 +495,31 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 )
                 Log.d("ProcesandoVideoActivity", "Texto guardado: ${textoInfo.privateFile.absolutePath}")
 
+                // Verificar contenido del texto para detectar "Sin detecciones válidas."
+                val contenidoTexto = textoInfo.privateFile.readText(Charsets.UTF_8).trim()
+                Log.d("ProcesandoVideoActivity", "Contenido del texto: '$contenidoTexto'")
+                
+                // Si el servidor envía "Sin detecciones válidas." o está vacío, marcar como mal traducido
+                val esMalTraducido = contenidoTexto.isEmpty() || 
+                                   contenidoTexto.equals("Sin detecciones válidas.", ignoreCase = true) ||
+                                   contenidoTexto.equals("Sin detecciones validas.", ignoreCase = true)
+                
+                if (esMalTraducido) {
+                    Log.w("ProcesandoVideoActivity", "Texto contiene respuesta inválida del servidor: '$contenidoTexto'")
+                    // Marcar como mal traducido pero NO eliminar archivos - permitir acceso al contenido
+                    val videoPath = intent.getStringExtra("VIDEO_PATH")
+                    videoPath?.let { path ->
+                        val videoFile = File(path)
+                        VideoTranslationStatusHelper.marcarVideoComoMalTraducido(videoFile)
+                        Log.d("ProcesandoVideoActivity", "Video marcado como mal traducido debido a respuesta inválida del servidor")
+                    }
+                }
+
                 Log.d("ProcesandoVideoActivity", "Todos los archivos guardados exitosamente en carpeta privada")
                 Log.i("ProcesandoVideoActivity", "🔒 Archivos seguros en: ${storageManager.getSessionPrivateDir(sessionName).absolutePath}")
+                
+                // Retornar si el video fue marcado como mal traducido
+                return@withContext esMalTraducido
                 
             } catch (e: Exception) {
                 Log.e("ProcesandoVideoActivity", "Error en guardarArchivosEnCarpeta: ${e.message}")
@@ -597,5 +639,31 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         
         // Reset flag en caso de que la actividad se destruya
         isApiCallInProgress = false
+    }
+
+    /**
+     * Marca un video como mal traducido y muestra el diálogo de advertencia
+     */
+    private fun marcarVideoComoMalTraducidoYMostrarDialogo() {
+        // Detener animación
+        stopLoadingAnimation()
+        
+        // Marcar video como mal traducido
+        val videoPath = intent.getStringExtra("VIDEO_PATH")
+        videoPath?.let { path ->
+            val videoFile = File(path)
+            VideoTranslationStatusHelper.marcarVideoComoMalTraducido(videoFile)
+            Log.d("ProcesandoVideoActivity", "Video marcado como mal traducido: ${videoFile.name}")
+        }
+        
+        runOnUiThread {
+            // Mostrar diálogo de advertencia
+            DialogUtils.mostrarDialogoVideoMalTraducido(this@ProcesandoVideoActivity)
+            
+            // Regresar al inicio después de mostrar el diálogo
+            Handler(Looper.getMainLooper()).postDelayed({
+                mostrarErrorYRegresarInicio("Video guardado pero requiere nueva traducción")
+            }, 2000) // Tiempo para que el usuario lea el diálogo
+        }
     }
 }

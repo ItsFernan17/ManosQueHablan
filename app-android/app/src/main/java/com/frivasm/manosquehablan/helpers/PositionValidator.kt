@@ -30,21 +30,36 @@ class PositionValidator(
         private const val TARGET_FREQUENCY_MS = 80L // Más frecuente para mayor responsividad (12.5 Hz)
         private const val FAST_EMA_ALPHA = 0.7f // Para salir a rojo (más reactivo)
         private const val SLOW_EMA_ALPHA = 0.25f // Para entrar a verde (ligeramente más reactivo)
-        private const val GREEN_THRESHOLD = 11.0f // ≤11° para GREEN (79-90° rango)
-        private const val RED_THRESHOLD = 13.0f // >13° para RED
-        private const val CRITICAL_THRESHOLD = 20.0f // ≥20° para CRITICAL
+        private const val GREEN_THRESHOLD = 20.0f // ≤20° para GREEN (70-90° rango)
+        private const val RED_THRESHOLD = 21.0f // >21° para RED
+        private const val CRITICAL_THRESHOLD = 25.0f // ≥25° para CRITICAL
         private const val GREEN_STABLE_TIME = 1200L // 1.2s estable para GREEN (reducido para mayor responsividad)
         private const val RED_TIME = 600L // 0.6s para pasar a RED (reducido para mayor responsividad)
         
         // Nuevos parámetros para suavidad
         private const val SMOOTH_TRANSITION_THRESHOLD = 2.0f // Grados para transición suave
         private const val UI_UPDATE_INTERVAL = 150L // Reducir frecuencia de updates UI para mayor responsividad
+        
+        /**
+         * Calcula la desviación de un valor respecto a un rango permitido
+         * @param value Valor actual del ángulo
+         * @param minRange Límite inferior del rango (70°)
+         * @param maxRange Límite superior del rango (90°)
+         * @return Desviación en grados (0 si está dentro del rango)
+         */
+        private fun calculateDeviationFromRange(value: Float, minRange: Float, maxRange: Float): Float {
+            return when {
+                value < minRange -> minRange - value  // Debajo del rango
+                value > maxRange -> value - maxRange  // Arriba del rango
+                else -> 0f  // Dentro del rango
+            }
+        }
     }
 
     enum class PositionState {
-        GREEN,    // Posición correcta (dev ≤ 5°)
-        RED,      // Posición incorrecta (dev > 7°)
-        CRITICAL  // Posición crítica (dev ≥ 20°)
+        GREEN,    // Posición correcta (desviación ≤ 20° del rango 70-90°)
+        RED,      // Posición incorrecta (desviación > 21° del rango 70-90°)
+        CRITICAL  // Posición crítica (desviación ≥ 25° del rango 70-90°)
     }
 
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -158,9 +173,9 @@ class PositionValidator(
         val pitch = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
         val roll = Math.toDegrees(orientationAngles[2].toDouble()).toFloat()
 
-        // Calcular desviación vertical: min(|90-|pitch||, |90-|roll||)
-        val pitchDev = abs(90 - abs(pitch))
-        val rollDev = abs(90 - abs(roll))
+        // Calcular desviación del rango 70-90°: qué tan fuera del rango está el dispositivo
+        val pitchDev = calculateDeviationFromRange(abs(pitch), 70f, 90f)
+        val rollDev = calculateDeviationFromRange(abs(roll), 70f, 90f)
         val deviation = min(pitchDev, rollDev)
 
         // Log detallado de ángulos cada 500ms para no saturar
@@ -170,7 +185,7 @@ class PositionValidator(
                     "Roll: ${String.format("%.1f", roll)}°")
             Log.d(TAG, "Desviaciones - Pitch: ${String.format("%.1f", pitchDev)}°, " +
                     "Roll: ${String.format("%.1f", rollDev)}°, " +
-                    "Final: ${String.format("%.1f", deviation)}° (Rango aceptable: 79-90°)")
+                    "Final: ${String.format("%.1f", deviation)}° (Rango aceptable: 70-90°, desv≤20° para GREEN)")
         }
 
         // Aplicar doble EMA

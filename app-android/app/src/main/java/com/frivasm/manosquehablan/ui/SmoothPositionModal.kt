@@ -129,7 +129,7 @@ class SmoothPositionModal(
         messageText?.text = message
         
         if (hasGyroscope) {
-            angleText?.text = "Ángulo actual: ${String.format("%.0f", uxAngle)}° (ideal: 79-90°)"
+            angleText?.text = "Ángulo actual: ${String.format("%.0f", uxAngle)}° (ideal: 70-90°)"
             angleText?.visibility = View.VISIBLE
             // Ya no necesitamos animación del ícono warning
         } else {
@@ -170,7 +170,7 @@ class SmoothPositionModal(
     }
 
     private fun updateAngleSmoothly(uxAngle: Float) {
-        angleText?.text = "Ángulo actual: ${String.format("%.0f", uxAngle)}° (ideal: 79-90°)"
+        angleText?.text = "Ángulo actual: ${String.format("%.0f", uxAngle)}° (ideal: 70-90°)"
         lastAngle = uxAngle
     }
 

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/contenedorCategoria"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/card_background"
+    android:padding="16dp"
+    android:layout_marginBottom="12dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+
+    <TextView
+        android:id="@+id/txtTituloCategoria"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Título de la Categoría"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/primary_color"
+        android:fontFamily="@font/poppins_semibold"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/txtDescripcionCategoria"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Descripción de las señas"
+        android:textSize="14sp"
+        android:textColor="@color/texto_secundario"
+        android:fontFamily="@font/poppins_regular"
+        android:gravity="center"
+        android:layout_marginBottom="12dp" />
+
+    <LinearLayout
+        android:id="@+id/botonVocabulario"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/boton_vocabulario_background"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp">
+
+        <TextView
+            android:id="@+id/txtBotonCategoria"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ver Vocabulario"
+            android:textSize="14sp"
+            android:textColor="@color/accent_color"
+            android:fontFamily="@font/poppins_semibold"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+</LinearLayout>

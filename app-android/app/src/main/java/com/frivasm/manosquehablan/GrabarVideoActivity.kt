@@ -168,7 +168,7 @@ class GrabarVideoActivity : AppCompatActivity() {
                 }
                 PositionValidator.PositionState.RED -> {
                     if (hasGyroscope) {
-                        "Endereza el teléfono (ideal 79-90°) - Actual: ${String.format("%.0f", uxAngle)}°"
+                        "Endereza el teléfono (ideal 70-90°) - Actual: ${String.format("%.0f", uxAngle)}°"
                     } else {
                         "Sin giroscopio: coloca el teléfono verticalmente"
                     }
@@ -289,14 +289,19 @@ class GrabarVideoActivity : AppCompatActivity() {
         if (!currentText.contains("¡Posición crítica!") && !currentText.contains("Endereza el teléfono")) {
             val baseMessage = "Coloca tus manos dentro del marco"
             val exposureHint = when {
-                luma < 0.35f && !hasEvSupport -> " • Busca mejor luz ambiente"
-                luma < 0.35f && hasEvSupport -> " • Sistema mejorando brillo automáticamente"
-                luma > 0.7f -> " • Evita luz directa o reflectores"
-                luma >= 0.47f && luma <= 0.60f -> " • Iluminación perfecta"
-                else -> " • $contextMessage"
+                luma < 0.35f && !hasEvSupport -> "Busca mejor luz ambiente"
+                luma < 0.35f && hasEvSupport -> "Sistema mejorando brillo automáticamente"
+                luma > 0.7f -> "Evita luz directa o reflectores"
+                luma >= 0.47f && luma <= 0.60f -> "Iluminación perfecta"
+                else -> contextMessage
             }
             
-            binding.textIndicaciones.text = "$baseMessage$exposureHint"
+            // Mostrar el hint de exposición primero, luego el mensaje base
+            binding.textIndicaciones.text = if (exposureHint.isNotEmpty() && exposureHint != "Solo medición") {
+                "$exposureHint\n$baseMessage"
+            } else {
+                baseMessage
+            }
         }
     }
     

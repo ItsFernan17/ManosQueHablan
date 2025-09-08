@@ -380,4 +380,26 @@ object DialogUtils {
 
         dialog.show()
     }
+
+    /**
+     * Muestra diálogo cuando un video no se tradujo correctamente
+     */
+    fun mostrarDialogoVideoMalTraducido(context: Context) {
+        val inflater = LayoutInflater.from(context)
+        val view = inflater.inflate(R.layout.dialog_video_mal_traducido, null)
+        val btnEntendido = view.findViewById<View>(R.id.btnEntendido)
+
+        val dialog = AlertDialog.Builder(context)
+            .setView(view)
+            .setCancelable(true)
+            .create()
+            
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        btnEntendido.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
 }

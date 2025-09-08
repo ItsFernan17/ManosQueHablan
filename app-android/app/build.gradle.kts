@@ -16,7 +16,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true
 
-        buildConfigField("String", "DEFAULT_BASE_URL", "\"http://192.168.1.100:5000/\"")
+        buildConfigField("String", "DEFAULT_BASE_URL", "\"http://192.168.1.13:8001/\"")
     }
     
     splits {
@@ -47,13 +47,13 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "BASE_URL", "\"http://172.20.10.2:8001/\"")
+            buildConfigField("String", "BASE_URL", "\"http://192.168.1.13:8001/\"")
             buildConfigField("boolean", "ENABLE_LOGGING", "true")
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            buildConfigField("String", "BASE_URL", "\"https://your-production-domain.com/\"")
+            buildConfigField("String", "BASE_URL", "\"https://api.manosquehablan.com/\"")
             buildConfigField("boolean", "ENABLE_LOGGING", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

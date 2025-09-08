@@ -78,6 +78,23 @@
                 android:focusable="false"
                 android:focusableInTouchMode="false" />
 
+            <!-- Etiqueta de mal traducido -->
+            <TextView
+                android:id="@+id/etiquetaMalTraducido"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="MAL TRADUCIDO"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/black"
+                android:fontFamily="@font/poppins_bold"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:background="@drawable/fondo_advertencia_redondeado"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/txtDetalles"
                 android:layout_width="match_parent"

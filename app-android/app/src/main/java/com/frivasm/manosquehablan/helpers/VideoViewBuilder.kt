@@ -13,6 +13,7 @@ import com.frivasm.manosquehablan.utils.VideoUtils
 import com.frivasm.manosquehablan.helpers.VideoViewOptionsHelper
 import com.frivasm.manosquehablan.helpers.VideoThumbnailCache
 import com.frivasm.manosquehablan.helpers.VideoActionsHelper
+import com.frivasm.manosquehablan.helpers.VideoTranslationStatusHelper
 import kotlinx.coroutines.*
 import java.io.File
 import java.text.SimpleDateFormat
@@ -45,6 +46,7 @@ object VideoViewBuilder {
         val titulo = vista.findViewById<TextView>(R.id.txtTitulo)
         val detalles = vista.findViewById<TextView?>(R.id.txtDetalles)
         val fecha = vista.findViewById<TextView?>(R.id.txtFecha) // ✅ Verificamos si existe el campo de fecha
+        val etiquetaMalTraducido = vista.findViewById<TextView?>(R.id.etiquetaMalTraducido) // ✅ Etiqueta de mal traducido
 
         val miniatura = vista.findViewById<ImageView>(R.id.imgMiniatura)
         val btnReproducir = vista.findViewById<ImageView>(R.id.btnReproducir)
@@ -65,6 +67,15 @@ object VideoViewBuilder {
             // ✅ Mostrar título actualizado
             titulo.text = videoFile.nameWithoutExtension.replace("_", " ").replace("-", " ")
             titulo.isSelected = true // Para marquee
+
+            // ✅ Mostrar/ocultar etiqueta de mal traducido
+            etiquetaMalTraducido?.let { etiqueta ->
+                if (VideoTranslationStatusHelper.esVideoMalTraducido(videoFile)) {
+                    etiqueta.visibility = View.VISIBLE
+                } else {
+                    etiqueta.visibility = View.GONE
+                }
+            }
 
             // ✅ Mostrar fecha de creación si existe el TextView y está habilitado
             if (fecha != null && mostrarFecha) {
@@ -150,24 +161,44 @@ object VideoViewBuilder {
                 VideoActionsHelper.reproducirVideo(context, videoFile)
             }
 
+            // Verificar disponibilidad de contenido válido
+            val tieneAudioValido = VideoTranslationStatusHelper.esAudioValido(videoFile)
+            val tieneTextoValido = VideoTranslationStatusHelper.esTextoValido(videoFile)
+
+            // Configurar botón de escuchar
+            configurarBotonContenido(btnEscuchar, tieneAudioValido)
+            configurarBotonContenido(escucharContenedor, tieneAudioValido)
+            
             btnEscuchar?.setOnClickListener {
-                val audio = File(videoFile.parentFile, "audio_traducido.mp3")
-                DialogUtils.mostrarDialogoAudio(context, audio)
+                if (tieneAudioValido) {
+                    val audio = File(videoFile.parentFile, "audio_traducido.mp3")
+                    DialogUtils.mostrarDialogoAudio(context, audio)
+                }
             }
 
             escucharContenedor?.setOnClickListener {
-                val audio = File(videoFile.parentFile, "audio_traducido.mp3")
-                DialogUtils.mostrarDialogoAudio(context, audio)
+                if (tieneAudioValido) {
+                    val audio = File(videoFile.parentFile, "audio_traducido.mp3")
+                    DialogUtils.mostrarDialogoAudio(context, audio)
+                }
             }
 
+            // Configurar botón de ver traducción
+            configurarBotonContenido(btnVerTraduccion, tieneTextoValido)
+            configurarBotonContenido(verTraduccionContenedor, tieneTextoValido)
+
             btnVerTraduccion?.setOnClickListener {
-                val transcripcion = File(videoFile.parentFile, "transcripcion.txt")
-                DialogUtils.mostrarDialogoTranscripcion(context, transcripcion)
+                if (tieneTextoValido) {
+                    val transcripcion = File(videoFile.parentFile, "transcripcion.txt")
+                    DialogUtils.mostrarDialogoTranscripcion(context, transcripcion)
+                }
             }
 
             verTraduccionContenedor?.setOnClickListener {
-                val transcripcion = File(videoFile.parentFile, "transcripcion.txt")
-                DialogUtils.mostrarDialogoTranscripcion(context, transcripcion)
+                if (tieneTextoValido) {
+                    val transcripcion = File(videoFile.parentFile, "transcripcion.txt")
+                    DialogUtils.mostrarDialogoTranscripcion(context, transcripcion)
+                }
             }
 
             btnExportar?.setOnClickListener {
@@ -265,5 +296,15 @@ object VideoViewBuilder {
             vistaCompacta = false,
             tipoVista = "fecha"
         )
+    }
+    
+    /**
+     * Configura el estado visual de un botón según la disponibilidad de contenido
+     */
+    private fun configurarBotonContenido(boton: View?, habilitado: Boolean) {
+        boton?.apply {
+            alpha = if (habilitado) 1.0f else 0.5f
+            isEnabled = habilitado
+        }
     }
 }

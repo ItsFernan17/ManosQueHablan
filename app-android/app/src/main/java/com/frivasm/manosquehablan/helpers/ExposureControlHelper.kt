@@ -129,7 +129,7 @@ class ExposureControlHelper(
     
     fun setFrontCamera(isFront: Boolean) {
         isFrontCamera = isFront
-        Log.d("ExposureControl", "Configurado para cámara: ${if (isFront) "frontal" else "trasera"} - Control automático MediaPipe ${if (isFront) "ACTIVADO" else "DESACTIVADO"}")
+        Log.d("ExposureControl", "✅ Configurado para cámara: ${if (isFront) "FRONTAL" else "TRASERA"} - Control automático de brillo ${if (isFront) "ACTIVADO" else "DESACTIVADO"}")
     }
     
     fun setCamera(camera: Camera) {
@@ -157,6 +157,17 @@ class ExposureControlHelper(
         
         // Configurar análisis de imagen para medición de luma
         setupImageAnalysis()
+        
+        // Si es cámara frontal, activar inmediatamente el control automático
+        if (isFrontCamera) {
+            Log.i("ExposureControl", "🚀 ACTIVANDO control automático para cámara frontal")
+            // Trigger inicial para comenzar el análisis inmediatamente usando Handler
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                cameraExecutor.execute {
+                    Log.d("ExposureControl", "🔄 Iniciando análisis de exposición automático")
+                }
+            }, 500) // Pequeño delay para que la cámara se estabilice
+        }
     }
     
     private fun checkCameraCapabilities() {
@@ -345,17 +356,21 @@ class ExposureControlHelper(
             // Solo activar control automático para la cámara frontal
             if (!isFrontCamera) {
                 // Log de debug para detectar si hay problemas de inicialización
-                Log.v("ExposureControl", "Control automático desactivado - cámara trasera (luma: ${String.format("%.3f", luma)})")
+                Log.v("ExposureControl", "❌ Control automático DESACTIVADO - cámara trasera (luma: ${String.format("%.3f", luma)})")
                 return
             }
             
+            Log.v("ExposureControl", "✅ Control automático ACTIVO - cámara frontal (luma: ${String.format("%.3f", luma)})")
+            
             // Si estamos grabando y AE está bloqueado, no hacer ajustes
             if (isRecording && isAeLocked) {
+                Log.v("ExposureControl", "⏸️ Ajuste pausado - grabando con AE bloqueado")
                 return
             }
             
             // Si no hay soporte para EV, solo hacer medición puntual
             if (!isExposureCompensationSupported) {
+                Log.v("ExposureControl", "ℹ️ EV no soportado - solo medición")
                 return
             }
             

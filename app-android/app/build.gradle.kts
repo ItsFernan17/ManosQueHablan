@@ -47,7 +47,7 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "BASE_URL", "\"http://192.168.1.13:8001/\"")
+            buildConfigField("String", "BASE_URL", "\"http://172.20.10.2:8001/\"")
             buildConfigField("boolean", "ENABLE_LOGGING", "true")
         }
         release {

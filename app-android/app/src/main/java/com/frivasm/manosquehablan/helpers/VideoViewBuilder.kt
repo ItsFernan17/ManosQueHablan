@@ -10,6 +10,9 @@ import android.widget.TextView
 import com.frivasm.manosquehablan.R
 import com.frivasm.manosquehablan.dialogs.DialogUtils
 import com.frivasm.manosquehablan.utils.VideoUtils
+import com.frivasm.manosquehablan.helpers.VideoViewOptionsHelper
+import com.frivasm.manosquehablan.helpers.VideoThumbnailCache
+import com.frivasm.manosquehablan.helpers.VideoActionsHelper
 import kotlinx.coroutines.*
 import java.io.File
 import java.text.SimpleDateFormat

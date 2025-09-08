@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.frivasm.manosquehablan.helpers.VideoViewBuilder
+import com.frivasm.manosquehablan.helpers.VideoStorageManager
 import com.frivasm.manosquehablan.utils.VideoUtils
 import kotlinx.coroutines.*
 import java.io.File
@@ -164,20 +165,13 @@ class SearchVideoActivity : AppCompatActivity() {
     
     private suspend fun buscarVideos(query: String): List<File> {
         return withContext(Dispatchers.IO) {
-            val raiz = File(getExternalFilesDir(null), "ManosQueHablan")
-            if (!raiz.exists() || !raiz.isDirectory) {
-                return@withContext emptyList()
-            }
+            // Cargar desde ambos sistemas: viejo (externo) y nuevo (privado)
+            val videosLegacy = cargarVideosLegacy()
+            val videosNuevos = cargarVideosPrivados()
             
-            val todosLosVideos = raiz.listFiles()
-                ?.filter { it.isDirectory }
-                ?.flatMap { carpeta ->
-                    carpeta.listFiles()?.filter { archivo ->
-                        archivo.isFile && 
-                        archivo.extension.equals("mp4", ignoreCase = true) && 
-                        archivo.length() > 100_000 // Misma lógica que en VideoLoader
-                    } ?: emptyList()
-                } ?: emptyList()
+            val todosLosVideos = (videosLegacy + videosNuevos)
+                .distinctBy { it.absolutePath } // Evitar duplicados
+                .filter { it.length() > 100_000 } // Filtro de tamaño consistente
             
             // Filtrar por nombre de archivo y carpeta (que representa la palabra/seña)
             todosLosVideos.filter { video ->
@@ -335,6 +329,35 @@ class SearchVideoActivity : AppCompatActivity() {
         vistaSinResultados.visibility = View.VISIBLE
         contenedorContador.visibility = View.GONE
         txtSinResultados.text = "Error durante la búsqueda. Intente nuevamente"
+    }
+    
+    /**
+     * Carga videos del sistema legacy (external files)
+     */
+    private fun cargarVideosLegacy(): List<File> {
+        val raiz = File(getExternalFilesDir(null), "ManosQueHablan")
+        if (!raiz.exists() || !raiz.isDirectory) {
+            return emptyList()
+        }
+
+        return raiz.listFiles()?.filter { it.isDirectory }?.flatMap { carpeta ->
+            carpeta.listFiles()?.filter {
+                it.isFile && it.extension.equals("mp4", ignoreCase = true)
+            } ?: emptyList()
+        } ?: emptyList()
+    }
+
+    /**
+     * Carga videos del nuevo sistema (private files)
+     */
+    private fun cargarVideosPrivados(): List<File> {
+        return try {
+            val storageManager = VideoStorageManager(this)
+            storageManager.getAllSavedVideos()
+        } catch (e: Exception) {
+            android.util.Log.w("SearchVideoActivity", "Error cargando videos privados: ${e.message}")
+            emptyList()
+        }
     }
     
     override fun onDestroy() {

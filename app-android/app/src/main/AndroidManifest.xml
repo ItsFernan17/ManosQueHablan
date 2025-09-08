@@ -69,6 +69,11 @@
             android:screenOrientation="portrait" />
 
         <activity
+            android:name=".ConfiguracionActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
             android:name=".SearchVideoActivity"
             android:exported="false"
             android:screenOrientation="portrait" />

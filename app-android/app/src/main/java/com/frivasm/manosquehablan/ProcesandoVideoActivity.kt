@@ -25,6 +25,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.frivasm.manosquehablan.api.ApiCliente
 import com.frivasm.manosquehablan.api.RespuestaProcesamiento
+import com.frivasm.manosquehablan.config.ServerConfig
+import com.frivasm.manosquehablan.helpers.ConectividadHelper
 import com.frivasm.manosquehablan.helpers.VideoStorageManager
 import com.frivasm.manosquehablan.helpers.VideoTranslationStatusHelper
 import com.frivasm.manosquehablan.dialogs.DialogUtils
@@ -342,107 +344,157 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         }
         
         isApiCallInProgress = true
-        Log.d("ProcesandoVideoActivity", "Iniciando llamada al API...")
-        Log.i("ProcesandoVideoActivity", "🌐 URL del servidor: ${ApiCliente.BASE_URL}")
+        Log.d("ProcesandoVideoActivity", "Iniciando verificación de conectividad...")
         
+        lifecycleScope.launch {
+            try {
+                // 1. Verificar conectividad del servidor ANTES de enviar el video
+                val conectividadHelper = ConectividadHelper(this@ProcesandoVideoActivity)
+                
+                // Mostrar mensaje de verificación
+                runOnUiThread {
+                    txtProcesando.text = getString(R.string.verificando_servidor)
+                }
+                
+                val estadoServidor = conectividadHelper.verificarServidorConReintentos { mensaje ->
+                    runOnUiThread {
+                        txtProcesando.text = mensaje
+                    }
+                }
+                
+                if (!estadoServidor.esDisponible) {
+                    Log.w("ProcesandoVideoActivity", "Servidor no disponible: ${estadoServidor.mensaje}")
+                    mostrarErrorConectividad(estadoServidor, path)
+                    return@launch
+                }
+                
+                // 2. Si el servidor está disponible, proceder con el envío
+                Log.i("ProcesandoVideoActivity", "✅ Servidor disponible. Enviando video...")
+                runOnUiThread {
+                    txtProcesando.text = "Procesando tu video, por favor espera..."
+                }
+                
+                enviarVideoAlServidor(path)
+                
+            } catch (e: Exception) {
+                Log.e("ProcesandoVideoActivity", "Excepción durante verificación: ${e.message}")
+                isApiCallInProgress = false
+                
+                // Clasificar el error y mostrar el diálogo apropiado
+                val estadoError = when (e) {
+                    is java.net.ConnectException -> ServerConfig.ServerStatus.SIN_CONEXION
+                    is java.net.SocketTimeoutException -> ServerConfig.ServerStatus.TIMEOUT
+                    else -> ServerConfig.ServerStatus.ERROR_DESCONOCIDO
+                }
+                
+                mostrarErrorConectividad(estadoError, path)
+            }
+        }
+    }
+    
+    /**
+     * Método original de envío al servidor, ahora separado
+     */
+    private suspend fun enviarVideoAlServidor(path: String) {
         val videoFile = File(path)
         val requestFile = videoFile.asRequestBody("video/mp4".toMediaTypeOrNull())
         val body = MultipartBody.Part.createFormData("video", videoFile.name, requestFile)
 
-        lifecycleScope.launch {
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    ApiCliente.instance.procesarVideo(body)
+        try {
+            val response = withContext(Dispatchers.IO) {
+                ApiCliente.instance.procesarVideo(body)
+            }
+            
+            Log.d("ProcesandoVideoActivity", "Respuesta del API: ${response.code()} - ${response.message()}")
+            
+            if (response.isSuccessful && response.body() != null) {
+                Log.d("ProcesandoVideoActivity", "API exitoso, validando respuesta...")
+                val data = response.body()!!
+                
+                // Actualizar mensaje de progreso
+                runOnUiThread {
+                    txtProcesando.text = "Descargando archivos traducidos..."
                 }
                 
-                Log.d("ProcesandoVideoActivity", "Respuesta del API: ${response.code()} - ${response.message()}")
+                // Validar que todos los archivos necesarios estén disponibles
+                if (data.video_url.isNullOrBlank()) {
+                    Log.e("ProcesandoVideoActivity", "El servidor no proporcionó URL del video")
+                    mostrarErrorYRegresarInicio("Error: el servidor no generó el video")
+                    return
+                }
                 
-                if (response.isSuccessful && response.body() != null) {
-                    Log.d("ProcesandoVideoActivity", "API exitoso, validando respuesta...")
-                    val data = response.body()!!
+                if (data.audio_url.isNullOrBlank()) {
+                    Log.e("ProcesandoVideoActivity", "El servidor no proporcionó URL del audio")
+                    marcarVideoComoMalTraducidoYMostrarDialogo()
+                    return
+                }
+                
+                if (data.texto_url.isNullOrBlank()) {
+                    Log.e("ProcesandoVideoActivity", "El servidor no proporcionó URL del texto")
+                    marcarVideoComoMalTraducidoYMostrarDialogo()
+                    return
+                }
+                
+                try {
+                    Log.d("ProcesandoVideoActivity", "Todos los archivos disponibles, guardando...")
+                    val esMalTraducido = guardarArchivosEnCarpeta(data)
                     
-                    // Validar que todos los archivos necesarios estén disponibles
-                    if (data.video_url.isNullOrBlank()) {
-                        Log.e("ProcesandoVideoActivity", "El servidor no proporcionó URL del video")
-                        mostrarErrorYRegresarInicio("Error: el servidor no generó el video")
-                        return@launch
-                    }
+                    // Detener animación
+                    stopLoadingAnimation()
                     
-                    if (data.audio_url.isNullOrBlank()) {
-                        Log.e("ProcesandoVideoActivity", "El servidor no proporcionó URL del audio")
-                        // Marcar como mal traducido y mostrar diálogo
-                        marcarVideoComoMalTraducidoYMostrarDialogo()
-                        return@launch
-                    }
-                    
-                    if (data.texto_url.isNullOrBlank()) {
-                        Log.e("ProcesandoVideoActivity", "El servidor no proporcionó URL del texto")
-                        // Marcar como mal traducido y mostrar diálogo
-                        marcarVideoComoMalTraducidoYMostrarDialogo()
-                        return@launch
-                    }
-                    
-                    try {
-                        Log.d("ProcesandoVideoActivity", "Todos los archivos disponibles, guardando...")
-                        val esMalTraducido = guardarArchivosEnCarpeta(data)
+                    if (esMalTraducido) {
+                        // Video marcado como mal traducido pero archivos guardados
+                        Log.w("ProcesandoVideoActivity", "Video completado pero marcado como mal traducido")
                         
-                        // Detener animación
-                        stopLoadingAnimation()
-                        
-                        if (esMalTraducido) {
-                            // Video marcado como mal traducido pero archivos guardados
-                            Log.w("ProcesandoVideoActivity", "Video completado pero marcado como mal traducido")
-                            
-                            runOnUiThread {
-                                // Ir a la pantalla principal primero
-                                val intent = Intent(this@ProcesandoVideoActivity, InicioAppActivity::class.java)
-                                intent.putExtra("MOSTRAR_DIALOGO_MAL_TRADUCIDO", true)
-                                startActivity(intent)
-                                isApiCallInProgress = false
-                                finish()
-                            }
-                        } else {
-                            // ✅ REPRODUCIR SONIDO SUAVE DE CONFIRMACIÓN
-                            reproducirSonidoConfirmacion()
-                            
-                            // Mostrar toast de éxito y navegar con delay más corto
-                            Toast.makeText(
-                                this@ProcesandoVideoActivity,
-                                "Video guardado correctamente",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            
-                            // Delay optimizado para que el usuario vea el toast pero no espere demasiado
-                            delay(800)
+                        runOnUiThread {
+                            // Ir a la pantalla principal primero
                             val intent = Intent(this@ProcesandoVideoActivity, InicioAppActivity::class.java)
+                            intent.putExtra("MOSTRAR_DIALOGO_MAL_TRADUCIDO", true)
                             startActivity(intent)
-                            isApiCallInProgress = false // Reset flag
+                            isApiCallInProgress = false
                             finish()
                         }
+                    } else {
+                        // ✅ REPRODUCIR SONIDO SUAVE DE CONFIRMACIÓN
+                        reproducirSonidoConfirmacion()
                         
-                    } catch (e: Exception) {
-                        Log.e("ProcesandoVideoActivity", "Error al guardar archivos: ${e.message}")
+                        // Mostrar toast de éxito y navegar con delay más corto
+                        Toast.makeText(
+                            this@ProcesandoVideoActivity,
+                            "Video guardado correctamente",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        
+                        // Delay optimizado para que el usuario vea el toast pero no espere demasiado
+                        delay(800)
+                        val intent = Intent(this@ProcesandoVideoActivity, InicioAppActivity::class.java)
+                        startActivity(intent)
                         isApiCallInProgress = false // Reset flag
-                        mostrarErrorYRegresarInicio("Error al descargar los archivos del servidor")
+                        finish()
                     }
-                } else {
-                    Log.e("ProcesandoVideoActivity", "API no exitoso: ${response.code()} - ${response.message()}")
                     
+                } catch (e: Exception) {
+                    Log.e("ProcesandoVideoActivity", "Error al guardar archivos: ${e.message}")
                     isApiCallInProgress = false // Reset flag
-                    
-                    // Mostrar error dialog según el tipo de código de respuesta
-                    val codigoEstado = response.code()
-                    when {
-                        codigoEstado >= 500 -> mostrarErrorYRegresarInicio("Error del servidor")
-                        codigoEstado >= 400 -> mostrarErrorYRegresarInicio("Error en la solicitud")
-                        else -> mostrarErrorYRegresarInicio("Error de conexión")
-                    }
+                    mostrarErrorYRegresarInicio("Error al descargar los archivos del servidor")
                 }
-            } catch (e: Exception) {
-                Log.e("ProcesandoVideoActivity", "Excepción durante llamada API: ${e.message}")
+            } else {
+                Log.e("ProcesandoVideoActivity", "API no exitoso: ${response.code()} - ${response.message()}")
+                
                 isApiCallInProgress = false // Reset flag
-                mostrarErrorYRegresarInicio("Error de conexión con el servidor")
+                
+                // Mostrar error dialog según el tipo de código de respuesta
+                val codigoEstado = response.code()
+                when {
+                    codigoEstado >= 500 -> mostrarErrorYRegresarInicio("Error del servidor")
+                    codigoEstado >= 400 -> mostrarErrorYRegresarInicio("Error en la solicitud")
+                    else -> mostrarErrorYRegresarInicio("Error de conexión")
+                }
             }
+        } catch (e: Exception) {
+            Log.e("ProcesandoVideoActivity", "Excepción durante llamada API: ${e.message}")
+            isApiCallInProgress = false // Reset flag
+            mostrarErrorYRegresarInicio("Error de conexión con el servidor")
         }
     }
     
@@ -584,7 +636,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         runOnUiThread {
             val builder = AlertDialog.Builder(this)
             val inflater = layoutInflater
-            val view = inflater.inflate(R.layout.dialog_error, null)
+            val view = inflater.inflate(R.layout.dialog_error_mejorado, null)
             
             val txtMensaje = view.findViewById<TextView>(R.id.txtMensaje)
             val btnAceptar = view.findViewById<View>(R.id.btnAceptar)
@@ -593,6 +645,74 @@ class ProcesandoVideoActivity : AppCompatActivity() {
             
             val dialog = builder.setView(view).setCancelable(false).create()
             dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+            
+            btnAceptar.setOnClickListener {
+                dialog.dismiss()
+                val intent = Intent(this, InicioAppActivity::class.java)
+                startActivity(intent)
+                finish()
+            }
+            
+            dialog.show()
+        }
+    }
+    
+    /**
+     * Muestra un diálogo de error de conectividad más amigable con opción de reintentar
+     */
+    private fun mostrarErrorConectividad(estadoServidor: ServerConfig.ServerStatus, videoPath: String) {
+        stopLoadingAnimation()
+        isApiCallInProgress = false // Reset flag para permitir reintentos
+        
+        runOnUiThread {
+            val conectividadHelper = ConectividadHelper(this@ProcesandoVideoActivity)
+            val (titulo, mensaje) = conectividadHelper.obtenerMensajeAmigable(estadoServidor)
+            val permitirReintento = conectividadHelper.deberiaPermitirReintento(estadoServidor)
+            
+            val builder = AlertDialog.Builder(this)
+            val inflater = layoutInflater
+            val view = inflater.inflate(R.layout.dialog_error_mejorado, null)
+            
+            val iconoError = view.findViewById<ImageView>(R.id.iconoError)
+            val txtTitulo = view.findViewById<TextView>(R.id.txtTitulo)
+            val txtMensaje = view.findViewById<TextView>(R.id.txtMensaje)
+            val txtSugerencia = view.findViewById<TextView>(R.id.txtSugerencia)
+            val btnReintentar = view.findViewById<View>(R.id.btnReintentar)
+            val btnAceptar = view.findViewById<View>(R.id.btnAceptar)
+            
+            // Configurar contenido
+            txtTitulo.text = titulo
+            txtMensaje.text = mensaje
+            txtSugerencia.text = when (estadoServidor) {
+                ServerConfig.ServerStatus.SIN_CONEXION -> 
+                    "Verifica tu conexión Wi-Fi o datos móviles"
+                ServerConfig.ServerStatus.TIMEOUT -> 
+                    "El servidor puede estar sobrecargado. Intenta en unos minutos"
+                ServerConfig.ServerStatus.ERROR_SERVIDOR -> 
+                    "Hay problemas técnicos en el servidor. Intenta más tarde"
+                else -> 
+                    "Verifica tu conexión e intenta nuevamente"
+            }
+            
+            // Configurar visibilidad del botón reintentar
+            if (permitirReintento) {
+                btnReintentar.visibility = View.VISIBLE
+            } else {
+                btnReintentar.visibility = View.GONE
+            }
+            
+            val dialog = builder.setView(view).setCancelable(false).create()
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+            
+            // Animación del título
+            DialogUtils.animarTituloColores(this@ProcesandoVideoActivity, txtTitulo)
+            
+            btnReintentar.setOnClickListener {
+                dialog.dismiss()
+                // Reiniciar animación y reintentar
+                startLoadingAnimation()
+                enviarVideoAPI(videoPath)
+            }
             
             btnAceptar.setOnClickListener {
                 dialog.dismiss()

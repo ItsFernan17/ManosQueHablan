@@ -4,4 +4,78 @@
     <string name="videos_anteriores">Grabados anteriormente</string>
     <string name="videos_recientes_ayer">Grabados ayer</string>
     <string name="videos_este_mes">Este mes</string>
+    
+    <!-- Configuración -->
+    <string name="configuracion_titulo">Configuración de la Aplicación</string>
+    <string name="consejos_antes_grabar">Consejos antes de grabar</string>
+    <string name="recordatorio_al_grabar">Recordatorio al grabar</string>
+    <string name="recordatorio_descripcion">Muestra consejos útiles cada vez que grabes un video en lengua de señas.</string>
+    <string name="confirmacion_videos_problematicos">Confirmación para videos problemáticos</string>
+    <string name="confirmar_compartir_videos">Confirmar al compartir videos sin traducción</string>
+    <string name="confirmar_compartir_descripcion">Pide confirmación antes de compartir videos que no se tradujeron correctamente.</string>
+    <string name="sonidos_notificaciones">Sonidos y notificaciones</string>
+    <string name="sonidos_descripcion">Activa un sonido cuando se completen acciones importantes en la app.</string>
+    <string name="acerca_de">Acerca de</string>
+    <string name="informacion_aplicacion">Información de la aplicación</string>
+    <string name="informacion_descripcion">Ver detalles sobre la app, versión y desarrolladores</string>
+    <string name="cambios_guardados">Los cambios se guardan automáticamente</string>
+    
+    <!-- Pantalla principal -->
+    <string name="no_hay_videos">¡No hay videos aún!</string>
+    <string name="presiona_grabar">Presiona el botón para grabar tu primer video.</string>
+    <string name="grabar_nuevo_video">Grabar Nuevo Video</string>
+    
+    <!-- Diálogos -->
+    <string name="video_mal_traducido_titulo">Video no traducido correctamente</string>
+    <string name="video_mal_traducido_mensaje">El sistema no pudo generar la traducción de audio y texto para este video.</string>
+    <string name="para_mejorar_traduccion">Para mejorar la traducción, recuerda:</string>
+    <string name="consejo_distancia">Mantén distancia de 30-40 cm del teléfono</string>
+    <string name="consejo_iluminacion">Usa buena luz frontal y evita contraluz</string>
+    <string name="consejo_manos">Mantén las manos dentro del recuadro</string>
+    <string name="consejo_velocidad">Haz la seña despacio y con estabilidad</string>
+    <string name="entendido">Entendido</string>
+    
+    <string name="confirmar_compartir_titulo">Video mal traducido</string>
+    <string name="confirmar_compartir_mensaje">Este video no se tradujo correctamente. ¿Estás seguro de que quieres compartirlo?</string>
+    
+    <string name="escuchar_traduccion">Escuchar traducción</string>
+    <string name="texto_traducido">Texto traducido</string>
+    
+    <!-- Botones generales -->
+    <string name="cancelar">Cancelar</string>
+    <string name="compartir">Compartir</string>
+    <string name="aceptar">Aceptar</string>
+    <string name="reintentar">Reintentar</string>
+    
+    <!-- Mensajes de conexión y servidor -->
+    <string name="conexion_problema">Conexión al servidor</string>
+    <string name="error_conexion_servidor">No se pudo conectar con el servidor de traducción</string>
+    <string name="sugerencia_conexion">Verifica tu conexión a internet e intenta nuevamente</string>
+    <string name="verificando_servidor">Verificando conexión al servidor...</string>
+    <string name="servidor_no_disponible">El servidor de traducción no está disponible en este momento</string>
+    <string name="servidor_lento">El servidor está tardando más de lo esperado. Por favor, ten paciencia...</string>
+    <string name="reintentando_conexion">Reintentando conexión...</string>
+    
+    <!-- Estados del servidor -->
+    <string name="servidor_disponible">Servidor disponible</string>
+    <string name="servidor_no_responde">El servidor no responde</string>
+    <string name="sin_conexion">Sin conexión al servidor</string>
+    <string name="error_servidor_interno">Error interno del servidor</string>
+    
+    <!-- Acciones de video -->
+    <string name="compartir_video">Compartir Video</string>
+    <string name="ver_texto_traducido">Ver Texto Traducido</string>
+    <string name="escuchar_traduccion_btn">Escuchar Traducción</string>
+    <string name="eliminar_video">Eliminar Video</string>
+    
+    <!-- Estados -->
+    <string name="mal_traducido">MAL TRADUCIDO</string>
+    <string name="hoy">Hoy</string>
+    
+    <!-- Categorías -->
+    <string name="titulo_categoria">Título de la Categoría</string>
+    <string name="descripcion_senias">Descripción de las señas</string>
+    
+    <!-- Símbolos -->
+    <string name="bullet_point">• </string>
 </resources>

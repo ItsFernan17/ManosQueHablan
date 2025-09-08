@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.core.content.FileProvider
+import com.frivasm.manosquehablan.dialogs.DialogUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,6 +22,38 @@ object VideoActionsHelper {
             return
         }
 
+        // Verificar si el video está mal traducido y si se debe confirmar
+        val esVideoMalTraducido = VideoTranslationStatusHelper.esVideoMalTraducido(video)
+        val debeConfirmar = ConfigHelper.debeConfirmarCompartirMalTraducidos(context)
+        
+        if (esVideoMalTraducido && debeConfirmar) {
+            // Mostrar diálogo de confirmación
+            mostrarDialogoConfirmacionCompartir(context, video)
+        } else {
+            // Compartir directamente
+            ejecutarCompartirVideo(context, video)
+        }
+    }
+    
+    /**
+     * Muestra diálogo de confirmación para compartir videos mal traducidos
+     */
+    private fun mostrarDialogoConfirmacionCompartir(context: Context, video: File) {
+        DialogUtils.mostrarDialogoConfirmarCompartirMalTraducido(
+            context = context,
+            onConfirmar = {
+                ejecutarCompartirVideo(context, video)
+            },
+            onCancelar = {
+                // No hacer nada, solo cerrar el diálogo
+            }
+        )
+    }
+    
+    /**
+     * Ejecuta el compartir video sin verificaciones adicionales
+     */
+    private fun ejecutarCompartirVideo(context: Context, video: File) {
         // Usar corrutina para obtener URI de galería
         CoroutineScope(Dispatchers.Main).launch {
             try {

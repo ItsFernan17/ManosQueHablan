@@ -18,9 +18,10 @@
 
     <!-- Título -->
     <TextView
+        android:id="@+id/txtTituloVideoMalTraducido"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Video no traducido correctamente"
+        android:text="@string/video_mal_traducido_titulo"
         android:textSize="20sp"
         android:textColor="@color/texto_videos"
         android:fontFamily="@font/poppins_semibold"
@@ -31,7 +32,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="El sistema no pudo generar la traducción de audio y texto para este video."
+        android:text="@string/video_mal_traducido_mensaje"
         android:textSize="16sp"
         android:textColor="@color/texto_videos"
         android:fontFamily="@font/poppins_regular"
@@ -42,7 +43,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Para mejorar la traducción, recuerda:"
+        android:text="@string/para_mejorar_traduccion"
         android:textSize="15sp"
         android:textColor="@color/violeta"
         android:fontFamily="@font/poppins_semibold"
@@ -69,7 +70,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="• "
+                    android:text="@string/bullet_point"
                     android:textSize="14sp"
                     android:textColor="@color/sunset_orange"
                     android:fontFamily="@font/poppins_semibold" />
@@ -78,7 +79,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Mantén distancia de 30-40 cm del teléfono"
+                    android:text="@string/consejo_distancia"
                     android:textSize="14sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
@@ -103,7 +104,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Usa buena luz frontal y evita contraluz"
+                    android:text="@string/consejo_iluminacion"
                     android:textSize="14sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
@@ -128,7 +129,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Mantén las manos dentro del recuadro"
+                    android:text="@string/consejo_manos"
                     android:textSize="14sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
@@ -153,7 +154,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Haz la seña despacio y con estabilidad"
+                    android:text="@string/consejo_velocidad"
                     android:textSize="14sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
@@ -175,7 +176,7 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:text="Entendido"
+            android:text="@string/entendido"
             android:textSize="16sp"
             android:textColor="@color/white"
             android:fontFamily="@font/poppins_semibold"

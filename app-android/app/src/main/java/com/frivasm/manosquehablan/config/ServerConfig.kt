@@ -52,12 +52,24 @@ object ServerConfig {
     }
     
     /**
-     * Configuración de timeouts
+     * Configuración de timeouts mejorados
      */
     object Timeouts {
-        const val CONNECT_TIMEOUT = 60L // segundos
-        const val READ_TIMEOUT = 300L // 5 minutos
-        const val WRITE_TIMEOUT = 300L // 5 minutos
+        // Timeout para conectar al servidor (más generoso)
+        const val CONNECT_TIMEOUT = 30L // segundos
+        
+        // Timeout para leer respuesta - muy generoso para procesamiento de video
+        const val READ_TIMEOUT = 600L // 10 minutos (videos largos necesitan más tiempo)
+        
+        // Timeout para escribir/subir - generoso para videos grandes
+        const val WRITE_TIMEOUT = 600L // 10 minutos
+        
+        // Timeout específico para verificar conectividad
+        const val HEALTH_CHECK_TIMEOUT = 10L // segundos
+        
+        // Reintentos para verificación de servidor
+        const val MAX_RETRY_ATTEMPTS = 3
+        const val RETRY_DELAY_MS = 2000L // 2 segundos entre reintentos
     }
     
     /**
@@ -99,5 +111,51 @@ object ServerConfig {
             appendLine("Logging: ${BuildConfig.ENABLE_LOGGING}")
             appendLine("====================================")
         }
+    }
+    
+    /**
+     * Verifica si el servidor está disponible
+     */
+    suspend fun verificarDisponibilidadServidor(): ServerStatus {
+        return try {
+            val client = okhttp3.OkHttpClient.Builder()
+                .connectTimeout(Timeouts.HEALTH_CHECK_TIMEOUT, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(Timeouts.HEALTH_CHECK_TIMEOUT, java.util.concurrent.TimeUnit.SECONDS)
+                .writeTimeout(Timeouts.HEALTH_CHECK_TIMEOUT, java.util.concurrent.TimeUnit.SECONDS)
+                .build()
+            
+            val request = okhttp3.Request.Builder()
+                .url(getEndpointUrl(Endpoints.HEALTH_CHECK))
+                .get()
+                .build()
+            
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val response = client.newCall(request).execute()
+                
+                when {
+                    response.isSuccessful -> ServerStatus.DISPONIBLE
+                    response.code in 500..599 -> ServerStatus.ERROR_SERVIDOR
+                    else -> ServerStatus.NO_DISPONIBLE
+                }
+            }
+        } catch (e: java.net.ConnectException) {
+            ServerStatus.SIN_CONEXION
+        } catch (e: java.net.SocketTimeoutException) {
+            ServerStatus.TIMEOUT
+        } catch (e: Exception) {
+            ServerStatus.ERROR_DESCONOCIDO
+        }
+    }
+    
+    /**
+     * Estados posibles del servidor
+     */
+    enum class ServerStatus(val mensaje: String, val esDisponible: Boolean) {
+        DISPONIBLE("Servidor disponible", true),
+        NO_DISPONIBLE("Servidor no disponible", false),
+        SIN_CONEXION("Sin conexión al servidor", false),
+        TIMEOUT("El servidor no responde", false),
+        ERROR_SERVIDOR("Error interno del servidor", false),
+        ERROR_DESCONOCIDO("Error de conexión desconocido", false)
     }
 }

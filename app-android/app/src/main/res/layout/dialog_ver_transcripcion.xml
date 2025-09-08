@@ -17,9 +17,10 @@
         android:gravity="center_horizontal">
 
         <TextView
+            android:id="@+id/txtTituloTextoTraducido"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Texto traducido"
+            android:text="@string/texto_traducido"
             android:textSize="18sp"
             android:fontFamily="@font/poppins_bold"
             android:textColor="@color/texto_videos"
@@ -50,7 +51,7 @@
             android:id="@+id/btnCerrarTranscripcion"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Aceptar"
+            android:text="@string/aceptar"
             android:textAllCaps="false"
             android:textColor="@color/white"
             android:background="@drawable/boton_redondeado_aceptar"

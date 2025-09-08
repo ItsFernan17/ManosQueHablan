@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_rounded_background"
+    android:padding="24dp"
+    android:gravity="center">
+
+    <!-- Icono más amigable con animación -->
+    <ImageView
+        android:id="@+id/iconoError"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:src="@drawable/ic_info"
+        android:layout_marginBottom="20dp"
+        app:tint="@color/accent_color" />
+
+    <!-- Título del error más amigable -->
+    <TextView
+        android:id="@+id/txtTitulo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/conexion_problema"
+        android:textSize="22sp"
+        android:textColor="@color/texto_principal"
+        android:fontFamily="@font/poppins_semibold"
+        android:layout_marginBottom="15dp"
+        android:gravity="center" />
+
+    <!-- Mensaje del error -->
+    <TextView
+        android:id="@+id/txtMensaje"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/error_conexion_servidor"
+        android:textSize="16sp"
+        android:textColor="@color/texto_secundario"
+        android:fontFamily="@font/poppins_regular"
+        android:layout_marginBottom="20dp"
+        android:gravity="center"
+        android:textAlignment="center"
+        android:lineSpacingExtra="4dp" />
+
+    <!-- Sugerencia amigable -->
+    <TextView
+        android:id="@+id/txtSugerencia"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/sugerencia_conexion"
+        android:textSize="14sp"
+        android:textColor="@color/texto_hint"
+        android:fontFamily="@font/poppins_regular"
+        android:layout_marginBottom="25dp"
+        android:gravity="center"
+        android:textAlignment="center"
+        android:lineSpacingExtra="2dp"
+        android:background="@drawable/rounded_hint_background"
+        android:padding="12dp" />
+
+    <!-- Contenedor de botones -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <!-- Botón Reintentar -->
+        <LinearLayout
+            android:id="@+id/btnReintentar"
+            android:layout_width="120dp"
+            android:layout_height="45dp"
+            android:background="@drawable/boton_principal_rounded"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:layout_marginEnd="12dp">
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/reintentar"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_medium" />
+        </LinearLayout>
+
+        <!-- Botón Aceptar -->
+        <LinearLayout
+            android:id="@+id/btnAceptar"
+            android:layout_width="120dp"
+            android:layout_height="45dp"
+            android:background="@drawable/boton_secundario_rounded"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center">
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/aceptar"
+                android:textColor="@color/texto_principal"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_medium" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

@@ -18,6 +18,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.lifecycle.lifecycleScope
+import com.frivasm.manosquehablan.helpers.ConfigHelper
 import com.frivasm.manosquehablan.helpers.VideoLoader
 import com.frivasm.manosquehablan.helpers.VideoOrdenamientoViewHelper
 import com.frivasm.manosquehablan.helpers.PreferenciasHelper
@@ -49,8 +50,8 @@ class InicioAppActivity : AppCompatActivity() {
     private lateinit var contenedor: LinearLayout
     private lateinit var vistaSinVideos: LinearLayout
     private lateinit var btnOpciones: ImageView
-    private lateinit var btnInfo: ImageView
     private lateinit var btnCatalogo: ImageView
+    private lateinit var btnConfiguracion: ImageView
     private lateinit var btnBuscar: ImageView
     private lateinit var btnNuevoVideo: LinearLayout
     
@@ -69,8 +70,8 @@ class InicioAppActivity : AppCompatActivity() {
         contenedor = findViewById(R.id.contenedorVideos)
         vistaSinVideos = findViewById(R.id.vistaSinVideos)
         btnOpciones = findViewById(R.id.btnOpciones)
-        btnInfo = findViewById(R.id.btnInfo)
         btnCatalogo = findViewById(R.id.btnCatalogo)
+        btnConfiguracion = findViewById(R.id.btnConfiguracion)
         btnBuscar = findViewById(R.id.btnBuscar)
         btnNuevoVideo = findViewById(R.id.btnNuevoVideo)
 
@@ -98,12 +99,13 @@ class InicioAppActivity : AppCompatActivity() {
             )
         }
 
-        btnInfo.setOnClickListener {
-            DialogUtils.mostrarDialogoAcercaDe(this)
-        }
-
         btnCatalogo.setOnClickListener {
             val intent = Intent(this, CatalogoSeniasActivity::class.java)
+            startActivity(intent)
+        }
+
+        btnConfiguracion.setOnClickListener {
+            val intent = Intent(this, ConfiguracionActivity::class.java)
             startActivity(intent)
         }
 
@@ -161,7 +163,7 @@ class InicioAppActivity : AppCompatActivity() {
             addListener(object : android.animation.AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: android.animation.Animator) {
                     // Verificar si debe mostrar el recordatorio
-                    if (PreferenciasHelper.deberMostrarRecordatorioGrabacion(this@InicioAppActivity)) {
+                    if (ConfigHelper.debeMostrarRecordatorio(this@InicioAppActivity)) {
                         DialogUtils.mostrarDialogoRecordatorioGrabar(this@InicioAppActivity) {
                             // Continuar a la cámara después del diálogo
                             startActivity(Intent(this@InicioAppActivity, GrabarVideoActivity::class.java))

@@ -37,27 +37,27 @@
             app:tint="@color/rojo" />
 
         <ImageView
-            android:id="@+id/btnInfo"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginEnd="8dp"
-            android:src="@drawable/ic_info"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:focusable="true"
-            android:contentDescription="Información"
-            app:tint="@color/rojo" />
-
-        <ImageView
             android:id="@+id/btnCatalogo"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:layout_marginEnd="12dp"
+            android:layout_marginEnd="8dp"
             android:src="@drawable/senia"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:focusable="true"
             android:contentDescription="Catálogo de Señas"
+            app:tint="@color/rojo" />
+
+        <ImageView
+            android:id="@+id/btnConfiguracion"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/config"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Configuración"
             app:tint="@color/rojo" />
 
         <ImageView
@@ -101,7 +101,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:fontFamily="@font/poppins_bold"
-                    android:text="¡No hay videos aún!"
+                    android:text="@string/no_hay_videos"
                     android:textColor="@color/texto_splash"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -111,7 +111,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:fontFamily="@font/poppins_regular"
-                    android:text="Presiona el botón para grabar tu primer video."
+                    android:text="@string/presiona_grabar"
                     android:textAlignment="center"
                     android:textColor="@color/texto_splash"
                     android:textSize="14sp" />
@@ -155,7 +155,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/poppins_medium"
-            android:text="Grabar Nuevo Video"
+            android:text="@string/grabar_nuevo_video"
             android:textAlignment="center"
             android:textColor="@android:color/white"
             android:textSize="16sp" />

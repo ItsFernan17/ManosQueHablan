@@ -87,9 +87,13 @@ object DialogUtils {
         val view = inflater.inflate(R.layout.dialog_escuchar_audio, null)
         val btnReproducir = view.findViewById<ImageView>(R.id.btnPlayAudio)
         val btnCerrar = view.findViewById<View>(R.id.btnCerrarAudio)
+        val txtTitulo = view.findViewById<TextView>(R.id.txtTituloEscucharAudio)
 
         val dialog = AlertDialog.Builder(context).setView(view).setCancelable(false).create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        // Animar colores del título
+        animarTituloColores(context, txtTitulo)
 
         var mediaPlayer: MediaPlayer? = null
 
@@ -195,7 +199,7 @@ object DialogUtils {
         dialog.show()
     }
     
-    private fun animarTituloColores(context: Context, textView: TextView) {
+    fun animarTituloColores(context: Context, textView: TextView) {
         val colorRojo = androidx.core.content.ContextCompat.getColor(context, R.color.rojo)
         val colorCeleste = androidx.core.content.ContextCompat.getColor(context, R.color.celeste)
         
@@ -227,9 +231,13 @@ object DialogUtils {
             val view = inflater.inflate(R.layout.dialog_ver_transcripcion, null)
             val txtTranscripcion = view.findViewById<TextView>(R.id.txtTranscripcion)
             val btnCerrar = view.findViewById<View>(R.id.btnCerrarTranscripcion)
+            val txtTitulo = view.findViewById<TextView>(R.id.txtTituloTextoTraducido)
 
             val dialog = AlertDialog.Builder(context).setView(view).setCancelable(false).create()
             dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+            // Animar colores del título
+            animarTituloColores(context, txtTitulo)
 
             // Leer el contenido del archivo de transcripción
             val contenidoOriginal = archivoTranscripcion.readText(Charsets.UTF_8)
@@ -362,7 +370,7 @@ object DialogUtils {
         btnEntendido.setOnClickListener {
             // Si el checkbox está marcado, guardar la preferencia
             if (checkNoMostrarMas.isChecked) {
-                com.frivasm.manosquehablan.helpers.PreferenciasHelper.marcarRecordatorioGrabacionDeshabilitado(context)
+                com.frivasm.manosquehablan.helpers.ConfigHelper.deshabilitarRecordatorio(context)
             }
             
             dialog.dismiss()
@@ -388,6 +396,7 @@ object DialogUtils {
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.dialog_video_mal_traducido, null)
         val btnEntendido = view.findViewById<View>(R.id.btnEntendido)
+        val txtTitulo = view.findViewById<TextView>(R.id.txtTituloVideoMalTraducido)
 
         val dialog = AlertDialog.Builder(context)
             .setView(view)
@@ -396,8 +405,49 @@ object DialogUtils {
             
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
+        // Animar colores del título
+        animarTituloColores(context, txtTitulo)
+
         btnEntendido.setOnClickListener {
             dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    /**
+     * Muestra diálogo de confirmación para compartir videos mal traducidos
+     */
+    fun mostrarDialogoConfirmarCompartirMalTraducido(
+        context: Context,
+        onConfirmar: () -> Unit,
+        onCancelar: (() -> Unit)? = null
+    ) {
+        val inflater = LayoutInflater.from(context)
+        val view = inflater.inflate(R.layout.dialog_confirmar_compartir_mal_traducido, null)
+        
+        val btnCancelar = view.findViewById<View>(R.id.btnCancelarCompartir)
+        val btnConfirmar = view.findViewById<View>(R.id.btnConfirmarCompartir)
+        val txtTitulo = view.findViewById<TextView>(R.id.txtTituloConfirmarCompartir)
+
+        val dialog = AlertDialog.Builder(context)
+            .setView(view)
+            .setCancelable(true)
+            .create()
+            
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        // Animar colores del título
+        animarTituloColores(context, txtTitulo)
+
+        btnCancelar.setOnClickListener {
+            dialog.dismiss()
+            onCancelar?.invoke()
+        }
+
+        btnConfirmar.setOnClickListener {
+            dialog.dismiss()
+            onConfirmar()
         }
 
         dialog.show()

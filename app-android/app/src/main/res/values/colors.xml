@@ -39,4 +39,5 @@
     <color name="accent_color">#ed7971</color>
     <color name="fondo_principal">#F3F2F4</color>
     <color name="texto_terciario">#9CA3AF</color>
+    <color name="texto_hint">#6B7280</color> <!-- Color para texto de sugerencias -->
 </resources>

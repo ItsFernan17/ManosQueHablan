@@ -23,8 +23,7 @@
             android:src="@drawable/ic_arrow_back"
             android:contentDescription="Volver"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="4dp"
-            app:tint="@color/rojo" />
+            android:padding="4dp"/>
 
         <EditText
             android:id="@+id/editTextSearch"

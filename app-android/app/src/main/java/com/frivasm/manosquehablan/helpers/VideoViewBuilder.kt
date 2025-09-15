@@ -45,8 +45,9 @@ object VideoViewBuilder {
     ) {
         val titulo = vista.findViewById<TextView>(R.id.txtTitulo)
         val detalles = vista.findViewById<TextView?>(R.id.txtDetalles)
-        val fecha = vista.findViewById<TextView?>(R.id.txtFecha) // ✅ Verificamos si existe el campo de fecha
-        val etiquetaMalTraducido = vista.findViewById<TextView?>(R.id.etiquetaMalTraducido) // ✅ Etiqueta de mal traducido
+        val fecha = vista.findViewById<TextView?>(R.id.txtFecha) // Verificamos si existe el campo de fecha
+        val etiquetaMalTraducido = vista.findViewById<TextView?>(R.id.etiquetaMalTraducido) // Etiqueta de mal traducido
+        val etiquetaErrorServidor = vista.findViewById<TextView?>(R.id.etiquetaErrorServidor) // Etiqueta de error de servidor
 
         val miniatura = vista.findViewById<ImageView>(R.id.imgMiniatura)
         val btnReproducir = vista.findViewById<ImageView>(R.id.btnReproducir)
@@ -64,20 +65,33 @@ object VideoViewBuilder {
         fun asignarListeners(videoFile: File) {
             vista.tag = videoFile
 
-            // ✅ Mostrar título actualizado
+            // Mostrar título actualizado
             titulo.text = videoFile.nameWithoutExtension.replace("_", " ").replace("-", " ")
             titulo.isSelected = true // Para marquee
 
-            // ✅ Mostrar/ocultar etiqueta de mal traducido
+            // Mostrar/ocultar etiquetas según el tipo de problema
+            val tieneErrorServidor = VideoTranslationStatusHelper.tieneErrorServidor(videoFile)
+            val esMalTraducido = VideoTranslationStatusHelper.esVideoMalTraducido(videoFile)
+            
+            // Mostrar etiqueta de error de servidor (prioridad sobre mal traducido)
+            etiquetaErrorServidor?.let { etiqueta ->
+                if (tieneErrorServidor) {
+                    etiqueta.visibility = View.VISIBLE
+                } else {
+                    etiqueta.visibility = View.GONE
+                }
+            }
+            
+            // Mostrar etiqueta de mal traducido (solo si no hay error de servidor)
             etiquetaMalTraducido?.let { etiqueta ->
-                if (VideoTranslationStatusHelper.esVideoMalTraducido(videoFile)) {
+                if (!tieneErrorServidor && esMalTraducido) {
                     etiqueta.visibility = View.VISIBLE
                 } else {
                     etiqueta.visibility = View.GONE
                 }
             }
 
-            // ✅ Mostrar fecha de creación si existe el TextView y está habilitado
+            // Mostrar fecha de creación si existe el TextView y está habilitado
             if (fecha != null && mostrarFecha) {
                 fecha.text = try {
                     val fechaCreacion = VideoUtils.obtenerFechaCreacionVideo(videoFile.absolutePath)
@@ -90,7 +104,7 @@ object VideoViewBuilder {
                 fecha?.visibility = View.GONE
             }
 
-            // ✅ Detalles (fecha + peso) si existe el TextView txtDetalles y está habilitado
+            // Detalles (fecha + peso) si existe el TextView txtDetalles y está habilitado
             if (detalles != null && mostrarDetalles) {
                 CoroutineScope(Dispatchers.Main).launch {
                     val detallesTexto = withContext(Dispatchers.IO) {
@@ -107,7 +121,7 @@ object VideoViewBuilder {
                 detalles?.visibility = View.GONE
             }
 
-            // ✅ Miniatura desde caché o generar
+            // Miniatura desde caché o generar
             val cachedBitmap = VideoThumbnailCache.get(videoFile)
             if (cachedBitmap != null) {
                 miniatura.setImageBitmap(cachedBitmap)
@@ -152,7 +166,7 @@ object VideoViewBuilder {
                 }
             }
 
-            // ✅ Acciones
+            // Acciones
             miniatura.setOnClickListener {
                 VideoActionsHelper.reproducirVideo(context, videoFile)
             }
@@ -237,7 +251,7 @@ object VideoViewBuilder {
                 }
             }
 
-            // ✅ Renombrar y refrescar datos
+            // Renombrar y refrescar datos
             titulo.setOnClickListener {
                 DialogUtils.mostrarDialogoRenombrar(context, videoFile, titulo, vista) { nuevoArchivo ->
                     VideoThumbnailCache.move(videoFile, nuevoArchivo)
@@ -246,7 +260,7 @@ object VideoViewBuilder {
                 }
             }
 
-            // ✅ Botón de opciones - Solo funciona en vistas específicas
+            // Botón de opciones - Solo funciona en vistas específicas
             btnOpciones?.setOnClickListener {
                 when (tipoVista) {
                     "fecha" -> VideoViewOptionsHelper.mostrarOpcionesPorFecha(context, videoFile)
@@ -266,7 +280,7 @@ object VideoViewBuilder {
             }
         }
 
-        // ✅ Carga inicial
+        // Carga inicial
         asignarListeners(video)
     }
 

@@ -344,8 +344,8 @@ class SearchVideoActivity : AppCompatActivity() {
             carpeta.listFiles()?.filter {
                 it.isFile && 
                 it.extension.equals("mp4", ignoreCase = true) &&
-                it.exists() && // ✅ Verificar que el archivo aún existe
-                it.length() > 100_000 // ✅ Filtro de tamaño consistente
+                it.exists() && // Verificar que el archivo aún existe
+                it.length() > 100_000 // Filtro de tamaño consistente
             } ?: emptyList()
         } ?: emptyList()
     }
@@ -356,7 +356,7 @@ class SearchVideoActivity : AppCompatActivity() {
     private fun cargarVideosPrivados(): List<File> {
         return try {
             val storageManager = VideoStorageManager(this)
-            // ✅ Filtrar solo archivos que aún existen
+            // Filtrar solo archivos que aún existen
             storageManager.getAllSavedVideos().filter { it.exists() && it.length() > 100_000 }
         } catch (e: Exception) {
             android.util.Log.w("SearchVideoActivity", "Error cargando videos privados: ${e.message}")

@@ -65,6 +65,23 @@
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="4dp"
                 android:visibility="gone" />
+
+            <!-- Etiqueta de error de servidor -->
+            <TextView
+                android:id="@+id/etiquetaErrorServidor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ERROR DE RED"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:fontFamily="@font/poppins_bold"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:background="@drawable/fondo_error_servidor_redondeado"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:visibility="gone" />
         </LinearLayout>
 
         <!-- Contenido: miniatura + acciones -->

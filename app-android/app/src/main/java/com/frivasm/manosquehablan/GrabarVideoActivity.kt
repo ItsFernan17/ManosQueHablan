@@ -230,7 +230,7 @@ class GrabarVideoActivity : AppCompatActivity() {
                 
                 // Actualizar texto basado en estado y soporte
                 val text = when {
-                    torchEnabled && hasTorchSupport -> "🔦"
+                    torchEnabled && hasTorchSupport -> "ON"
                     evCompensation > 0 && hasEvSupport -> "+$evCompensation"
                     evCompensation < 0 && hasEvSupport -> "$evCompensation"
                     luma < 0.3f && !hasEvSupport -> "◐" // Oscuro pero sin control EV

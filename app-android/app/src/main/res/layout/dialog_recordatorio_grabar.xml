@@ -174,7 +174,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="🎯 El sistema optimiza automáticamente la cámara, pero la calidad final depende de tu ubicación y la luz del ambiente."
+                    android:text="El sistema graba en calidad HD 720p estable (30fps, H.264) para una traducción óptima y consistente."
                     android:textSize="14sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_medium" />
@@ -200,7 +200,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="⚠️ La traducción puede fallar si no hay suficiente luz natural o artificial en tu ubicación, incluso con el ajuste automático."
+                    android:text="IMPORTANTE: La traducción puede fallar si no hay suficiente luz natural o artificial en tu ubicación, incluso con el ajuste automático."
                     android:textSize="14sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />

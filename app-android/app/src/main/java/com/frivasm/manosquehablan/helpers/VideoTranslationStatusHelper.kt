@@ -10,6 +10,7 @@ import java.io.File
 object VideoTranslationStatusHelper {
 
     private const val BAD_TRANSLATION_MARKER = ".mal_traducido"
+    private const val SERVER_ERROR_MARKER = ".error_servidor"
 
     /**
      * Marca un video como mal traducido de forma asíncrona para evitar bloqueos
@@ -19,6 +20,24 @@ object VideoTranslationStatusHelper {
         Thread {
             val parentDir = videoFile.parentFile ?: return@Thread
             val markerFile = File(parentDir, BAD_TRANSLATION_MARKER)
+            try {
+                if (!markerFile.exists()) {
+                    markerFile.createNewFile()
+                }
+            } catch (e: Exception) {
+                // Ignorar errores de marcado, no es crítico
+            }
+        }.start()
+    }
+
+    /**
+     * Marca un video con error de servidor (cuando el servidor no genera archivos)
+     */
+    fun marcarVideoConErrorServidor(videoFile: File) {
+        // Ejecutar operación I/O en thread background para evitar bloqueos
+        Thread {
+            val parentDir = videoFile.parentFile ?: return@Thread
+            val markerFile = File(parentDir, SERVER_ERROR_MARKER)
             try {
                 if (!markerFile.exists()) {
                     markerFile.createNewFile()
@@ -47,12 +66,43 @@ object VideoTranslationStatusHelper {
     }
 
     /**
+     * Verifica si un video tiene error de servidor (no se generaron archivos)
+     */
+    fun tieneErrorServidor(videoFile: File): Boolean {
+        val parentDir = videoFile.parentFile ?: return false
+        val markerFile = File(parentDir, SERVER_ERROR_MARKER)
+        return markerFile.exists()
+    }
+
+    /**
+     * Verifica si un video tiene algún tipo de problema (mal traducido o error de servidor)
+     */
+    fun tieneProblemas(videoFile: File): Boolean {
+        return esVideoMalTraducido(videoFile) || tieneErrorServidor(videoFile)
+    }
+
+    /**
      * Remueve la marca de mal traducido de un video
      * (útil si el usuario vuelve a procesar el video)
      */
     fun removerMarcaMalTraducido(videoFile: File) {
         val parentDir = videoFile.parentFile ?: return
         val markerFile = File(parentDir, BAD_TRANSLATION_MARKER)
+        try {
+            if (markerFile.exists()) {
+                markerFile.delete()
+            }
+        } catch (e: Exception) {
+            // Ignorar errores, no es crítico
+        }
+    }
+
+    /**
+     * Remueve la marca de error de servidor de un video
+     */
+    fun removerMarcaErrorServidor(videoFile: File) {
+        val parentDir = videoFile.parentFile ?: return
+        val markerFile = File(parentDir, SERVER_ERROR_MARKER)
         try {
             if (markerFile.exists()) {
                 markerFile.delete()
@@ -101,14 +151,17 @@ object VideoTranslationStatusHelper {
         
         val audioFile = File(parentDir, "audio_traducido.mp3")
         val textoFile = File(parentDir, "transcripcion.txt")
-        val markerFile = File(parentDir, BAD_TRANSLATION_MARKER)
+        val malTraducidoMarker = File(parentDir, BAD_TRANSLATION_MARKER)
+        val errorServidorMarker = File(parentDir, SERVER_ERROR_MARKER)
         
         val tieneAudio = audioFile.exists() && audioFile.length() > 0
         val tieneTexto = textoFile.exists() && textoFile.length() > 0
-        val estaMarcado = markerFile.exists()
+        val estaMarcadoMalo = malTraducidoMarker.exists()
+        val tieneErrorServidor = errorServidorMarker.exists()
         
         return when {
-            estaMarcado -> EstadoTraduccion.MARCADO_COMO_MALO
+            tieneErrorServidor -> EstadoTraduccion.ERROR_SERVIDOR
+            estaMarcadoMalo -> EstadoTraduccion.MARCADO_COMO_MALO
             tieneAudio && tieneTexto -> EstadoTraduccion.TRADUCCION_COMPLETA
             tieneAudio && !tieneTexto -> EstadoTraduccion.SOLO_AUDIO
             !tieneAudio && tieneTexto -> EstadoTraduccion.SOLO_TEXTO
@@ -124,7 +177,8 @@ object VideoTranslationStatusHelper {
         SOLO_AUDIO,            // Solo tiene archivo de audio
         SOLO_TEXTO,            // Solo tiene archivo de texto
         SIN_ARCHIVOS,          // No tiene archivos de traducción
-        MARCADO_COMO_MALO      // Explícitamente marcado como mal traducido
+        MARCADO_COMO_MALO,     // Explícitamente marcado como mal traducido (contenido "Sin detecciones válidas.")
+        ERROR_SERVIDOR         // Error del servidor (no generó archivos por problemas de red/servidor)
     }
     
     /**

@@ -59,7 +59,7 @@ object DialogUtils {
                     // Actualizar referencia interna de la vista
                     vista.tag = nuevoArchivo
 
-                    // ⚠️ No se modifica directamente el título aquí: dejar que onRenombrado lo haga visualmente
+                    // No se modifica directamente el título aquí: dejar que onRenombrado lo haga visualmente
                     onRenombrado(nuevoArchivo)
                     
                     dialog.dismiss()

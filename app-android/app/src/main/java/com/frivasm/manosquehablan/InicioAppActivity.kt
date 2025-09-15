@@ -30,6 +30,8 @@ import com.frivasm.manosquehablan.helpers.VideoViewBuilder
 import com.frivasm.manosquehablan.helpers.VideoSyncCache
 import com.frivasm.manosquehablan.dialogs.DialogUtils
 import com.frivasm.manosquehablan.config.ServerConfig
+import com.frivasm.manosquehablan.utils.JobStatusUtils
+import com.frivasm.manosquehablan.workers.VideoWorkManager
 import java.io.File
 import java.text.SimpleDateFormat
 import kotlinx.coroutines.launch
@@ -66,6 +68,9 @@ class InicioAppActivity : AppCompatActivity() {
 
         // Log de configuración de servidor
         Log.i("ServerConfig", ServerConfig.getServerInfo())
+        
+        // Verificar estado de trabajos pendientes
+        verificarTrabajosPendientes()
 
         contenedor = findViewById(R.id.contenedorVideos)
         vistaSinVideos = findViewById(R.id.vistaSinVideos)
@@ -126,6 +131,27 @@ class InicioAppActivity : AppCompatActivity() {
         
         // PARA PRUEBAS: Descomentar la siguiente línea para resetear y ver el diálogo nuevamente
         // PreferenciasHelper.marcarBienvenidaMostrada(this) // comentar esta línea para resetear
+    }
+    
+    /**
+     * Verifica si hay trabajos de procesamiento pendientes y muestra información relevante
+     */
+    private fun verificarTrabajosPendientes() {
+        try {
+            // Log estado de trabajos para debugging
+            JobStatusUtils.logJobStatus(this)
+            
+            // Verificar si hay trabajos activos
+            val hasActiveWork = VideoWorkManager.hasActiveWork(this)
+            if (hasActiveWork) {
+                Log.i("InicioAppActivity", "Hay trabajos de procesamiento activos en segundo plano")
+                // Aquí podrías mostrar una notificación sutil o badge en la UI
+                // Por ejemplo: mostrarIndicadorProcesamientoActivo()
+            }
+            
+        } catch (e: Exception) {
+            Log.e("InicioAppActivity", "Error verificando trabajos pendientes: ${e.message}")
+        }
     }
 
     private fun animateButtonAndNavigate() {

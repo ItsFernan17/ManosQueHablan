@@ -59,7 +59,7 @@ object VideoLoader {
                 val nuevoTitulo = vista.findViewById<TextView>(R.id.txtTitulo)
                 nuevoTitulo.text = nuevoArchivo.nameWithoutExtension.replace("_", " ").replace("-", " ")
 
-                // 🔁 Guardar cambio en caché para que otras vistas reflejen el cambio sin recargar
+                // Guardar cambio en caché para que otras vistas reflejen el cambio sin recargar
                 VideoSyncCache.videosActualizados[videoOriginal.absolutePath] = nuevoArchivo
             }
 

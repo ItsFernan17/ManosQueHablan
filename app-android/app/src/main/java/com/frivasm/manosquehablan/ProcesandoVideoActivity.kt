@@ -23,6 +23,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.work.WorkInfo
 import com.frivasm.manosquehablan.api.ApiCliente
 import com.frivasm.manosquehablan.api.RespuestaProcesamiento
 import com.frivasm.manosquehablan.config.ServerConfig
@@ -30,6 +31,7 @@ import com.frivasm.manosquehablan.helpers.ConectividadHelper
 import com.frivasm.manosquehablan.helpers.VideoStorageManager
 import com.frivasm.manosquehablan.helpers.VideoTranslationStatusHelper
 import com.frivasm.manosquehablan.dialogs.DialogUtils
+import com.frivasm.manosquehablan.workers.VideoWorkManager
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -82,6 +84,10 @@ class ProcesandoVideoActivity : AppCompatActivity() {
     // Variable para controlar que la API solo se llame una vez
     private var isApiCallInProgress = false
     
+    // Variables para WorkManager
+    private var currentSessionId: String? = null
+    private var isUsingWorkManager = true // Flag para alternar entre implementaciones
+    
     // Referencias a animadores para poder cancelarlos
     private val activeAnimators = mutableListOf<ObjectAnimator>()
     private val activeValueAnimators = mutableListOf<ValueAnimator>()
@@ -102,7 +108,13 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         val videoPath = intent.getStringExtra("VIDEO_PATH")
         if (videoPath != null) {
             // Solo usar fondo negro sin miniatura del video
-            enviarVideoAPI(videoPath)
+            if (isUsingWorkManager) {
+                // NUEVA IMPLEMENTACIÓN: Usar WorkManager
+                enviarVideoConWorkManager(videoPath)
+            } else {
+                // IMPLEMENTACIÓN ORIGINAL: Mantener como fallback
+                enviarVideoAPI(videoPath)
+            }
         } else {
             mostrarErrorYRegresarInicio("Error: No se encontró el video a procesar")
         }
@@ -334,8 +346,104 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         }
     }
     
+    /**
+     * NUEVA IMPLEMENTACIÓN: Usar WorkManager para procesamiento robusto
+     */
+    private fun enviarVideoConWorkManager(videoPath: String) {
+        // Verificar que no haya otra llamada en progreso
+        if (isApiCallInProgress) {
+            Log.d("ProcesandoVideoActivity", "Procesamiento ya en progreso, ignorando...")
+            return
+        }
+        
+        isApiCallInProgress = true
+        Log.i("ProcesandoVideoActivity", "Iniciando procesamiento con WorkManager: $videoPath")
+        
+        try {
+            // Encolar trabajo de procesamiento
+            currentSessionId = VideoWorkManager.enqueueVideoProcessing(this, videoPath)
+            Log.i("ProcesandoVideoActivity", "Trabajo encolado con sesión: $currentSessionId")
+            
+            // Observar progreso del trabajo
+            observarProgresoWorker()
+            
+        } catch (e: Exception) {
+            Log.e("ProcesandoVideoActivity", "Error iniciando WorkManager: ${e.message}")
+            isApiCallInProgress = false
+            mostrarErrorYRegresarInicio("Error iniciando el procesamiento: ${e.message}")
+        }
+    }
+    
+    /**
+     * Observa el progreso del Worker y actualiza la UI
+     */
+    private fun observarProgresoWorker() {
+        val sessionId = currentSessionId ?: return
+        
+        VideoWorkManager.observeWorkProgress(this, sessionId) { workInfo ->
+            runOnUiThread {
+                when (workInfo?.state) {
+                    WorkInfo.State.ENQUEUED -> {
+                        txtProcesando.text = "Tu video está en cola. Espera un momento más..."
+                        Log.d("ProcesandoVideoActivity", "Trabajo en cola")
+                    }
+                    
+                    WorkInfo.State.RUNNING -> {
+                        // Obtener progreso detallado del Worker
+                        val progress = workInfo.progress
+                        val state = progress.getString("state") ?: "procesando"
+                        val message = progress.getString("message") ?: "Procesando tu video..."
+                        
+                        txtProcesando.text = message
+                        Log.d("ProcesandoVideoActivity", "Trabajo ejecutándose: $state - $message")
+                    }
+                    
+                    WorkInfo.State.SUCCEEDED -> {
+                        Log.i("ProcesandoVideoActivity", "Trabajo completado exitosamente")
+                        txtProcesando.text = "¡Traducción completada!"
+                        
+                        // Detener animación
+                        stopLoadingAnimation()
+                        isApiCallInProgress = false
+                        
+                        // REPRODUCIR SONIDO SUAVE DE CONFIRMACIÓN
+                        reproducirSonidoConfirmacion()
+                        
+                        // Navegar de vuelta al inicio con delay corto
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            val intent = Intent(this, InicioAppActivity::class.java)
+                            startActivity(intent)
+                            finish()
+                        }, 1500)
+                    }
+                    
+                    WorkInfo.State.FAILED -> {
+                        Log.w("ProcesandoVideoActivity", "Trabajo falló")
+                        stopLoadingAnimation()
+                        isApiCallInProgress = false
+                        mostrarErrorYRegresarInicio("Error procesando el video. Intenta de nuevo.")
+                    }
+                    
+                    WorkInfo.State.CANCELLED -> {
+                        Log.w("ProcesandoVideoActivity", "Trabajo cancelado")
+                        stopLoadingAnimation()
+                        isApiCallInProgress = false
+                        mostrarErrorYRegresarInicio("Procesamiento cancelado")
+                    }
+                    
+                    else -> {
+                        Log.d("ProcesandoVideoActivity", "Estado del trabajo: ${workInfo?.state}")
+                    }
+                }
+            }
+        }
+    }
 
     
+
+    /**
+     * IMPLEMENTACIÓN ORIGINAL: Mantener como fallback
+     */
     private fun enviarVideoAPI(path: String) {
         // Verificar que no haya otra llamada en progreso
         if (isApiCallInProgress) {
@@ -369,7 +477,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 }
                 
                 // 2. Si el servidor está disponible, proceder con el envío
-                Log.i("ProcesandoVideoActivity", "✅ Servidor disponible. Enviando video...")
+                Log.i("ProcesandoVideoActivity", "Servidor disponible. Enviando video...")
                 runOnUiThread {
                     txtProcesando.text = "Procesando tu video, por favor espera..."
                 }
@@ -424,14 +532,28 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 }
                 
                 if (data.audio_url.isNullOrBlank()) {
-                    Log.e("ProcesandoVideoActivity", "El servidor no proporcionó URL del audio")
-                    marcarVideoComoMalTraducidoYMostrarDialogo()
+                    Log.e("ProcesandoVideoActivity", "PROBLEMA DEL SERVIDOR: No proporcionó URL del audio")
+                    // Marcar con etiqueta de error de servidor en lugar de mal traducido
+                    val videoPath = intent.getStringExtra("VIDEO_PATH")
+                    videoPath?.let { path ->
+                        val videoFile = File(path)
+                        VideoTranslationStatusHelper.marcarVideoConErrorServidor(videoFile)
+                        Log.d("ProcesandoVideoActivity", "Video marcado con ERROR DE SERVIDOR (audio faltante)")
+                    }
+                    mostrarErrorYRegresarInicio("Error del servidor: no se generó el archivo de audio")
                     return
                 }
                 
                 if (data.texto_url.isNullOrBlank()) {
-                    Log.e("ProcesandoVideoActivity", "El servidor no proporcionó URL del texto")
-                    marcarVideoComoMalTraducidoYMostrarDialogo()
+                    Log.e("ProcesandoVideoActivity", "PROBLEMA DEL SERVIDOR: No proporcionó URL del texto")
+                    // Marcar con etiqueta de error de servidor en lugar de mal traducido
+                    val videoPath = intent.getStringExtra("VIDEO_PATH")
+                    videoPath?.let { path ->
+                        val videoFile = File(path)
+                        VideoTranslationStatusHelper.marcarVideoConErrorServidor(videoFile)
+                        Log.d("ProcesandoVideoActivity", "Video marcado con ERROR DE SERVIDOR (texto faltante)")
+                    }
+                    mostrarErrorYRegresarInicio("Error del servidor: no se generó el archivo de texto")
                     return
                 }
                 
@@ -455,7 +577,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                             finish()
                         }
                     } else {
-                        // ✅ REPRODUCIR SONIDO SUAVE DE CONFIRMACIÓN
+                        // REPRODUCIR SONIDO SUAVE DE CONFIRMACIÓN
                         reproducirSonidoConfirmacion()
                         
                         // Mostrar toast de éxito y navegar con delay más corto
@@ -547,28 +669,34 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 )
                 Log.d("ProcesandoVideoActivity", "Texto guardado: ${textoInfo.privateFile.absolutePath}")
 
-                // Verificar contenido del texto para detectar "Sin detecciones válidas."
+                // Verificar contenido del texto para detectar respuestas inválidas del servidor
                 val contenidoTexto = textoInfo.privateFile.readText(Charsets.UTF_8).trim()
                 Log.d("ProcesandoVideoActivity", "Contenido del texto: '$contenidoTexto'")
                 
-                // Si el servidor envía "Sin detecciones válidas." o está vacío, marcar como mal traducido
+                // Detectar diferentes variantes de respuestas inválidas del servidor
                 val esMalTraducido = contenidoTexto.isEmpty() || 
                                    contenidoTexto.equals("Sin detecciones válidas.", ignoreCase = true) ||
-                                   contenidoTexto.equals("Sin detecciones validas.", ignoreCase = true)
+                                   contenidoTexto.equals("Sin detecciones validas.", ignoreCase = true) ||
+                                   contenidoTexto.equals("Sin detecciones válidas", ignoreCase = true) ||
+                                   contenidoTexto.equals("Sin detecciones validas", ignoreCase = true) ||
+                                   contenidoTexto.contains("No se detectaron", ignoreCase = true) ||
+                                   contenidoTexto.contains("Error en el procesamiento", ignoreCase = true)
                 
                 if (esMalTraducido) {
-                    Log.w("ProcesandoVideoActivity", "Texto contiene respuesta inválida del servidor: '$contenidoTexto'")
-                    // Marcar como mal traducido pero NO eliminar archivos - permitir acceso al contenido
+                    Log.w("ProcesandoVideoActivity", "DETECCIÓN AUTOMÁTICA: Texto contiene respuesta inválida: '$contenidoTexto'")
+                    // Marcar como MAL TRADUCIDO (contenido inválido) - NO eliminar archivos
                     val videoPath = intent.getStringExtra("VIDEO_PATH")
                     videoPath?.let { path ->
                         val videoFile = File(path)
                         VideoTranslationStatusHelper.marcarVideoComoMalTraducido(videoFile)
-                        Log.d("ProcesandoVideoActivity", "Video marcado como mal traducido debido a respuesta inválida del servidor")
+                        Log.d("ProcesandoVideoActivity", "Video marcado como MAL TRADUCIDO (contenido: 'Sin detecciones válidas.')")
                     }
+                } else {
+                    Log.i("ProcesandoVideoActivity", "Contenido del texto es válido: Video correctamente traducido")
                 }
 
                 Log.d("ProcesandoVideoActivity", "Todos los archivos guardados exitosamente en carpeta privada")
-                Log.i("ProcesandoVideoActivity", "🔒 Archivos seguros en: ${storageManager.getSessionPrivateDir(sessionName).absolutePath}")
+                Log.i("ProcesandoVideoActivity", "Archivos seguros en: ${storageManager.getSessionPrivateDir(sessionName).absolutePath}")
                 
                 // Retornar si el video fue marcado como mal traducido
                 return@withContext esMalTraducido
@@ -685,21 +813,17 @@ class ProcesandoVideoActivity : AppCompatActivity() {
             txtMensaje.text = mensaje
             txtSugerencia.text = when (estadoServidor) {
                 ServerConfig.ServerStatus.SIN_CONEXION -> 
-                    "Verifica tu conexión Wi-Fi o datos móviles"
+                    "Verifica tu conexión Wi-Fi o datos móviles e intenta más tarde"
                 ServerConfig.ServerStatus.TIMEOUT -> 
-                    "El servidor puede estar sobrecargado. Intenta en unos minutos"
+                    "El servidor está ocupado. Por favor, intenta nuevamente en unos minutos"
                 ServerConfig.ServerStatus.ERROR_SERVIDOR -> 
-                    "Hay problemas técnicos en el servidor. Intenta más tarde"
+                    "Problemas técnicos en el servidor. Intenta más tarde"
                 else -> 
-                    "Verifica tu conexión e intenta nuevamente"
+                    "Por favor, verifica tu conexión e intenta más tarde"
             }
             
-            // Configurar visibilidad del botón reintentar
-            if (permitirReintento) {
-                btnReintentar.visibility = View.VISIBLE
-            } else {
-                btnReintentar.visibility = View.GONE
-            }
+            // Siempre ocultar el botón reintentar - solo mostrar Aceptar
+            btnReintentar.visibility = View.GONE
             
             val dialog = builder.setView(view).setCancelable(false).create()
             dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
@@ -739,16 +863,16 @@ class ProcesandoVideoActivity : AppCompatActivity() {
      */
     private fun reproducirSonidoConfirmacion() {
         try {
-            Log.d("ProcesandoVideoActivity", "🔊 Reproduciendo sonido de confirmación...")
+            Log.d("ProcesandoVideoActivity", "Reproduciendo sonido de confirmación...")
             
             val toneG = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
             val r = RingtoneManager.getRingtone(applicationContext, toneG)
             r.play()
             
-            Log.d("ProcesandoVideoActivity", "✅ Sonido de confirmación reproducido exitosamente")
+            Log.d("ProcesandoVideoActivity", "Sonido de confirmación reproducido exitosamente")
             
         } catch (e: Exception) {
-            Log.w("ProcesandoVideoActivity", "❌ Error reproduciendo sonido de confirmación: ${e.message}")
+            Log.w("ProcesandoVideoActivity", "Error reproduciendo sonido de confirmación: ${e.message}")
         }
     }
     
@@ -759,6 +883,9 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         
         // Reset flag en caso de que la actividad se destruya
         isApiCallInProgress = false
+        
+        // Si usamos WorkManager, el trabajo continúa en segundo plano
+        // No cancelamos aquí para permitir que el procesamiento continúe
     }
 
     /**

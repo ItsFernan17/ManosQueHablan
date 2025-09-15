@@ -142,8 +142,8 @@ object VideoOrdenamientoViewHelper {
             carpeta.listFiles()?.filter {
                 it.isFile && 
                 it.extension.equals("mp4", ignoreCase = true) &&
-                it.exists() && // ✅ Verificar que el archivo aún existe
-                it.length() > 100_000 // ✅ Filtro de tamaño consistente
+                it.exists() && // Verificar que el archivo aún existe
+                it.length() > 100_000 // Filtro de tamaño consistente
             } ?: emptyList()
         } ?: emptyList()
     }

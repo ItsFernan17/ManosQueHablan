@@ -59,11 +59,11 @@ class ConectividadHelper(private val context: Context) {
                 
             ServerConfig.ServerStatus.SIN_CONEXION -> 
                 "Sin conexión" to "Verifica tu conexión a internet e intenta nuevamente"
-                
-            ServerConfig.ServerStatus.TIMEOUT -> 
-                "Servidor lento" to "El servidor está tardando más de lo esperado. Intenta nuevamente en unos momentos"
-                
-            ServerConfig.ServerStatus.ERROR_SERVIDOR -> 
+
+            ServerConfig.ServerStatus.TIMEOUT ->
+                "Conexión lenta" to "La respuesta está tardando demasiado. Verifica tu conexión a internet o inténtalo de nuevo en unos instantes"
+
+            ServerConfig.ServerStatus.ERROR_SERVIDOR ->
                 "Problema del servidor" to "El servidor está experimentando problemas. Intenta más tarde"
                 
             ServerConfig.ServerStatus.NO_DISPONIBLE -> 

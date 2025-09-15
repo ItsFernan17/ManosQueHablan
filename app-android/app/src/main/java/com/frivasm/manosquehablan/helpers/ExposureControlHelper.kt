@@ -160,11 +160,11 @@ class ExposureControlHelper(
         
         // Si es cámara frontal, activar inmediatamente el control automático
         if (isFrontCamera) {
-            Log.i("ExposureControl", "🚀 ACTIVANDO control automático para cámara frontal")
+            Log.i("ExposureControl", "ACTIVANDO control automático para cámara frontal")
             // Trigger inicial para comenzar el análisis inmediatamente usando Handler
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                 cameraExecutor.execute {
-                    Log.d("ExposureControl", "🔄 Iniciando análisis de exposición automático")
+                    Log.d("ExposureControl", "Iniciando análisis de exposición automático")
                 }
             }, 500) // Pequeño delay para que la cámara se estabilice
         }

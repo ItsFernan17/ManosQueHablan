@@ -43,6 +43,7 @@
     
     <!-- Botones generales -->
     <string name="cancelar">Cancelar</string>
+    <string name="btn_cancelar">Cancelar</string>
     <string name="compartir">Compartir</string>
     <string name="aceptar">Aceptar</string>
     <string name="reintentar">Reintentar</string>
@@ -78,4 +79,40 @@
     
     <!-- Símbolos -->
     <string name="bullet_point">• </string>
+    
+    <!-- Diálogo recordatorio grabar -->
+    <string name="titulo_antes_de_grabar">Recuerda antes de grabar</string>
+    <string name="tab_consejos">Consejos</string>
+    <string name="tab_uso_responsable">Uso Responsable</string>
+    <string name="btn_siguiente">Siguiente</string>
+    
+    <!-- Consejos adicionales -->
+    <string name="consejo_recuadro">Coloca tus manos dentro del recuadro en pantalla.</string>
+    <string name="consejo_estabilidad">Haz la seña despacio y con estabilidad.</string>
+    <string name="consejo_angulo">Al entrar, espera mientras se verifica el ángulo del teléfono automáticamente.</string>
+    
+    <!-- Sección importante -->
+    <string name="titulo_importante">Importante:</string>
+    <string name="mensaje_importante">La traducción puede fallar si no hay suficiente luz natural o artificial en tu ubicación.</string>
+    
+    <!-- Uso responsable -->
+    <string name="mensaje_uso_responsable">Por favor, evita grabarte haciendo señas inapropiadas o vulgares.</string>
+    <string name="uso_educativo">Usa la app para aprender señas educativas y apropiadas</string>
+    <string name="evitar_vulgares">Evita gestos inapropiados, ofensivos o vulgares</string>
+    <string name="respetar_comunidad">Respeta a la comunidad sorda y su lengua de señas</string>
+    
+    <!-- Recordatorio uso responsable -->
+    <string name="titulo_recuerda">Recuerda:</string>
+    <string name="mensaje_recuerda">Esta app está diseñada para promover el aprendizaje respetuoso de la lengua de señas. Tu comportamiento responsable ayuda a mantener un entorno educativo positivo.</string>
+    
+    <!-- Notificaciones -->
+    <string name="notif_channel_name">Traducción de Videos</string>
+    <string name="notif_channel_desc">Notificaciones cuando el video termine de procesarse</string>
+    <string name="notif_video_procesado_titulo">Video procesado</string>
+    <string name="notif_video_procesado_mensaje">Tu video ha sido traducido exitosamente</string>
+    <string name="notif_video_error_titulo">Error en traducción</string>
+    <string name="notif_video_error_mensaje">Hubo un problema al procesar tu video</string>
+    
+    <!-- Títulos de diálogos secuenciales -->
+    <string name="titulo_uso_responsable">Uso Responsable</string>
 </resources>

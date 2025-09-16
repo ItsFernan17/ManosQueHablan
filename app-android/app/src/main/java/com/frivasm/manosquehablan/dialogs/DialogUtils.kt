@@ -356,7 +356,11 @@ object DialogUtils {
 
         dialog.show()
     }
-    
+
+    fun mostrarDialogoPosicionUsuario(context: Context, onContinuar: () -> Unit) {
+        mostrarSegundoDialogoPosicion(context, onContinuar)
+    }
+
     private fun mostrarSegundoDialogoPosicion(context: Context, onContinuar: () -> Unit) {
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.dialog_posicion_usuario, null)
@@ -393,57 +397,7 @@ object DialogUtils {
         dialog.show()
     }
 
-    /**
-     * Muestra diálogo cuando un video no se tradujo correctamente
-     */
-    fun mostrarDialogoVideoMalTraducido(context: Context) {
-        Log.d("DialogUtils", "INICIANDO mostrarDialogoVideoMalTraducido")
-        
-        val mensaje = "TRADUCCIÓN NO EXITOSA\n\n" +
-                "INFORMACIÓN IMPORTANTE:\n" +
-                "• El video no pudo ser traducido correctamente\n" +
-                "• La seña puede no haberse reconocido bien\n" +
-                "• El contenido podría no ser apropiado para traducir\n" +
-                "• El video se ha guardado con una marca especial\n\n" +
-                "SUGERENCIAS PARA MEJORAR:\n" +
-                "• Verifica que la seña sea clara y bien definida\n" +
-                "• Asegúrate de usar buena iluminación\n" +
-                "• Mantén las manos dentro del recuadro\n" +
-                "• Realiza la seña de manera lenta y precisa\n\n" +
-                "ACCIONES DISPONIBLES:\n" +
-                "• Puedes intentar grabar un nuevo video\n" +
-                "• Revisa los consejos de grabación\n" +
-                "• El video actual quedará marcado como no traducido"
 
-        try {
-            Log.d("DialogUtils", "Creando AlertDialog...")
-            val builder = AlertDialog.Builder(context)
-                .setTitle("Video No Traducido")
-                .setMessage(mensaje)
-                .setPositiveButton("Entendido") { dialog, _ ->
-                    Log.d("DialogUtils", "Usuario presionó 'Entendido'")
-                    dialog.dismiss()
-                }
-                .setNeutralButton("Grabar Nuevo") { dialog, _ ->
-                    Log.d("DialogUtils", "Usuario presionó 'Grabar Nuevo'")
-                    dialog.dismiss()
-                    // El usuario puede grabar un nuevo video
-                    if (context is Activity) {
-                        val intent = Intent(context, GrabarVideoActivity::class.java)
-                        context.startActivity(intent)
-                    }
-                }
-                .setCancelable(true)
-
-            val dialog = builder.create()
-            Log.d("DialogUtils", "Mostrando diálogo...")
-            dialog.show()
-            Log.d("DialogUtils", "Diálogo mostrado exitosamente")
-        } catch (e: Exception) {
-            Log.e("DialogUtils", "ERROR al mostrar diálogo de video mal traducido: ${e.message}")
-            e.printStackTrace()
-        }
-    }
 
     /**
      * Muestra diálogo de confirmación para compartir videos mal traducidos

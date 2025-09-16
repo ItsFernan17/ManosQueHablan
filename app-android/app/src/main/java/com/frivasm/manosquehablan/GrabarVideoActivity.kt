@@ -4,11 +4,13 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraSelector
 import com.frivasm.manosquehablan.databinding.ActivityGrabarVideoBinding
+import com.frivasm.manosquehablan.dialogs.DialogUtils
 import com.frivasm.manosquehablan.helpers.*
 import com.frivasm.manosquehablan.ui.PositionValidationBanner
 import com.frivasm.manosquehablan.ui.SmoothPositionModal
@@ -413,51 +415,53 @@ class GrabarVideoActivity : AppCompatActivity() {
     }
 
     private fun mostrarRecordatorioUsoResponsable(onAceptado: () -> Unit) {
-        val yaSeMovstroRecordatorio = sharedPreferences.getBoolean("recordatorio_mostrado", false)
-
-        val mensaje = if (yaSeMovstroRecordatorio) {
-            // Mensaje corto para usuarios que ya vieron el recordatorio completo
-            "🔄 RECORDATORIO:\n\n" +
-            "• Mantén un comportamiento respetuoso\n" +
-            "• No hagas gestos ofensivos o vulgares\n" +
-            "• Usa la aplicación de manera apropiada\n\n" +
-            "¿Entiendes y aceptas continuar?"
-        } else {
-            // Mensaje completo para usuarios nuevos
-            "🔄 RECORDATORIO DE USO RESPONSABLE\n\n" +
-            "📋 NORMAS DE COMPORTAMIENTO:\n" +
-            "• Mantén un comportamiento respetuoso en todo momento\n" +
-            "• No hagas gestos ofensivos, vulgares o inapropiados\n" +
-            "• No uses la aplicación para contenido inadecuado\n" +
-            "• Respeta a otros usuarios y la comunidad\n\n" +
-            "💡 CONSEJOS PARA MEJOR TRADUCCIÓN:\n" +
-            "• Mantén distancia de 30-40 cm del teléfono\n" +
-            "• Usa buena luz frontal y evita contraluz\n" +
-            "• Mantén las manos dentro del recuadro\n" +
-            "• Haz la seña despacio y con estabilidad\n\n" +
-            "📱 Consejo: Toque largo en 🔄 para ver este recordatorio nuevamente\n\n" +
-            "¿Entiendes y aceptas usar la aplicación de manera responsable?"
-        }
-
         try {
-            val builder = AlertDialog.Builder(this)
-                .setTitle("📋 Uso Responsable")
-                .setMessage(mensaje)
-                .setPositiveButton("✅ Acepto") { dialog, _ ->
-                    dialog.dismiss()
-                    onAceptado()
-                }
-                .setNegativeButton("❌ Cancelar") { dialog, _ ->
-                    dialog.dismiss()
-                    Log.i("GrabarVideo", "Usuario canceló el recordatorio de uso responsable")
-                }
+            // Primer diálogo: Recordatorio antes de grabar
+            val dialogView = layoutInflater.inflate(R.layout.dialog_recordatorio_grabar, null)
+            val dialog = AlertDialog.Builder(this)
+                .setView(dialogView)
                 .setCancelable(false)
+                .create()
 
-            builder.create().show()
+            val btnSiguiente = dialogView.findViewById<LinearLayout>(R.id.btnSiguienteRecordatorio)
+
+            btnSiguiente.setOnClickListener {
+                dialog.dismiss()
+                // Segundo diálogo: Uso responsable
+                mostrarDialogoUsoResponsable {
+                    // Tercer diálogo: Posición correcta (el que ya existe)
+                    DialogUtils.mostrarDialogoPosicionUsuario(this, onAceptado)
+                }
+            }
+
+            dialog.show()
         } catch (e: Exception) {
-            Log.e("GrabarVideo", "Error al mostrar recordatorio: ${e.message}")
-            // Si hay error mostrando el diálogo, continuar sin él
+            Log.e("GrabarVideo", "Error al mostrar secuencia de recordatorios: ${e.message}")
+            // Si hay error, continuar sin diálogos
             onAceptado()
+        }
+    }
+    
+    
+    private fun mostrarDialogoUsoResponsable(onSiguiente: () -> Unit) {
+        try {
+            val dialogView = layoutInflater.inflate(R.layout.dialog_uso_responsable, null)
+            val dialog = AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setCancelable(false)
+                .create()
+
+            val btnSiguiente = dialogView.findViewById<LinearLayout>(R.id.btnSiguienteUsoResponsable)
+
+            btnSiguiente.setOnClickListener {
+                dialog.dismiss()
+                onSiguiente()
+            }
+
+            dialog.show()
+        } catch (e: Exception) {
+            Log.e("GrabarVideo", "Error al mostrar diálogo de uso responsable: ${e.message}")
+            onSiguiente()
         }
     }
     

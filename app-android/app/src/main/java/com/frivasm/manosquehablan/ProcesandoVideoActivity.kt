@@ -28,6 +28,7 @@ import com.frivasm.manosquehablan.api.ApiCliente
 import com.frivasm.manosquehablan.api.RespuestaProcesamiento
 import com.frivasm.manosquehablan.config.ServerConfig
 import com.frivasm.manosquehablan.helpers.ConectividadHelper
+import com.frivasm.manosquehablan.helpers.NotificationHelper
 import com.frivasm.manosquehablan.helpers.VideoStorageManager
 import com.frivasm.manosquehablan.helpers.VideoTranslationStatusHelper
 import com.frivasm.manosquehablan.dialogs.DialogUtils
@@ -405,6 +406,10 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                         // REPRODUCIR SONIDO SUAVE DE CONFIRMACIÓN
                         reproducirSonidoConfirmacion()
                         
+                        // Mostrar notificación de éxito
+                        val notificationHelper = NotificationHelper(this@ProcesandoVideoActivity)
+                        notificationHelper.mostrarNotificacionVideoExitoso()
+                        
                         // Navegar de vuelta al inicio con delay corto
                         Handler(Looper.getMainLooper()).postDelayed({
                             val intent = Intent(this, InicioAppActivity::class.java)
@@ -587,17 +592,25 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                     if (esMalTraducido) {
                         // Video marcado como mal traducido pero archivos guardados
                         Log.w("ProcesandoVideoActivity", "Video completado pero marcado como mal traducido")
-                        Log.d("ProcesandoVideoActivity", "Llamando a mostrar diálogo de mal traducido...")
+                        Log.d("ProcesandoVideoActivity", "Video procesado con error - enviando notificación...")
                         
-                        // Mostrar el diálogo de mal traducido directamente
+                        // Mostrar notificación de error y regresar al inicio
                         runOnUiThread {
                             stopLoadingAnimation()
-                            DialogUtils.mostrarDialogoVideoMalTraducido(this@ProcesandoVideoActivity)
-                            Log.d("ProcesandoVideoActivity", "Diálogo de mal traducido mostrado")
+                            val notificationHelper = NotificationHelper(this@ProcesandoVideoActivity)
+                            notificationHelper.mostrarNotificacionVideoError()
+                            Log.d("ProcesandoVideoActivity", "Notificación de error enviada")
+                            
+                            // Regresar al inicio
+                            mostrarErrorYRegresarInicio("Video guardado pero requiere nueva traducción")
                         }
                     } else {
                         // REPRODUCIR SONIDO SUAVE DE CONFIRMACIÓN
                         reproducirSonidoConfirmacion()
+                        
+                        // Mostrar notificación de éxito
+                        val notificationHelper = NotificationHelper(this@ProcesandoVideoActivity)
+                        notificationHelper.mostrarNotificacionVideoExitoso()
                         
                         // Mostrar toast de éxito y navegar con delay más corto
                         Toast.makeText(
@@ -924,10 +937,11 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         }
         
         runOnUiThread {
-            // Mostrar diálogo de advertencia
-            DialogUtils.mostrarDialogoVideoMalTraducido(this@ProcesandoVideoActivity)
+            // Mostrar notificación de error
+            val notificationHelper = NotificationHelper(this@ProcesandoVideoActivity)
+            notificationHelper.mostrarNotificacionVideoError()
             
-            // Regresar al inicio después de mostrar el diálogo
+            // Regresar al inicio después de un breve delay
             Handler(Looper.getMainLooper()).postDelayed({
                 mostrarErrorYRegresarInicio("Video guardado pero requiere nueva traducción")
             }, 2000) // Tiempo para que el usuario lea el diálogo

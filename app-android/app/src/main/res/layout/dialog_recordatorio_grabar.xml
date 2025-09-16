@@ -11,12 +11,12 @@
         android:id="@+id/txtTituloRecordatorio"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Recuerda antes de grabar:"
+        android:text="@string/titulo_antes_de_grabar"
         android:textSize="20sp"
         android:textColor="@color/texto_videos"
         android:fontFamily="@font/poppins_semibold"
         android:gravity="center"
-        android:layout_marginBottom="20dp" />
+        android:layout_marginBottom="16dp" />
 
     <!-- Contenido -->
     <ScrollView
@@ -26,6 +26,7 @@
         android:maxHeight="300dp">
 
         <LinearLayout
+            android:id="@+id/contenidoDialog"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -74,7 +75,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Usa buena luz frontal y evita contraluz. El sistema ajustará automáticamente la exposición, pero tú debes ubicarte en un lugar con luz adecuada."
+                    android:text="Usa buena luz frontal y evita contraluz. Toca la pantalla para ajustar el brillo manualmente."
                     android:textSize="15sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
@@ -99,7 +100,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Coloca tus manos dentro del recuadro en pantalla."
+                    android:text="@string/consejo_recuadro"
                     android:textSize="15sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
@@ -124,13 +125,13 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Haz la seña despacio y con estabilidad."
+                    android:text="@string/consejo_estabilidad"
                     android:textSize="15sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
             </LinearLayout>
 
-            <!-- Punto 5 - Nuevo punto sobre verificación de ángulo -->
+            <!-- Punto 5 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -149,7 +150,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Al entrar, espera mientras se verifica el ángulo del teléfono automáticamente."
+                    android:text="@string/consejo_angulo"
                     android:textSize="15sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
@@ -166,7 +167,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Importante:"
+                    android:text="@string/titulo_importante"
                     android:textSize="16sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_semibold"
@@ -175,7 +176,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="IMPORTANTE: La traducción puede fallar si no hay suficiente luz natural o artificial en tu ubicación. Toca la pantalla para que la app ajuste automáticamente el brillo."
+                    android:text="@string/mensaje_importante"
                     android:textSize="14sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
@@ -184,25 +185,35 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- Botón Siguiente -->
+    <!-- Botones -->
     <LinearLayout
-        android:id="@+id/btnSiguienteRecordatorio"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:paddingVertical="12dp"
-        android:paddingHorizontal="20dp"
-        android:background="@drawable/boton_redondeado_aceptar"
         android:layout_marginTop="8dp">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- Botón Siguiente -->
+        <LinearLayout
+            android:id="@+id/btnSiguienteRecordatorio"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Siguiente"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            android:fontFamily="@font/poppins_semibold" />
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingVertical="12dp"
+            android:paddingHorizontal="20dp"
+            android:background="@drawable/boton_redondeado_aceptar"
+            android:layout_marginEnd="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/btn_siguiente"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold" />
+        </LinearLayout>
 
     </LinearLayout>
 

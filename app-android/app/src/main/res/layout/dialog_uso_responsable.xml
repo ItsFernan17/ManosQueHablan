@@ -6,81 +6,61 @@
     android:padding="24dp"
     android:background="@drawable/fondo_popup_redondeado">
 
-    <!-- Icono de advertencia -->
-    <ImageView
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:layout_gravity="center"
-        android:src="@drawable/warning"
-        app:tint="@color/sunset_orange"
-        android:layout_marginBottom="16dp"
-        xmlns:app="http://schemas.android.com/apk/res-auto" />
-
     <!-- Título -->
     <TextView
-        android:id="@+id/txtTituloVideoMalTraducido"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/video_mal_traducido_titulo"
+        android:text="@string/titulo_uso_responsable"
         android:textSize="20sp"
         android:textColor="@color/texto_videos"
         android:fontFamily="@font/poppins_semibold"
         android:gravity="center"
         android:layout_marginBottom="16dp" />
 
-    <!-- Mensaje principal -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/video_mal_traducido_mensaje"
-        android:textSize="16sp"
-        android:textColor="@color/texto_videos"
-        android:fontFamily="@font/poppins_regular"
-        android:gravity="center"
-        android:layout_marginBottom="20dp" />
-
-    <!-- Recordatorios para mejorar -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/para_mejorar_traduccion"
-        android:textSize="15sp"
-        android:textColor="@color/violeta"
-        android:fontFamily="@font/poppins_semibold"
-        android:layout_marginBottom="12dp" />
-
+    <!-- Contenido -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dp"
-        android:maxHeight="200dp">
+        android:maxHeight="300dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Mensaje principal -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/mensaje_uso_responsable"
+                android:textSize="16sp"
+                android:textColor="@color/texto_videos"
+                android:fontFamily="@font/poppins_regular"
+                android:gravity="center"
+                android:layout_marginBottom="16dp" />
+
             <!-- Punto 1 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
+                android:layout_marginBottom="12dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/bullet_point"
-                    android:textSize="14sp"
-                    android:textColor="@color/sunset_orange"
+                    android:text="• "
+                    android:textSize="16sp"
+                    android:textColor="@color/violeta"
                     android:fontFamily="@font/poppins_semibold" />
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/consejo_distancia"
-                    android:textSize="14sp"
+                    android:text="@string/uso_educativo"
+                    android:textSize="15sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
             </LinearLayout>
@@ -90,22 +70,22 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
+                android:layout_marginBottom="12dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="• "
-                    android:textSize="14sp"
-                    android:textColor="@color/sunset_orange"
+                    android:textSize="16sp"
+                    android:textColor="@color/violeta"
                     android:fontFamily="@font/poppins_semibold" />
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/consejo_iluminacion"
-                    android:textSize="14sp"
+                    android:text="@string/evitar_vulgares"
+                    android:textSize="15sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
             </LinearLayout>
@@ -115,46 +95,47 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
+                android:layout_marginBottom="16dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="• "
-                    android:textSize="14sp"
-                    android:textColor="@color/sunset_orange"
+                    android:textSize="16sp"
+                    android:textColor="@color/violeta"
                     android:fontFamily="@font/poppins_semibold" />
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/consejo_manos"
-                    android:textSize="14sp"
+                    android:text="@string/respetar_comunidad"
+                    android:textSize="15sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
             </LinearLayout>
 
-            <!-- Punto 4 -->
+            <!-- Sección importante -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
+                android:orientation="vertical"
+                android:background="@drawable/fondo_importante"
+                android:padding="12dp">
 
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="• "
-                    android:textSize="14sp"
-                    android:textColor="@color/sunset_orange"
-                    android:fontFamily="@font/poppins_semibold" />
+                    android:text="@string/titulo_recuerda"
+                    android:textSize="16sp"
+                    android:textColor="@color/texto_videos"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:layout_marginBottom="8dp" />
 
                 <TextView
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/consejo_velocidad"
+                    android:text="@string/mensaje_recuerda"
                     android:textSize="14sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
@@ -168,22 +149,29 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center">
+        android:gravity="center"
+        android:layout_marginTop="8dp">
 
-        <!-- Botón Entendido -->
-        <TextView
-            android:id="@+id/btnEntendido"
+        <!-- Botón Siguiente -->
+        <LinearLayout
+            android:id="@+id/btnSiguienteUsoResponsable"
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/entendido"
-            android:textSize="16sp"
-            android:textColor="@color/white"
-            android:fontFamily="@font/poppins_semibold"
-            android:background="@drawable/boton_principal_rounded"
+            android:orientation="horizontal"
             android:gravity="center"
-            android:clickable="true"
-            android:focusable="true" />
+            android:paddingVertical="12dp"
+            android:paddingHorizontal="20dp"
+            android:background="@drawable/boton_redondeado_aceptar">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/btn_siguiente"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold" />
+        </LinearLayout>
 
     </LinearLayout>
 

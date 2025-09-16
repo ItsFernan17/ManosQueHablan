@@ -80,15 +80,6 @@ class InicioAppActivity : AppCompatActivity() {
         btnBuscar = findViewById(R.id.btnBuscar)
         btnNuevoVideo = findViewById(R.id.btnNuevoVideo)
 
-        // Verificar si debe mostrar diálogo de mal traducido
-        val mostrarDialogoMalTraducido = intent.getBooleanExtra("MOSTRAR_DIALOGO_MAL_TRADUCIDO", false)
-        if (mostrarDialogoMalTraducido) {
-            // Mostrar el diálogo después de que la interfaz esté lista
-            findViewById<View>(android.R.id.content).post {
-                DialogUtils.mostrarDialogoVideoMalTraducido(this)
-            }
-        }
-
         btnNuevoVideo.setOnClickListener {
             // Animar el botón antes de navegar
             animateButtonAndNavigate()

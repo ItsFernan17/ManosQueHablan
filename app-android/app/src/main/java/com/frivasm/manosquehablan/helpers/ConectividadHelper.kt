@@ -22,30 +22,39 @@ class ConectividadHelper(private val context: Context) {
     suspend fun verificarServidorConReintentos(
         onProgress: (String) -> Unit = {}
     ): ServerConfig.ServerStatus = withContext(Dispatchers.IO) {
-        
+
         onProgress("Verificando conexión al servidor...")
-        
+
+        // Mensajes más amigables para cada reintento
+        val mensajesReintento = listOf(
+            "Intentando reconectar...",
+            "Un momento más...",
+            "Casi listo..."
+        )
+
         repeat(ServerConfig.Timeouts.MAX_RETRY_ATTEMPTS) { intento ->
             val resultado = ServerConfig.verificarDisponibilidadServidor()
-            
+
             Log.d(TAG, "Intento ${intento + 1}: ${resultado.mensaje}")
-            
+
             if (resultado.esDisponible) {
-                onProgress("Servidor disponible")
+                onProgress("¡Conexión exitosa!")
                 return@withContext resultado
             }
-            
+
             // Si no es el último intento, esperar antes de reintentar
             if (intento < ServerConfig.Timeouts.MAX_RETRY_ATTEMPTS - 1) {
-                onProgress("Reintentando conexión... (${intento + 2}/${ServerConfig.Timeouts.MAX_RETRY_ATTEMPTS})")
+                // Usar mensaje amigable en lugar del contador
+                val mensajeAmigable = mensajesReintento.getOrElse(intento) { "Reintentando..." }
+                onProgress(mensajeAmigable)
                 delay(ServerConfig.Timeouts.RETRY_DELAY_MS)
             }
         }
-        
+
         // Si llegamos aquí, no se pudo conectar
         val ultimoResultado = ServerConfig.verificarDisponibilidadServidor()
-        onProgress("Error de conexión")
-        
+        onProgress("No se pudo conectar al servidor")
+
         ultimoResultado
     }
     
@@ -54,23 +63,23 @@ class ConectividadHelper(private val context: Context) {
      */
     fun obtenerMensajeAmigable(status: ServerConfig.ServerStatus): Pair<String, String> {
         return when (status) {
-            ServerConfig.ServerStatus.DISPONIBLE -> 
+            ServerConfig.ServerStatus.DISPONIBLE ->
                 "Conexión exitosa" to "El servidor está funcionando correctamente"
-                
-            ServerConfig.ServerStatus.SIN_CONEXION -> 
-                "Sin conexión" to "Verifica tu conexión a internet e intenta nuevamente"
+
+            ServerConfig.ServerStatus.SIN_CONEXION ->
+                "Sin conexión a internet" to "No se detecta conexión de red. Activa Wi-Fi o datos móviles para continuar"
 
             ServerConfig.ServerStatus.TIMEOUT ->
-                "Conexión lenta" to "La respuesta está tardando demasiado. Verifica tu conexión a internet o inténtalo de nuevo en unos instantes"
+                "Tiempo de espera agotado" to "El servidor está tardando en responder. Puede ser por congestión de red o mantenimiento"
 
             ServerConfig.ServerStatus.ERROR_SERVIDOR ->
-                "Problema del servidor" to "El servidor está experimentando problemas. Intenta más tarde"
-                
-            ServerConfig.ServerStatus.NO_DISPONIBLE -> 
-                "Servidor no disponible" to "El servidor de traducción no está disponible en este momento"
-                
-            ServerConfig.ServerStatus.ERROR_DESCONOCIDO -> 
-                "Error de conexión" to "Ocurrió un error inesperado. Verifica tu conexión e intenta nuevamente"
+                "Error interno del servidor" to "Hay un problema técnico en nuestros servidores. Estamos trabajando para solucionarlo"
+
+            ServerConfig.ServerStatus.NO_DISPONIBLE ->
+                "Servicio temporalmente suspendido" to "El servicio de traducción está en mantenimiento programado. Regresa en unos minutos"
+
+            ServerConfig.ServerStatus.ERROR_DESCONOCIDO ->
+                "Error inesperado" to "Ha ocurrido un problema no identificado. Intenta nuevamente o contacta soporte si persiste"
         }
     }
     

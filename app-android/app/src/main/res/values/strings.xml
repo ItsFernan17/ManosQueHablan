@@ -97,13 +97,13 @@
     
     <!-- Uso responsable -->
     <string name="mensaje_uso_responsable">Por favor, evita grabarte haciendo señas inapropiadas o vulgares.</string>
-    <string name="uso_educativo">Usa la app para aprender señas educativas y apropiadas</string>
+    <string name="uso_educativo">Usa la app para traducir la lengua de señas de manera adecuada y respetuosa</string>
     <string name="evitar_vulgares">Evita gestos inapropiados, ofensivos o vulgares</string>
-    <string name="respetar_comunidad">Respeta a la comunidad sorda y su lengua de señas</string>
+    <string name="respetar_comunidad">Respeta a quienes se comunican en lengua de señas</string>
     
     <!-- Recordatorio uso responsable -->
     <string name="titulo_recuerda">Recuerda:</string>
-    <string name="mensaje_recuerda">Esta app está diseñada para promover el aprendizaje respetuoso de la lengua de señas. Tu comportamiento responsable ayuda a mantener un entorno educativo positivo.</string>
+    <string name="mensaje_recuerda">Esta app está diseñada para traducir la lengua de señas de forma respetuosa. Tu uso responsable ayuda a mantener un entorno positivo para la comunidad.</string>
     
     <!-- Notificaciones -->
     <string name="notif_channel_name">Traducción de Videos</string>

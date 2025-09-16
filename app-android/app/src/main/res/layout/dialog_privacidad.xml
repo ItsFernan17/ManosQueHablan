@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="0dp"
+    android:background="@drawable/fondo_popup_redondeado">
+
+    <!-- Header con título -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="16dp">
+
+        <TextView
+            android:id="@+id/txtTituloPrivacidad"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="Política de Privacidad"
+            android:textColor="@color/rojo"
+            android:textSize="20sp"
+            android:fontFamily="@font/poppins_bold"
+            android:gravity="center" />
+    </RelativeLayout>
+
+    <!-- Contenido del diálogo -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="24dp"
+        android:paddingBottom="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Introducción -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tu privacidad es prioridad. Manos Que Hablan no recolecta datos personales y no requiere cuentas ni inicio de sesión."
+                android:textColor="@color/texto_videos"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_regular"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="18dp" />
+
+            <!-- Datos que recopilamos -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="¿Qué datos recopilamos?"
+                android:textColor="@color/rojo"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• No pedimos nombre, correo ni ningún dato personal.\n• No llevamos registro de uso identificado.\n• Los videos permanecen en tu dispositivo."
+                android:textColor="@color/texto_videos"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_regular"
+                android:lineSpacingExtra="3dp"
+                android:layout_marginBottom="18dp" />
+
+            <!-- Uso de los datos / Procesamiento -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="¿Cómo se procesan los videos?"
+                android:textColor="@color/rojo"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• Solo se envían a traducir cuando tú lo decides.\n• Los videos se procesan únicamente durante la traducción y luego se eliminan.\n• No se guardan copias en el servidor ni se comparten con terceros."
+                android:textColor="@color/texto_videos"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_regular"
+                android:lineSpacingExtra="3dp"
+                android:layout_marginBottom="18dp" />
+
+            <!-- Protección de datos -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Protección de tus datos"
+                android:textColor="@color/rojo"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• Conexiones seguras durante la traducción.\n• Sin almacenamiento de videos en servidores.\n• No compartimos tu información con terceros."
+                android:textColor="@color/texto_videos"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_regular"
+                android:lineSpacingExtra="3dp"
+                android:layout_marginBottom="18dp" />
+
+            <!-- Compromiso -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nuestro compromiso"
+                android:textColor="@color/rojo"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• No vendemos ni filtramos datos.\n• Usamos el procesamiento solo para la traducción solicitada.\n• Eres tú quien decide cuándo enviar un video a traducir."
+                android:textColor="@color/texto_videos"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_regular"
+                android:lineSpacingExtra="3dp"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Botón Aceptar -->
+            <LinearLayout
+                android:id="@+id/btnAceptarPrivacidad"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="32dp"
+                android:background="@drawable/boton_redondeado_aceptar"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingVertical="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_medium"
+                    android:text="Entendido"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

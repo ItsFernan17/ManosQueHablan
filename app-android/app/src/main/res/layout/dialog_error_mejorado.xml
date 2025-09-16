@@ -59,51 +59,26 @@
         android:background="@drawable/rounded_hint_background"
         android:padding="12dp" />
 
-    <!-- Contenedor de botones -->
+    <!-- Botón Aceptar -->
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:id="@+id/btnAceptar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center">
+        android:layout_marginHorizontal="32dp"
+        android:background="@drawable/boton_redondeado_aceptar"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:paddingVertical="12dp">
 
-        <!-- Botón Reintentar -->
-        <LinearLayout
-            android:id="@+id/btnReintentar"
-            android:layout_width="120dp"
-            android:layout_height="45dp"
-            android:background="@drawable/boton_principal_rounded"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center"
-            android:layout_marginEnd="12dp">
-            
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/reintentar"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                android:fontFamily="@font/poppins_medium" />
-        </LinearLayout>
-
-        <!-- Botón Aceptar -->
-        <LinearLayout
-            android:id="@+id/btnAceptar"
-            android:layout_width="120dp"
-            android:layout_height="45dp"
-            android:background="@drawable/boton_secundario_rounded"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center">
-            
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/aceptar"
-                android:textColor="@color/texto_principal"
-                android:textSize="14sp"
-                android:fontFamily="@font/poppins_medium" />
-        </LinearLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_medium"
+            android:text="Entendido"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            android:textSize="16sp" />
     </LinearLayout>
 
 </LinearLayout>

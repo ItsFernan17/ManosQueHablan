@@ -7,8 +7,6 @@ from typing import List, Dict, Any, Tuple
 import cv2
 from gtts import gTTS
 
-PHONE_W, PHONE_H = 720, 1280  # vertical 9:16
-
 
 def get_ffmpeg_path() -> str:
     """Obtiene ffmpeg binario portable desde imageio-ffmpeg; si falla, usa 'ffmpeg' del PATH."""
@@ -89,15 +87,21 @@ def _build_sentence_for_group(group: List[Dict[str, Any]]) -> str:
 # ----------------------------------------
 
 def build_ass_file_per_detection(
-    detections: List[Dict[str, Any]],
+   detections: List[Dict[str, Any]],
     ass_path: str,
-    font: str = "Poppins",     # caerá a una fuente del sistema si no existe
-    font_size: int = 50,
-    margin_v: int = 50,
-    subtitle_delay: float = 0.0  # retraso en segundos para mostrar subtítulos después de la seña
+    font: str = "Arial",       # Fuente compatible universalmente
+    font_size: int = 50,       # Tamaño optimizado para 720p
+    margin_v: int = 84,        # distancia desde el borde inferior
+    subtitle_delay: float = 0.0
 ) -> None:
+    """
+    Subtítulos estilo 'pill':
+    - Texto blanco pequeño centrado.
+    - Caja negra opaca con bordes suaves (simula esquinas redondeadas).
+    - Sin forzar la resolución del video (solo coordenadas de referencia).
+    """
     header = f"""[Script Info]
-Title: Subs estilo Poppins
+Title: Subs estilo pill
 ScriptType: v4.00+
 WrapStyle: 2
 ScaledBorderAndShadow: yes
@@ -107,50 +111,51 @@ PlayResY: 1280
 [V4+ Styles]
 ; Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-; PrimaryColour: texto blanco      (&H00FFFFFF, alfa 00 = opaco)
-; OutlineColour: caja negra 85%    (&H28 000000 -> ~85% opaco, 15% transparente)
-Style: Default,{font},{font_size},&H00FFFFFF,&H000000FF,&H28000000,&H00000000,-1,0,0,0,100,100,0,0,3,18,0,2,30,30,{margin_v},1
+; PrimaryColour  -> texto blanco (opaco)
+; OutlineColour  -> color de la CAJA (negro con ~85% opacidad)
+; BackColour     -> sombra/halo (ligero)
+Style: Pill,{font},{font_size},&H00FFFFFF,&H000000FF,&H2A000000,&H5A000000,-1,0,0,0,100,100,0,0,3,10,0,2,30,30,{margin_v},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
+
     def _to_ass_time(s: float) -> str:
         h = int(s // 3600); m = int((s % 3600) // 60); sec = s % 60
         return f"{h:d}:{m:02d}:{sec:05.2f}"
 
     lines = []
-    subtitle_times = []  # Para evitar overlaps: [(start, end), ...]
-    
+    used = []  # evitar solapes
+
     for d in sorted(detections or [], key=lambda x: x.get("start_time", 0.0)):
         label = _clean_label(str(d.get("label", "")))
-        if not label: continue
-        
-        # Calcular delay dinámico basado en duración de la seña
-        sign_duration = float(d.get("end_time", 0.0)) - float(d.get("start_time", 0.0))
-        
-        # Para señas rápidas (< 0.5s): delay mínimo
-        # Para señas normales (0.5-2s): delay proporcional pequeño 
-        # Para señas largas (>2s): delay fijo pequeño
-        if sign_duration < 0.5:
-            dynamic_delay = 0.01  # 10ms para señas muy rápidas
-        elif sign_duration < 2.0:
-            dynamic_delay = sign_duration * 0.02  # 2% de la duración de la seña
+        if not label:
+            continue
+
+        # pequeño retardo dinámico (como ya hacías)
+        dur = float(d.get("end_time", 0.0)) - float(d.get("start_time", 0.0))
+        if dur < 0.5:
+            dyn = 0.01
+        elif dur < 2.0:
+            dyn = dur * 0.02
         else:
-            dynamic_delay = 0.04  # 40ms máximo para señas largas
-        
-        # Los subtítulos aparecen DESPUÉS de que termine la seña con delay dinámico
-        start_subtitle = float(d.get("end_time", 0.0)) + max(subtitle_delay, dynamic_delay)
-        end_subtitle = start_subtitle + min(1.2, max(0.8, sign_duration * 0.8))  # Duración proporcional a la seña
-        
-        # Evitar overlaps con subtítulos anteriores
-        for prev_start, prev_end in subtitle_times:
-            if start_subtitle < prev_end:
-                # Si hay overlap, mover el inicio después del anterior (gap mínimo)
-                start_subtitle = prev_end + 0.02  # Gap de solo 20ms
-                end_subtitle = start_subtitle + min(1.2, max(0.8, sign_duration * 0.8))
-        
-        subtitle_times.append((start_subtitle, end_subtitle))
-        lines.append(f"Dialogue: 0,{_to_ass_time(start_subtitle)},{_to_ass_time(end_subtitle)},Default,,0,0,0,,{label}")
+            dyn = 0.04
+
+        start = float(d.get("end_time", 0.0)) + max(subtitle_delay, dyn)
+        end   = start + min(1.2, max(0.8, dur * 0.8))
+
+        for ps, pe in used:
+            if start < pe:
+                start = pe + 0.02
+                end   = start + min(1.2, max(0.8, dur * 0.8))
+        used.append((start, end))
+
+        # Truco para “bordes suaves” del pill:
+        #   - BorderStyle=3 crea caja opaca
+        #   - \bord ajusta acolchado; \be suaviza bordes (blur)
+        #   - \an2 asegura centrado abajo (alignment 2)
+        tag = r"{\an2\bord10\be2}"
+        lines.append(f"Dialogue: 0,{_to_ass_time(start)},{_to_ass_time(end)},Pill,,0,0,0,,{tag}{label}")
 
     with open(ass_path, "w", encoding="utf-8") as f:
         f.write(header + "\n".join(lines))
@@ -312,80 +317,178 @@ def build_ffmpeg_filter_and_inputs(
 ) -> Tuple[List[str], List[str]]:
     """
     Prepara entradas y filtros:
-      - Video: escala + pad + ASS
+      - Video: solo ASS (sin rescalado)
       - Audio: silencio base recortado a duración real + todos los TTS con adelay + amix
     """
+    # Entradas (0 = video base, 1..N = TTS)
     inputs = ["-i", src_video]
     for item in tts_items:
         inputs += ["-i", item["audio_path"]]
 
-    # Escapar ruta ASS para Windows
+    # Escapar ruta ASS (Linux/Windows)
     ass_escaped = ass_path.replace("\\", "/").replace(":", r"\:").replace("'", r"\'")
 
-    # Cadena de video
-    vchain = (
-        f"[0:v]"
-        f"scale={PHONE_W}:{PHONE_H}:force_original_aspect_ratio=decrease,"
-        f"pad={PHONE_W}:{PHONE_H}:(ow-iw)/2:(oh-ih)/2:black,"
-        f"ass='{ass_escaped}'[vout]"
-    )
+    # Cadena de video: solo subtítulos
+    vchain = f"[0:v]ass='{ass_escaped}'[vout]"
 
-    # Silencio base FINITO: recortado a la duración real
+    # ===== Audio =====
+    # Silencio base FINITO (stereo/44.1k) recortado a duración real
     dur = max(0.01, float(video_duration))
     a_parts = [
         "anullsrc=channel_layout=stereo:sample_rate=44100[base0]",
         f"[base0]atrim=0:{dur:.3f},asetpts=N/SR/TB[base]"
     ]
+
+    # Mezclaremos base + N TTS
     mix_inputs = "[base]"
     out_labels = []
 
+    # Para cada TTS:
+    # - Resample a 44.1k y estéreo para igualar con base
+    # - Reset PTS
+    # - Aplicar delay (para mono, usar 'delays=...:all=1')
     for idx, item in enumerate(tts_items, start=1):
         delay_ms = max(0, int(round(float(item.get("start_time", 0.0)) * 1000)))
-        a_parts.append(f"[{idx}:a]volume=12dB,adelay={delay_ms}|{delay_ms}[a{idx}]")  # Subido a 12dB para mejor audibilidad
+        a_parts.append(
+            f"[{idx}:a]"
+            f"aresample=async=1:first_pts=0,"
+            f"aformat=sample_rates=44100:channel_layouts=stereo,"
+            f"adelay=delays={delay_ms}:all=1"
+            f"[a{idx}]"
+        )
         out_labels.append(f"[a{idx}]")
 
     if out_labels:
+        # Construir inputs para amix: 1 (base) + len(tts_items)
         mix_inputs += "".join(out_labels)
-        amix = f"{mix_inputs}amix=inputs={1+len(tts_items)}:duration=longest:dropout_transition=0[aout]"
+        amix_inputs = 1 + len(tts_items)
+
+        # OJO: sin :normalize=1 (tu ffmpeg no lo soporta).
+        # Si quieres nivelado automático, añadimos dynaudnorm después de amix.
+        amix = (
+            f"{mix_inputs}"
+            f"amix=inputs={amix_inputs}:duration=longest:dropout_transition=0"
+            f",dynaudnorm=f=150:g=15"
+            f",acompressor=threshold=-18dB:ratio=2:attack=5:release=50"
+            f",alimiter=limit=0.95[aout]"
+        )
         filters = [vchain, *a_parts, amix]
     else:
+        # Sin TTS: deja el silencio base como salida
         a_parts.append("[base]anull[aout]")
         filters = [vchain, *a_parts]
 
     return inputs, filters
 
 
-def ffmpeg_burn_subs_and_mix_audio(
+
+def ffmpeg_burn_subs_and_mix_audio_no_resize(
     src_video: str,
     ass_path: str,
     tts_items: List[Dict[str, Any]],
     out_video_path: str
 ) -> None:
     """
-    Renderiza video vertical con ASS y mezcla TTS. Portátil con imageio-ffmpeg.
-    Evita render infinito: silencio base recortado + -shortest.
+    Renderiza el video SIN cambiar resolución:
+      - Evita normalize=1 (no existe en FFmpeg 4.2.2).
+      - Fuerza todos los audios a 44.1 kHz MONO y usa adelay legacy (adelay=MS).
+      - Mezcla con amix y nivelación posterior (dynaudnorm + acompressor + alimiter).
+    Requisitos previos:
+      - get_ffmpeg_path()
+      - get_video_duration_seconds()
     """
     ffmpeg = get_ffmpeg_path()
     video_duration = get_video_duration_seconds(src_video)
 
-    inputs, filters = build_ffmpeg_filter_and_inputs(src_video, ass_path, tts_items, video_duration)
+    # Entradas (0 = video, 1..N = TTS)
+    inputs = ["-i", src_video]
+    for item in tts_items:
+        inputs += ["-i", item["audio_path"]]
+
+    # Escapar ruta ASS de forma segura
+    ass_escaped = ass_path.replace("\\", "/").replace(":", r"\:").replace("'", r"\'")
+
+    # Cadena de video: solo quemar ASS, sin reescalar
+    vchain = f"[0:v]ass='{ass_escaped}'[vout]"
+
+    # ===== Audio =====
+    # Base de silencio FINITA: 44.1 kHz MONO, recortada a la duración real del video
+    dur = max(0.01, float(video_duration))
+    a_parts = [
+        "anullsrc=channel_layout=mono:sample_rate=44100[base0]",
+        f"[base0]atrim=0:{dur:.3f},asetpts=N/SR/TB[base]"
+    ]
+
+    mix_inputs = "[base]"
+    out_labels = []
+
+    # Para cada TTS:
+    # - Convertir a 44.1 kHz MONO (compatibilidad con amix)
+    # - Reiniciar PTS (first_pts=0)
+    # - Aplicar delay con sintaxis legacy: adelay=MS (sin :all=1 en FFmpeg 4.2.2)
+    for idx, item in enumerate(tts_items, start=1):
+        delay_ms = max(0, int(round(float(item.get("start_time", 0.0)) * 1000)))
+        a_parts.append(
+            f"[{idx}:a]"
+            f"aresample=async=1:first_pts=0,"
+            f"aformat=sample_rates=44100:channel_layouts=mono,"
+            f"adelay={delay_ms}"
+            f"[a{idx}]"
+        )
+        out_labels.append(f"[a{idx}]")
+
+    # Mezcla y nivelado
+    if out_labels:
+        mix_inputs += "".join(out_labels)
+        # Sin normalize=1 en amix; nivelamos después
+        amix = (
+            f"{mix_inputs}"
+            f"amix=inputs={1+len(tts_items)}:duration=longest:dropout_transition=0,"
+            f"dynaudnorm=f=150:g=15,"
+            f"acompressor=threshold=-18dB:ratio=2:attack=5:release=50,"
+            f"alimiter=limit=0.95[aout]"
+        )
+        filters = [vchain, *a_parts, amix]
+    else:
+        # Sin TTS: deja la base de silencio
+        a_parts.append("[base]anull[aout]")
+        filters = [vchain, *a_parts]
+
     filter_complex = ";".join(filters)
 
+    # Comando FFmpeg final
     cmd = [
         ffmpeg, "-y",
         *inputs,
         "-filter_complex", filter_complex,
         "-map", "[vout]",
         "-map", "[aout]",
-        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-        "-c:a", "aac", "-b:a", "160k",
-        "-pix_fmt", "yuv420p",
+        "-c:v", "libx264", "-preset", "slow", "-crf", "26",
+        "-profile:v", "high", "-level", "4.0", "-pix_fmt", "yuv420p",
+        "-maxrate", "2M", "-bufsize", "4M",
+        "-c:a", "aac", "-ac", "1", "-b:a", "96k",
+        "-movflags", "+faststart",
         "-shortest",
         out_video_path
     ]
-    print("FFmpeg CMD:", " ".join(cmd))
+
+    print("FFmpeg CMD (no resize):", " ".join(cmd))
     run = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if run.returncode != 0:
         print(run.stdout)
         print(run.stderr)
         raise RuntimeError(f"FFmpeg falló: {run.stderr}")
+
+
+def cleanup_tts_files(tts_items: List[Dict[str, Any]]) -> None:
+    """
+    Limpia archivos MP3 temporales de TTS para ahorrar espacio.
+    Llamar después de generar el video final.
+    """
+    for item in tts_items:
+        try:
+            audio_path = item.get("audio_path")
+            if audio_path and os.path.exists(audio_path):
+                os.remove(audio_path)
+        except Exception:
+            pass  # Ignorar errores de limpieza

@@ -16,7 +16,7 @@ import com.frivasm.manosquehablan.helpers.ConectividadHelper
 import com.frivasm.manosquehablan.helpers.VideoStorageManager
 import com.frivasm.manosquehablan.helpers.VideoTranslationStatusHelper
 import com.frivasm.manosquehablan.persistence.VideoProcessingJobManager
-import com.frivasm.manosquehablan.notifications.NotificationManager as AppNotificationManager
+import com.frivasm.manosquehablan.helpers.NotificationHelper
 import android.media.MediaMetadataRetriever
 import android.media.MediaExtractor
 import android.media.MediaFormat
@@ -109,8 +109,9 @@ class ProcesoVideoWorker(
         val job = jobManager.createJob(videoPath)
         
         try {
-            // Crear canal de notificación si no existe
-            AppNotificationManager.createNotificationChannels(appContext)
+            // Usar solo NotificationManager para evitar duplicados
+            val notificationManager = com.frivasm.manosquehablan.notifications.NotificationManager
+            notificationManager.createNotificationChannels(appContext.applicationContext)
             
             // Configurar foreground service
             setForeground(createForegroundInfo("Procesando tu video, por favor espera...", STATE_CONECTANDO))
@@ -160,13 +161,33 @@ class ProcesoVideoWorker(
             updateProgress(STATE_COMPLETADO, "¡Traducción completada!")
             
             if (esMalTraducido) {
-                AppNotificationManager.showSuccessNotification(appContext, 
-                    "Traducción con advertencia", 
-                    "Tu video fue procesado pero requiere revisión", true)
+                // Para videos mal traducidos, mostrar notificación de advertencia
+                try {
+                    val notificationManager = com.frivasm.manosquehablan.notifications.NotificationManager
+                    notificationManager.showSuccessNotification(
+                        context = appContext.applicationContext,
+                        title = "Traducción con advertencia",
+                        message = "El video fue procesado pero puede tener errores de traducción",
+                        isWarning = true
+                    )
+                    Log.d(TAG, "Notificación de advertencia mostrada para video mal traducido")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error mostrando notificación de advertencia: ${e.message}")
+                }
             } else {
-                AppNotificationManager.showSuccessNotification(appContext, 
-                    "¡Traducción lista!", 
-                    "Tu video fue procesado correctamente")
+                // Para videos correctamente traducidos, mostrar notificación de éxito
+                try {
+                    val notificationManager = com.frivasm.manosquehablan.notifications.NotificationManager
+                    notificationManager.showSuccessNotification(
+                        context = appContext.applicationContext,
+                        title = "¡Traducción lista!",
+                        message = "Tu video fue procesado correctamente",
+                        isWarning = false
+                    )
+                    Log.d(TAG, "Notificación de éxito mostrada para video correctamente traducido")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error mostrando notificación de éxito: ${e.message}")
+                }
             }
             
             Log.i(TAG, "Procesamiento completado exitosamente")
@@ -509,8 +530,14 @@ class ProcesoVideoWorker(
             STATE_DESCARGANDO -> "Descargando"
             else -> "Manos Que Hablan"
         }
-        
-        val notification = AppNotificationManager.createProcessingNotification(appContext, title, message)
+
+        // Crear notificación de procesamiento usando NotificationManager
+        val notificationManager = com.frivasm.manosquehablan.notifications.NotificationManager
+        val notification = notificationManager.createProcessingNotification(
+            context = appContext.applicationContext,
+            title = title,
+            message = message
+        )
         return ForegroundInfo(NOTIFICATION_ID, notification)
     }
 
@@ -525,8 +552,18 @@ class ProcesoVideoWorker(
         VideoTranslationStatusHelper.marcarVideoConErrorServidor(videoFile)
         
         // Mostrar notificación de error
-        AppNotificationManager.showErrorNotification(appContext, "Error en traducción", errorMessage)
-        
+        try {
+            val notificationManager = com.frivasm.manosquehablan.notifications.NotificationManager
+            notificationManager.showErrorNotification(
+                context = appContext.applicationContext,
+                title = "Error en traducción",
+                message = errorMessage
+            )
+            Log.d(TAG, "Notificación de error mostrada")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error mostrando notificación de error: ${e.message}")
+        }
+
         updateProgress(STATE_ERROR, errorMessage)
         
         return Result.retry()
@@ -543,8 +580,18 @@ class ProcesoVideoWorker(
         VideoTranslationStatusHelper.marcarVideoConErrorServidor(videoFile)
         
         // Mostrar notificación de error crítico
-        AppNotificationManager.showErrorNotification(appContext, "Error crítico", errorMessage)
-        
+        try {
+            val notificationManager = com.frivasm.manosquehablan.notifications.NotificationManager
+            notificationManager.showErrorNotification(
+                context = appContext.applicationContext,
+                title = "Error en traducción",
+                message = errorMessage
+            )
+            Log.d(TAG, "Notificación de error crítico mostrada")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error mostrando notificación de error crítico: ${e.message}")
+        }
+
         updateProgress(STATE_ERROR, errorMessage)
         
         // Retornar failure para cancelar definitivamente el trabajo

@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.tmp
+*.swp
+.env
+.git
+.gitignore
+.vscode/
+.idea/
+data/
+app/static/uploads
+app/static/results

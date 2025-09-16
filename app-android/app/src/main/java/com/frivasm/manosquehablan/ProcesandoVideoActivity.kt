@@ -113,10 +113,6 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         // Iniciar animación de loading
         startLoadingAnimation()
 
-        // MOSTRAR NOTIFICACIÓN DE PROCESAMIENTO CON LOGO AL INICIO
-        val notificationHelper = NotificationHelper(this@ProcesandoVideoActivity)
-        notificationHelper.mostrarNotificacionProcesandoVideo()
-
         // Obtener el path del video desde el intent
         currentVideoPath = intent.getStringExtra("VIDEO_PATH")
         if (currentVideoPath != null) {
@@ -130,7 +126,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
             }
         } else {
             // Cancelar notificación de procesamiento
-            NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
+            NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_PROCESSING)
             mostrarErrorYRegresarInicio("Error: No se encontró el video a procesar")
         }
     }
@@ -461,24 +457,52 @@ class ProcesandoVideoActivity : AppCompatActivity() {
             Log.d("ProcesandoVideoActivity", "Procesamiento ya en progreso, ignorando...")
             return
         }
-        
+
         isApiCallInProgress = true
         Log.i("ProcesandoVideoActivity", "Iniciando procesamiento con WorkManager: $videoPath")
-        
-        try {
-            // Encolar trabajo de procesamiento
-            currentSessionId = VideoWorkManager.enqueueVideoProcessing(this, videoPath)
-            Log.i("ProcesandoVideoActivity", "Trabajo encolado con sesión: $currentSessionId")
-            
-            // Observar progreso del trabajo
-            observarProgresoWorker()
-            
-        } catch (e: Exception) {
-            Log.e("ProcesandoVideoActivity", "Error iniciando WorkManager: ${e.message}")
-            // Cancelar notificación de procesamiento
-            NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
-            isApiCallInProgress = false
-            mostrarErrorYRegresarInicio("Error iniciando el procesamiento: ${e.message}")
+
+        lifecycleScope.launch {
+            try {
+                // 1. Verificar conectividad del servidor ANTES de encolar el trabajo
+                val conectividadHelper = ConectividadHelper(this@ProcesandoVideoActivity)
+
+                // Mostrar mensaje de verificación
+                runOnUiThread {
+                    txtProcesando.text = getString(R.string.verificando_servidor)
+                }
+
+                val estadoServidor = conectividadHelper.verificarServidorConReintentos { mensaje ->
+                    runOnUiThread {
+                        txtProcesando.text = mensaje
+                    }
+                }
+
+                if (!estadoServidor.esDisponible) {
+                    Log.w("ProcesandoVideoActivity", "Servidor no disponible: ${estadoServidor.mensaje}")
+                    mostrarErrorConectividad(estadoServidor, videoPath)
+                    return@launch
+                }
+
+                // 2. Si el servidor está disponible, proceder con WorkManager
+                Log.i("ProcesandoVideoActivity", "Servidor disponible. Encolando trabajo con WorkManager...")
+                runOnUiThread {
+                    txtProcesando.text = "Procesando tu video, por favor espera..."
+                }
+
+                // Encolar trabajo de procesamiento
+                currentSessionId = VideoWorkManager.enqueueVideoProcessing(this@ProcesandoVideoActivity, videoPath)
+                Log.i("ProcesandoVideoActivity", "Trabajo encolado con sesión: $currentSessionId")
+
+                // Observar progreso del trabajo
+                observarProgresoWorker()
+
+            } catch (e: Exception) {
+                Log.e("ProcesandoVideoActivity", "Error iniciando WorkManager: ${e.message}")
+                // Cancelar notificación de procesamiento
+                NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_PROCESSING)
+                isApiCallInProgress = false
+                mostrarErrorYRegresarInicio("Error iniciando el procesamiento: ${e.message}")
+            }
         }
     }
     
@@ -510,23 +534,20 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                         isApiCallInProgress = false
 
 
-                        // Solo navegar si la actividad está en primer plano
-                        if (!isFinishing && !isDestroyed) {
-                            // Navegar de vuelta al inicio con delay corto
-                            Handler(Looper.getMainLooper()).postDelayed({
-                                if (!isFinishing && !isDestroyed) {
-                                    val intent = Intent(this, InicioAppActivity::class.java)
-                                    startActivity(intent)
-                                    finish()
-                                }
-                            }, 1500)
-                        }
+                        // NO abrir la app automáticamente - dejar que el usuario toque la notificación
+                        // Solo reset flag después de un delay para que vea el mensaje
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            if (!isFinishing && !isDestroyed) {
+                                isApiCallInProgress = false // Reset flag
+                                finish()
+                            }
+                        }, 1500)
                     }
                     
                     WorkInfo.State.FAILED -> {
                         Log.w("ProcesandoVideoActivity", "Trabajo falló")
                         // Cancelar notificación de procesamiento
-                        NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
+                        NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_PROCESSING)
                         stopLoadingAnimation()
                         isApiCallInProgress = false
                         
@@ -559,7 +580,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                     WorkInfo.State.CANCELLED -> {
                         Log.w("ProcesandoVideoActivity", "Trabajo cancelado")
                         // Cancelar notificación de procesamiento
-                        NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
+                        NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_PROCESSING)
                         stopLoadingAnimation()
                         isApiCallInProgress = false
                         mostrarErrorYRegresarInicio("Procesamiento cancelado")
@@ -662,7 +683,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 if (data.video_url.isNullOrBlank()) {
                     Log.e("ProcesandoVideoActivity", "El servidor no proporcionó URL del video")
                     // Cancelar notificación de procesamiento
-                    NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
+                    NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_PROCESSING)
                     mostrarErrorYRegresarInicio("Error: el servidor no generó el video")
                     return
                 }
@@ -677,7 +698,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                         Log.d("ProcesandoVideoActivity", "Video marcado con ERROR DE SERVIDOR (audio faltante)")
                     }
                     // Cancelar notificación de procesamiento
-                    NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
+                    NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_PROCESSING)
                     mostrarErrorYRegresarInicio("Error del servidor: no se generó el archivo de audio")
                     return
                 }
@@ -692,7 +713,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                         Log.d("ProcesandoVideoActivity", "Video marcado con ERROR DE SERVIDOR (texto faltante)")
                     }
                     // Cancelar notificación de procesamiento
-                    NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
+                    NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_PROCESSING)
                     mostrarErrorYRegresarInicio("Error del servidor: no se generó el archivo de texto")
                     return
                 }
@@ -723,7 +744,6 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                             // Cancelar notificación de procesamiento y mostrar éxito
                             mostrarNotificacionFinalUnificada(true)
 
-
                             // Mostrar toast de éxito
                             Toast.makeText(
                                 this@ProcesandoVideoActivity,
@@ -732,10 +752,9 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                             ).show()
                         }
 
-                        // Delay optimizado para que el usuario vea el toast pero no espere demasiado
-                        delay(800)
-                        val intent = Intent(this@ProcesandoVideoActivity, InicioAppActivity::class.java)
-                        startActivity(intent)
+                        // NO abrir la app automáticamente - dejar que el usuario toque la notificación
+                        // Solo reset flag y finish después de un delay para que vea el toast
+                        delay(1500) // Dar tiempo para que el usuario vea el toast
                         isApiCallInProgress = false // Reset flag
                         finish()
                     }
@@ -749,7 +768,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 Log.e("ProcesandoVideoActivity", "API no exitoso: ${response.code()} - ${response.message()}")
 
                 // Cancelar notificación de procesamiento
-                NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
+                NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_PROCESSING)
 
                 isApiCallInProgress = false // Reset flag
 
@@ -764,7 +783,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.e("ProcesandoVideoActivity", "Excepción durante llamada API: ${e.message}")
             // Cancelar notificación de procesamiento
-            NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
+            NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_PROCESSING)
             isApiCallInProgress = false // Reset flag
             mostrarErrorYRegresarInicio("Error de conexión con el servidor")
         }
@@ -911,27 +930,27 @@ class ProcesandoVideoActivity : AppCompatActivity() {
     
     private fun mostrarErrorYRegresarInicio(mensaje: String) {
         stopLoadingAnimation()
-        
+
         runOnUiThread {
             val builder = AlertDialog.Builder(this)
             val inflater = layoutInflater
             val view = inflater.inflate(R.layout.dialog_error_mejorado, null)
-            
+
             val txtMensaje = view.findViewById<TextView>(R.id.txtMensaje)
             val btnAceptar = view.findViewById<View>(R.id.btnAceptar)
-            
+
             txtMensaje.text = mensaje
-            
+
             val dialog = builder.setView(view).setCancelable(false).create()
             dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-            
+
             btnAceptar.setOnClickListener {
                 dialog.dismiss()
                 val intent = Intent(this, InicioAppActivity::class.java)
                 startActivity(intent)
                 finish()
             }
-            
+
             dialog.show()
         }
     }
@@ -941,7 +960,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
      */
     private fun mostrarErrorConectividad(estadoServidor: ServerConfig.ServerStatus, videoPath: String) {
         // Cancelar notificación de procesamiento
-        NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
+        NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_PROCESSING)
         stopLoadingAnimation()
         isApiCallInProgress = false // Reset flag para permitir reintentos
         
@@ -958,39 +977,30 @@ class ProcesandoVideoActivity : AppCompatActivity() {
             val txtTitulo = view.findViewById<TextView>(R.id.txtTitulo)
             val txtMensaje = view.findViewById<TextView>(R.id.txtMensaje)
             val txtSugerencia = view.findViewById<TextView>(R.id.txtSugerencia)
-            val btnReintentar = view.findViewById<View>(R.id.btnReintentar)
             val btnAceptar = view.findViewById<View>(R.id.btnAceptar)
-            
+
             // Configurar contenido
             txtTitulo.text = titulo
             txtMensaje.text = mensaje
             txtSugerencia.text = when (estadoServidor) {
-                ServerConfig.ServerStatus.SIN_CONEXION -> 
-                    "Verifica tu conexión Wi-Fi o datos móviles e intenta más tarde"
-                ServerConfig.ServerStatus.TIMEOUT -> 
-                    "El servidor está ocupado. Por favor, intenta nuevamente en unos minutos"
-                ServerConfig.ServerStatus.ERROR_SERVIDOR -> 
-                    "Problemas técnicos en el servidor. Intenta más tarde"
-                else -> 
-                    "Por favor, verifica tu conexión e intenta más tarde"
+                ServerConfig.ServerStatus.SIN_CONEXION ->
+                    "Activa tu Wi-Fi o datos móviles y vuelve a intentar"
+                ServerConfig.ServerStatus.TIMEOUT ->
+                    "Espera unos minutos y vuelve a intentar. El servidor puede estar congestionado"
+                ServerConfig.ServerStatus.ERROR_SERVIDOR ->
+                    "Nuestros técnicos están solucionando el problema. Regresa en unos minutos"
+                ServerConfig.ServerStatus.NO_DISPONIBLE ->
+                    "El servicio volverá pronto. Te recomendamos esperar un poco"
+                else ->
+                    "Si el problema persiste, contacta nuestro soporte técnico"
             }
-            
-            // Siempre ocultar el botón reintentar - solo mostrar Aceptar
-            btnReintentar.visibility = View.GONE
             
             val dialog = builder.setView(view).setCancelable(false).create()
             dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
             
             // Animación del título
             DialogUtils.animarTituloColores(this@ProcesandoVideoActivity, txtTitulo)
-            
-            btnReintentar.setOnClickListener {
-                dialog.dismiss()
-                // Reiniciar animación y reintentar
-                startLoadingAnimation()
-                enviarVideoAPI(videoPath)
-            }
-            
+
             btnAceptar.setOnClickListener {
                 dialog.dismiss()
                 val intent = Intent(this, InicioAppActivity::class.java)
@@ -1067,21 +1077,24 @@ class ProcesandoVideoActivity : AppCompatActivity() {
     /**
      * Muestra UNA SOLA notificación final unificada con el logo de la app
      * Solo muestra notificación de éxito cuando el video es completamente normal
+     * EJECUTA TODAS LAS OPERACIONES EN EL HILO PRINCIPAL
      */
     private fun mostrarNotificacionFinalUnificada(esExitoso: Boolean, mensajePersonalizado: String? = null) {
-        val notificationHelper = NotificationHelper(this@ProcesandoVideoActivity)
+        runOnUiThread {
+            val notificationHelper = NotificationHelper(this@ProcesandoVideoActivity)
 
-        // SIEMPRE cancelar la notificación de procesamiento
-        NotificationManagerCompat.from(this).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
+            // SIEMPRE cancelar la notificación de procesamiento
+            NotificationManagerCompat.from(this).cancel(NotificationHelper.NOTIFICATION_ID_PROCESSING)
 
-        if (esExitoso) {
-            // Solo mostrar notificación de éxito para videos completamente normales
-            notificationHelper.mostrarNotificacionVideoExitoso()
-            Log.d("ProcesandoVideoActivity", "Notificación final: ÉXITO - Video completamente normal")
-        } else {
-            // Para errores o videos mal traducidos, NO mostrar notificación adicional
-            // Solo cancelar la de procesamiento
-            Log.d("ProcesandoVideoActivity", "Notificación final: ERROR/MAL TRADUCIDO - Sin notificación adicional")
+            if (esExitoso) {
+                // Solo mostrar notificación de éxito para videos completamente normales
+                notificationHelper.mostrarNotificacionVideoExitoso()
+                Log.d("ProcesandoVideoActivity", "Notificación final: ÉXITO - Video completamente normal")
+            } else {
+                // Para errores o videos mal traducidos, NO mostrar notificación adicional
+                // Solo cancelar la de procesamiento
+                Log.d("ProcesandoVideoActivity", "Notificación final: ERROR/MAL TRADUCIDO - Sin notificación adicional")
+            }
         }
     }
 }

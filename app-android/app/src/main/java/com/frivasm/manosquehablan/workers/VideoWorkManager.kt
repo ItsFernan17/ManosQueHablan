@@ -3,7 +3,7 @@ package com.frivasm.manosquehablan.workers
 import android.content.Context
 import android.util.Log
 import androidx.work.*
-import com.frivasm.manosquehablan.notifications.NotificationManager as AppNotificationManager
+import com.frivasm.manosquehablan.helpers.NotificationHelper
 import com.frivasm.manosquehablan.persistence.VideoProcessingJobManager
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -35,8 +35,8 @@ object VideoWorkManager {
         
         Log.i(TAG, "Encolando procesamiento de video: $videoPath (trabajo: $uniqueWorkName)")
         
-        // Crear canales de notificación
-        AppNotificationManager.createNotificationChannels(context)
+        // Crear canales de notificación (NotificationHelper lo hace automáticamente)
+        val notificationHelper = NotificationHelper(context)
         
         // Configurar restricciones del trabajo
         val constraints = Constraints.Builder()

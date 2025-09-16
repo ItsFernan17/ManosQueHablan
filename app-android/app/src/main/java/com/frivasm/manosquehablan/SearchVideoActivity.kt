@@ -168,18 +168,25 @@ class SearchVideoActivity : AppCompatActivity() {
             // Cargar desde ambos sistemas: viejo (externo) y nuevo (privado)
             val videosLegacy = cargarVideosLegacy()
             val videosNuevos = cargarVideosPrivados()
-            
+
             val todosLosVideos = (videosLegacy + videosNuevos)
                 .distinctBy { it.absolutePath } // Evitar duplicados
                 .filter { it.length() > 100_000 } // Filtro de tamaño consistente
-            
+
+            // Normalizar la query para búsqueda más robusta
+            val queryNormalizada = normalizarTexto(query)
+
             // Filtrar por nombre de archivo y carpeta (que representa la palabra/seña)
             todosLosVideos.filter { video ->
                 val nombreCarpeta = video.parentFile?.name ?: ""
                 val nombreArchivo = video.nameWithoutExtension
-                
-                nombreCarpeta.contains(query, ignoreCase = true) || 
-                nombreArchivo.contains(query, ignoreCase = true)
+
+                // Normalizar los textos a comparar
+                val carpetaNormalizada = normalizarTexto(nombreCarpeta)
+                val archivoNormalizado = normalizarTexto(nombreArchivo)
+
+                // Búsqueda flexible y robusta
+                coincideBusquedaFlexible(queryNormalizada, carpetaNormalizada, archivoNormalizado)
             }.sortedByDescending { it.lastModified() } // Ordenar por más reciente
         }
     }
@@ -363,7 +370,101 @@ class SearchVideoActivity : AppCompatActivity() {
             emptyList()
         }
     }
-    
+
+    /**
+     * Normaliza el texto para búsqueda más robusta
+     * - Convierte a minúsculas
+     * - Quita acentos y caracteres especiales
+     * - Hace la búsqueda más flexible
+     */
+    private fun normalizarTexto(texto: String): String {
+        if (texto.isEmpty()) return texto
+
+        return texto
+            .lowercase(Locale.getDefault())
+            // Reemplazar caracteres acentuados
+            .replace("á", "a")
+            .replace("é", "e")
+            .replace("í", "i")
+            .replace("ó", "o")
+            .replace("ú", "u")
+            .replace("ü", "u")
+            .replace("ñ", "n")
+            // También manejar mayúsculas acentuadas
+            .replace("Á", "a")
+            .replace("É", "e")
+            .replace("Í", "i")
+            .replace("Ó", "o")
+            .replace("Ú", "u")
+            .replace("Ü", "u")
+            .replace("Ñ", "n")
+            // Quitar otros caracteres especiales comunes
+            .replace(Regex("[^a-z0-9\\s]"), " ")
+            // Normalizar espacios múltiples
+            .replace(Regex("\\s+"), " ")
+            .trim()
+    }
+
+    /**
+     * Implementa búsqueda flexible y robusta
+     * - Búsqueda exacta
+     * - Búsqueda por palabras parciales
+     * - Búsqueda por prefijos/sufijos
+     * - Manejo especial para letras individuales
+     */
+    private fun coincideBusquedaFlexible(query: String, carpeta: String, archivo: String): Boolean {
+        if (query.isEmpty()) return true
+
+        // Dividir la query en palabras para búsqueda más granular
+        val palabrasQuery = query.split("\\s+".toRegex()).filter { it.isNotEmpty() }
+
+        // Función auxiliar para verificar si una palabra coincide
+        fun palabraCoincide(palabra: String, texto: String): Boolean {
+            if (palabra.isEmpty() || texto.isEmpty()) return false
+
+            val palabrasTexto = texto.split("\\s+".toRegex())
+
+            // Para letras individuales (longitud 1), ser más restrictivo
+            if (palabra.length == 1) {
+                // Solo buscar al inicio de palabras para letras individuales
+                return palabrasTexto.any { it.startsWith(palabra) }
+            }
+
+            // Para palabras cortas (2-3 letras), ser moderadamente restrictivo
+            if (palabra.length <= 3) {
+                // Buscar al inicio de palabras o coincidencia exacta
+                return palabrasTexto.any { it.startsWith(palabra) } || texto.contains(palabra)
+            }
+
+            // Para palabras más largas, búsqueda más flexible
+            // 1. Coincidencia exacta
+            if (texto.contains(palabra)) return true
+
+            // 2. Coincidencia por prefijo (inicio de palabra)
+            if (palabrasTexto.any { it.startsWith(palabra) }) return true
+
+            // 3. Coincidencia por sufijo (fin de palabra)
+            if (palabrasTexto.any { it.endsWith(palabra) }) return true
+
+            // 4. Coincidencia parcial (contenida en cualquier parte de las palabras)
+            if (palabrasTexto.any { it.contains(palabra) }) return true
+
+            return false
+        }
+
+        // Verificar coincidencia en carpeta
+        val carpetaCoincide = palabrasQuery.all { palabra ->
+            palabraCoincide(palabra, carpeta)
+        }
+
+        // Verificar coincidencia en archivo
+        val archivoCoincide = palabrasQuery.all { palabra ->
+            palabraCoincide(palabra, archivo)
+        }
+
+        return carpetaCoincide || archivoCoincide
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         searchJob?.cancel()

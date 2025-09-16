@@ -1,7 +1,6 @@
 package com.frivasm.manosquehablan
 
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.widget.LinearLayout
@@ -39,8 +38,6 @@ class GrabarVideoActivity : AppCompatActivity() {
     private var isRecordingAllowed = false
     private var isManualRestart = false // Bandera para reinicio manual
 
-    // SharedPreferences para recordar el recordatorio
-    private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,8 +75,6 @@ class GrabarVideoActivity : AppCompatActivity() {
     private fun initializeHelpers() {
         cameraExecutor = Executors.newSingleThreadExecutor()
         
-        // Inicializar SharedPreferences para recordatorios
-        sharedPreferences = getSharedPreferences("app_preferences", MODE_PRIVATE)
         
         permissionHelper = PermissionHelper(this)
         videoRecordingHelper = VideoRecordingHelper(this, binding, this, cameraExecutor)
@@ -378,14 +373,8 @@ class GrabarVideoActivity : AppCompatActivity() {
             videoRecordingHelper.rotarCamara()
         }
 
-        // Long click en btnRotarCamara para mostrar recordatorio de uso responsable
-        binding.btnRotarCamara.setOnLongClickListener {
-            mostrarRecordatorioUsoResponsable {
-                // No hacer nada extra, solo mostrar el recordatorio
-                Log.i("GrabarVideo", "Recordatorio de uso responsable mostrado por solicitud del usuario")
-            }
-            true // Indicar que el evento fue manejado
-        }
+        // Long click en btnRotarCamara - funcionalidad removida
+        // binding.btnRotarCamara.setOnLongClickListener { true }
         
         binding.btnCerrar.setOnClickListener {
             try {
@@ -405,76 +394,14 @@ class GrabarVideoActivity : AppCompatActivity() {
     
     private fun iniciarGrabacion() {
         Log.d("GrabarVideo", "Iniciando grabación...")
-
-        val yaSeMovstroRecordatorio = sharedPreferences.getBoolean("recordatorio_mostrado", false)
-
-        if (!yaSeMovstroRecordatorio) {
-            mostrarRecordatorioUsoResponsable {
-                // Después de aceptar el recordatorio, proceder con la grabación
-                sharedPreferences.edit()
-                    .putBoolean("recordatorio_mostrado", true)
-                    .apply()
-                procederConGrabacion()
-            }
-        } else {
-            procederConGrabacion()
-        }
+        // Ir directamente a la grabación sin mostrar modales
+        procederConGrabacion()
     }
 
     private fun procederConGrabacion() {
         videoRecordingHelper.iniciarGrabacion()
     }
 
-    private fun mostrarRecordatorioUsoResponsable(onAceptado: () -> Unit) {
-        try {
-            // Primer diálogo: Recordatorio antes de grabar
-            val dialogView = layoutInflater.inflate(R.layout.dialog_recordatorio_grabar, null)
-            val dialog = AlertDialog.Builder(this)
-                .setView(dialogView)
-                .setCancelable(false)
-                .create()
-
-            val btnSiguiente = dialogView.findViewById<LinearLayout>(R.id.btnSiguienteRecordatorio)
-
-            btnSiguiente.setOnClickListener {
-                dialog.dismiss()
-                // Segundo diálogo: Uso responsable
-                mostrarDialogoUsoResponsable {
-                    // Tercer diálogo: Posición correcta (el que ya existe)
-                    DialogUtils.mostrarDialogoPosicionUsuario(this, onAceptado)
-                }
-            }
-
-            dialog.show()
-        } catch (e: Exception) {
-            Log.e("GrabarVideo", "Error al mostrar secuencia de recordatorios: ${e.message}")
-            // Si hay error, continuar sin diálogos
-            onAceptado()
-        }
-    }
-    
-    
-    private fun mostrarDialogoUsoResponsable(onSiguiente: () -> Unit) {
-        try {
-            val dialogView = layoutInflater.inflate(R.layout.dialog_uso_responsable, null)
-            val dialog = AlertDialog.Builder(this)
-                .setView(dialogView)
-                .setCancelable(false)
-                .create()
-
-            val btnSiguiente = dialogView.findViewById<LinearLayout>(R.id.btnSiguienteUsoResponsable)
-
-            btnSiguiente.setOnClickListener {
-                dialog.dismiss()
-                onSiguiente()
-            }
-
-            dialog.show()
-        } catch (e: Exception) {
-            Log.e("GrabarVideo", "Error al mostrar diálogo de uso responsable: ${e.message}")
-            onSiguiente()
-        }
-    }
     
     private fun detenerGrabacion() {
         try {

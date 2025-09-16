@@ -82,6 +82,18 @@ class ConfiguracionActivity : AppCompatActivity() {
         cardAcercaDe.setOnClickListener {
             DialogUtils.mostrarDialogoAcercaDe(this)
         }
+
+        // Configurar click listener para "Preguntas Frecuentes"
+        val cardPreguntasFrecuentes = findViewById<MaterialCardView>(R.id.cardPreguntasFrecuentes)
+        cardPreguntasFrecuentes.setOnClickListener {
+            DialogUtils.mostrarDialogoPreguntasFrecuentes(this)
+        }
+
+        // Configurar click listener para "Privacidad"
+        val cardPrivacidad = findViewById<MaterialCardView>(R.id.cardPrivacidad)
+        cardPrivacidad.setOnClickListener {
+            DialogUtils.mostrarDialogoPrivacidad(this)
+        }
     }
     
     private fun animarTituloColores(context: Context, textView: TextView) {

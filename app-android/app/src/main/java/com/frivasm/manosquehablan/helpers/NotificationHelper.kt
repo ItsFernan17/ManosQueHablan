@@ -22,6 +22,7 @@ class NotificationHelper(private val context: Context) {
     
     companion object {
         private const val CHANNEL_ID = "video_translation_channel"
+        const val NOTIFICATION_ID_PROCESSING = 1000
         const val NOTIFICATION_ID_SUCCESS = 1001
         const val NOTIFICATION_ID_ERROR = 1002
         const val REQUEST_CODE_NOTIFICATION_PERMISSION = 2001
@@ -40,7 +41,7 @@ class NotificationHelper(private val context: Context) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 context.getString(R.string.notif_channel_name),
-                NotificationManager.IMPORTANCE_HIGH // Mantener HIGH para emergentes
+                NotificationManager.IMPORTANCE_HIGH // HIGH para heads-up notifications
             ).apply {
                 description = context.getString(R.string.notif_channel_desc)
                 enableVibration(true)
@@ -50,10 +51,17 @@ class NotificationHelper(private val context: Context) {
                 setShowBadge(true) // Mostrar badge en ícono de la app
                 setBypassDnd(true) // Saltar modo No Molestar para emergentes
 
+                // Configuración adicional para heads-up
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    setImportance(NotificationManager.IMPORTANCE_HIGH)
+                    setSound(null, null) // Sin sonido personalizado para usar el por defecto
+                }
             }
 
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
+
+            Log.d("NotificationHelper", "Canal de notificaciones creado con IMPORTANCE_HIGH para heads-up")
         }
     }
 
@@ -63,14 +71,13 @@ class NotificationHelper(private val context: Context) {
      * APARECE TANTO EN PRIMER PLANO COMO EN SEGUNDO PLANO
      */
     fun mostrarNotificacionProcesandoVideo() {
-        // Cancelar cualquier notificación anterior para evitar duplicados
+        // Cancelar TODAS las notificaciones anteriores para evitar duplicados
+        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_PROCESSING)
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_SUCCESS)
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_ERROR)
 
-        val intent = Intent(context, com.frivasm.manosquehablan.InicioSplashScreenActivity::class.java).apply {
+        val intent = Intent(context, com.frivasm.manosquehablan.InicioAppActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            action = Intent.ACTION_MAIN
-            addCategory(Intent.CATEGORY_LAUNCHER)
             // Agregar extras para identificar que viene de notificación
             putExtra("from_notification", true)
         }
@@ -82,13 +89,7 @@ class NotificationHelper(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Crear fullScreenIntent para emergentes
-        val fullScreenPendingIntent = PendingIntent.getActivity(
-            context,
-            3, // Diferente requestCode
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        Log.d("NotificationHelper", "PendingIntent creado para InicioAppActivity: ${intent.component}")
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_mqh) // ÍCONO ESPECÍFICO PARA NOTIFICACIONES
@@ -99,18 +100,18 @@ class NotificationHelper(private val context: Context) {
             .setAutoCancel(false) // NO se auto-cancela - persiste como Gmail/Twitter
             .setOngoing(true) // HACERLA ONGOING para que aparezca siempre
             .setVibrate(longArrayOf(0, 250, 250, 250))
+            .setSound(Uri.EMPTY, 0) // SIN SONIDO para notificación de subida
             .setWhen(System.currentTimeMillis()) // Timestamp actual
             .setShowWhen(true) // Mostrar timestamp
             .setCategory(NotificationCompat.CATEGORY_PROGRESS) // Categoría de progreso
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // Visible en pantalla de bloqueo
             .setOnlyAlertOnce(true) // Solo alertar una vez, no cada actualización
-            .setFullScreenIntent(fullScreenPendingIntent, true) // EMERGENTE como Facebook/Google
             .build()
 
         try {
             // Verificar permiso de notificaciones en Android 13+
             if (isNotificationPermissionGranted()) {
-                NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_SUCCESS, notification)
+                NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_PROCESSING, notification)
                 Log.d("NotificationHelper", "Notificación de procesamiento mostrada con logo - Visible en primer y segundo plano")
             } else {
                 // Si no hay permiso, intentar solicitarlo (solo si el contexto es una Activity)
@@ -130,13 +131,13 @@ class NotificationHelper(private val context: Context) {
      * APARECE TANTO EN PRIMER PLANO COMO EN SEGUNDO PLANO
      */
     fun mostrarNotificacionVideoExitoso() {
-        // Cancelar notificación anterior
+        // Cancelar notificaciones anteriores (procesamiento, éxito y error)
+        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_PROCESSING)
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_SUCCESS)
+        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_ERROR)
 
-        val intent = Intent(context, com.frivasm.manosquehablan.InicioSplashScreenActivity::class.java).apply {
+        val intent = Intent(context, com.frivasm.manosquehablan.InicioAppActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            action = Intent.ACTION_MAIN
-            addCategory(Intent.CATEGORY_LAUNCHER)
             // Agregar extras para identificar que viene de notificación
             putExtra("from_notification", true)
         }
@@ -148,13 +149,7 @@ class NotificationHelper(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Crear fullScreenIntent para emergentes
-        val fullScreenPendingIntent = PendingIntent.getActivity(
-            context,
-            1,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        Log.d("NotificationHelper", "PendingIntent creado para notificación exitosa: ${intent.component}")
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_mqh) // ÍCONO ESPECÍFICO PARA NOTIFICACIONES
@@ -169,7 +164,6 @@ class NotificationHelper(private val context: Context) {
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // Visible en pantalla de bloqueo
             .setOnlyAlertOnce(true) // Solo alertar una vez
-            .setFullScreenIntent(fullScreenPendingIntent, true) // EMERGENTE como Facebook/Google
             .build()
 
         try {
@@ -192,13 +186,13 @@ class NotificationHelper(private val context: Context) {
      * APARECE TANTO EN PRIMER PLANO COMO EN SEGUNDO PLANO
      */
     fun mostrarNotificacionVideoError() {
-        // Cancelar notificación anterior
+        // Cancelar notificaciones anteriores (procesamiento, éxito y error)
+        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_PROCESSING)
+        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_SUCCESS)
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_ERROR)
 
-        val intent = Intent(context, com.frivasm.manosquehablan.InicioSplashScreenActivity::class.java).apply {
+        val intent = Intent(context, com.frivasm.manosquehablan.InicioAppActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            action = Intent.ACTION_MAIN
-            addCategory(Intent.CATEGORY_LAUNCHER)
             // Agregar extras para identificar que viene de notificación
             putExtra("from_notification", true)
         }
@@ -210,13 +204,7 @@ class NotificationHelper(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Crear fullScreenIntent para emergentes
-        val fullScreenPendingIntent = PendingIntent.getActivity(
-            context,
-            5, // Diferente requestCode
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        Log.d("NotificationHelper", "PendingIntent creado para notificación error: ${intent.component}")
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_mqh) // ÍCONO ESPECÍFICO PARA NOTIFICACIONES
@@ -231,7 +219,6 @@ class NotificationHelper(private val context: Context) {
             .setCategory(NotificationCompat.CATEGORY_ERROR)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // Visible en pantalla de bloqueo
             .setOnlyAlertOnce(true) // Solo alertar una vez
-            .setFullScreenIntent(fullScreenPendingIntent, true) // EMERGENTE como Facebook/Google
             .build()
 
         try {
@@ -275,5 +262,50 @@ class NotificationHelper(private val context: Context) {
                 )
             }
         }
+    }
+
+    /**
+     * Crea y retorna una notificación de procesamiento para foreground service
+     * NO la muestra automáticamente - solo la retorna para uso en ForegroundInfo
+     */
+    fun crearNotificacionProcesandoVideo(): android.app.Notification {
+        // Cancelar TODAS las notificaciones anteriores para evitar duplicados
+        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_PROCESSING)
+        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_SUCCESS)
+        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_ERROR)
+
+        val intent = Intent(context, com.frivasm.manosquehablan.InicioAppActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            // Agregar extras para identificar que viene de notificación
+            putExtra("from_notification", true)
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            2, // Diferente requestCode para evitar conflictos
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        Log.d("NotificationHelper", "PendingIntent creado para InicioAppActivity: ${intent.component}")
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_mqh) // ÍCONO ESPECÍFICO PARA NOTIFICACIONES
+            .setContentTitle("Manos que Hablan") // Título de la app
+            .setContentText("Subiendo tu video...") // MENSAJE SOLICITADO
+            .setPriority(NotificationCompat.PRIORITY_MAX) // MÁXIMA PRIORIDAD - EMERGENTE
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(false) // NO se auto-cancela - persiste como Gmail/Twitter
+            .setOngoing(true) // HACERLA ONGOING para que aparezca siempre
+            .setVibrate(longArrayOf(0, 250, 250, 250))
+            .setSound(Uri.EMPTY, 0) // SIN SONIDO para notificación de subida
+            .setWhen(System.currentTimeMillis()) // Timestamp actual
+            .setShowWhen(true) // Mostrar timestamp
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS) // Categoría de progreso
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // Visible en pantalla de bloqueo
+            .setOnlyAlertOnce(true) // Solo alertar una vez, no cada actualización
+            .build()
+
+        return notification
     }
 }

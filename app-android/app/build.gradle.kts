@@ -16,7 +16,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true
 
-        buildConfigField("String", "DEFAULT_BASE_URL", "\"http://192.168.1.13:8001/\"")
+        buildConfigField("String", "DEFAULT_BASE_URL", "\"http://192.168.1.13:8011/\"")
     }
     
     splits {
@@ -47,7 +47,7 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "BASE_URL", "\"http://192.168.1.13:8001/\"")
+            buildConfigField("String", "BASE_URL", "\"http://192.168.1.13:8011/\"")
             buildConfigField("boolean", "ENABLE_LOGGING", "true")
         }
         release {

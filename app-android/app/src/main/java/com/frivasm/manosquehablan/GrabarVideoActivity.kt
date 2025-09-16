@@ -1,8 +1,10 @@
 package com.frivasm.manosquehablan
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraSelector
@@ -32,6 +34,9 @@ class GrabarVideoActivity : AppCompatActivity() {
     private lateinit var smoothPositionModal: SmoothPositionModal
     private var isRecordingAllowed = false
     private var isManualRestart = false // Bandera para reinicio manual
+
+    // SharedPreferences para recordar el recordatorio
+    private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,6 +70,9 @@ class GrabarVideoActivity : AppCompatActivity() {
     
     private fun initializeHelpers() {
         cameraExecutor = Executors.newSingleThreadExecutor()
+        
+        // Inicializar SharedPreferences para recordatorios
+        sharedPreferences = getSharedPreferences("app_preferences", MODE_PRIVATE)
         
         permissionHelper = PermissionHelper(this)
         videoRecordingHelper = VideoRecordingHelper(this, binding, this, cameraExecutor)
@@ -356,6 +364,15 @@ class GrabarVideoActivity : AppCompatActivity() {
             }
             videoRecordingHelper.rotarCamara()
         }
+
+        // Long click en btnRotarCamara para mostrar recordatorio de uso responsable
+        binding.btnRotarCamara.setOnLongClickListener {
+            mostrarRecordatorioUsoResponsable {
+                // No hacer nada extra, solo mostrar el recordatorio
+                Log.i("GrabarVideo", "Recordatorio de uso responsable mostrado por solicitud del usuario")
+            }
+            true // Indicar que el evento fue manejado
+        }
         
         binding.btnCerrar.setOnClickListener {
             try {
@@ -374,7 +391,74 @@ class GrabarVideoActivity : AppCompatActivity() {
     }
     
     private fun iniciarGrabacion() {
+        Log.d("GrabarVideo", "Iniciando grabación...")
+
+        val yaSeMovstroRecordatorio = sharedPreferences.getBoolean("recordatorio_mostrado", false)
+
+        if (!yaSeMovstroRecordatorio) {
+            mostrarRecordatorioUsoResponsable {
+                // Después de aceptar el recordatorio, proceder con la grabación
+                sharedPreferences.edit()
+                    .putBoolean("recordatorio_mostrado", true)
+                    .apply()
+                procederConGrabacion()
+            }
+        } else {
+            procederConGrabacion()
+        }
+    }
+
+    private fun procederConGrabacion() {
         videoRecordingHelper.iniciarGrabacion()
+    }
+
+    private fun mostrarRecordatorioUsoResponsable(onAceptado: () -> Unit) {
+        val yaSeMovstroRecordatorio = sharedPreferences.getBoolean("recordatorio_mostrado", false)
+
+        val mensaje = if (yaSeMovstroRecordatorio) {
+            // Mensaje corto para usuarios que ya vieron el recordatorio completo
+            "🔄 RECORDATORIO:\n\n" +
+            "• Mantén un comportamiento respetuoso\n" +
+            "• No hagas gestos ofensivos o vulgares\n" +
+            "• Usa la aplicación de manera apropiada\n\n" +
+            "¿Entiendes y aceptas continuar?"
+        } else {
+            // Mensaje completo para usuarios nuevos
+            "🔄 RECORDATORIO DE USO RESPONSABLE\n\n" +
+            "📋 NORMAS DE COMPORTAMIENTO:\n" +
+            "• Mantén un comportamiento respetuoso en todo momento\n" +
+            "• No hagas gestos ofensivos, vulgares o inapropiados\n" +
+            "• No uses la aplicación para contenido inadecuado\n" +
+            "• Respeta a otros usuarios y la comunidad\n\n" +
+            "💡 CONSEJOS PARA MEJOR TRADUCCIÓN:\n" +
+            "• Mantén distancia de 30-40 cm del teléfono\n" +
+            "• Usa buena luz frontal y evita contraluz\n" +
+            "• Mantén las manos dentro del recuadro\n" +
+            "• Haz la seña despacio y con estabilidad\n\n" +
+            "📱 Consejo: Toque largo en 🔄 para ver este recordatorio nuevamente\n\n" +
+            "¿Entiendes y aceptas usar la aplicación de manera responsable?"
+        }
+
+        try {
+            val builder = AlertDialog.Builder(this)
+                .setTitle("📋 Uso Responsable")
+                .setMessage(mensaje)
+                .setPositiveButton("✅ Acepto") { dialog, _ ->
+                    dialog.dismiss()
+                    onAceptado()
+                }
+                .setNegativeButton("❌ Cancelar") { dialog, _ ->
+                    dialog.dismiss()
+                    Log.i("GrabarVideo", "Usuario canceló el recordatorio de uso responsable")
+                }
+                .setCancelable(false)
+
+            builder.create().show()
+        } catch (e: Exception) {
+            Log.e("GrabarVideo", "Error al mostrar recordatorio: ${e.message}")
+            // Si hay error mostrando el diálogo, continuar sin él
+            onAceptado()
+        }
     }
     
     private fun detenerGrabacion() {

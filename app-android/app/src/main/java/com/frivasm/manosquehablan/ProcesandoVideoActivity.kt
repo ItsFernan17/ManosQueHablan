@@ -47,6 +47,11 @@ import java.util.*
 @ExperimentalCamera2Interop
 class ProcesandoVideoActivity : AppCompatActivity() {
     
+    // Estado de la actividad
+    private var currentVideoPath: String? = null
+    private var currentSessionId: String? = null
+    private var isApiCallInProgress = false
+    
     // Views para la animación de loading
     private lateinit var txtProcesando: TextView
     private lateinit var progressCircle: CircularProgressIndicator
@@ -81,11 +86,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
     // Variable para controlar la animación
     private var isAnimating = true
     
-    // Variable para controlar que la API solo se llame una vez
-    private var isApiCallInProgress = false
-    
     // Variables para WorkManager
-    private var currentSessionId: String? = null
     private var isUsingWorkManager = true // Flag para alternar entre implementaciones
     
     // Referencias a animadores para poder cancelarlos
@@ -105,15 +106,15 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         startLoadingAnimation()
         
         // Obtener el path del video desde el intent
-        val videoPath = intent.getStringExtra("VIDEO_PATH")
-        if (videoPath != null) {
+        currentVideoPath = intent.getStringExtra("VIDEO_PATH")
+        if (currentVideoPath != null) {
             // Solo usar fondo negro sin miniatura del video
             if (isUsingWorkManager) {
                 // NUEVA IMPLEMENTACIÓN: Usar WorkManager
-                enviarVideoConWorkManager(videoPath)
+                enviarVideoConWorkManager(currentVideoPath!!)
             } else {
                 // IMPLEMENTACIÓN ORIGINAL: Mantener como fallback
-                enviarVideoAPI(videoPath)
+                enviarVideoAPI(currentVideoPath!!)
             }
         } else {
             mostrarErrorYRegresarInicio("Error: No se encontró el video a procesar")
@@ -383,11 +384,6 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         VideoWorkManager.observeWorkProgress(this, sessionId) { workInfo ->
             runOnUiThread {
                 when (workInfo?.state) {
-                    WorkInfo.State.ENQUEUED -> {
-                        txtProcesando.text = "Tu video está en cola. Espera un momento más..."
-                        Log.d("ProcesandoVideoActivity", "Trabajo en cola")
-                    }
-                    
                     WorkInfo.State.RUNNING -> {
                         // Obtener progreso detallado del Worker
                         val progress = workInfo.progress
@@ -421,7 +417,31 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                         Log.w("ProcesandoVideoActivity", "Trabajo falló")
                         stopLoadingAnimation()
                         isApiCallInProgress = false
-                        mostrarErrorYRegresarInicio("Error procesando el video. Intenta de nuevo.")
+                        
+                        // Obtener información del error del progress data
+                        val progress = workInfo.progress
+                        val state = progress.getString("state") ?: "error"
+                        val errorMessage = progress.getString("message") ?: "Error procesando el video. Intenta de nuevo."
+                        
+                        Log.w("ProcesandoVideoActivity", "Error state: $state, message: $errorMessage")
+                        
+                        // Determinar si es error de conectividad o servidor
+                        when {
+                            errorMessage.contains("Sin conexión", ignoreCase = true) ||
+                            errorMessage.contains("conexión", ignoreCase = true) -> {
+                                // Error de conectividad - usar diálogo específico
+                                mostrarErrorConectividad(ServerConfig.ServerStatus.SIN_CONEXION, currentVideoPath ?: "")
+                            }
+                            errorMessage.contains("Error del servidor", ignoreCase = true) ||
+                            errorMessage.contains("500", ignoreCase = true) -> {
+                                // Error del servidor
+                                mostrarErrorYRegresarInicio("Error del servidor. El servicio está temporalmente fuera de línea. Intenta más tarde.")
+                            }
+                            else -> {
+                                // Error genérico
+                                mostrarErrorYRegresarInicio(errorMessage)
+                            }
+                        }
                     }
                     
                     WorkInfo.State.CANCELLED -> {
@@ -567,14 +587,13 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                     if (esMalTraducido) {
                         // Video marcado como mal traducido pero archivos guardados
                         Log.w("ProcesandoVideoActivity", "Video completado pero marcado como mal traducido")
+                        Log.d("ProcesandoVideoActivity", "Llamando a mostrar diálogo de mal traducido...")
                         
+                        // Mostrar el diálogo de mal traducido directamente
                         runOnUiThread {
-                            // Ir a la pantalla principal primero
-                            val intent = Intent(this@ProcesandoVideoActivity, InicioAppActivity::class.java)
-                            intent.putExtra("MOSTRAR_DIALOGO_MAL_TRADUCIDO", true)
-                            startActivity(intent)
-                            isApiCallInProgress = false
-                            finish()
+                            stopLoadingAnimation()
+                            DialogUtils.mostrarDialogoVideoMalTraducido(this@ProcesandoVideoActivity)
+                            Log.d("ProcesandoVideoActivity", "Diálogo de mal traducido mostrado")
                         }
                     } else {
                         // REPRODUCIR SONIDO SUAVE DE CONFIRMACIÓN
@@ -684,12 +703,13 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 
                 if (esMalTraducido) {
                     Log.w("ProcesandoVideoActivity", "DETECCIÓN AUTOMÁTICA: Texto contiene respuesta inválida: '$contenidoTexto'")
+                    Log.w("ProcesandoVideoActivity", "VIDEO SERÁ MARCADO COMO MAL TRADUCIDO")
                     // Marcar como MAL TRADUCIDO (contenido inválido) - NO eliminar archivos
                     val videoPath = intent.getStringExtra("VIDEO_PATH")
                     videoPath?.let { path ->
                         val videoFile = File(path)
                         VideoTranslationStatusHelper.marcarVideoComoMalTraducido(videoFile)
-                        Log.d("ProcesandoVideoActivity", "Video marcado como MAL TRADUCIDO (contenido: 'Sin detecciones válidas.')")
+                        Log.d("ProcesandoVideoActivity", "Video marcado como MAL TRADUCIDO (contenido: '$contenidoTexto')")
                     }
                 } else {
                     Log.i("ProcesandoVideoActivity", "Contenido del texto es válido: Video correctamente traducido")

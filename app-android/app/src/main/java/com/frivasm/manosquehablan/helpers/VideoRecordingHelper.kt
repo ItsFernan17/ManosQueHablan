@@ -7,6 +7,7 @@ import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
+import androidx.camera.core.DynamicRange
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
 import androidx.core.content.ContextCompat
@@ -59,18 +60,21 @@ class VideoRecordingHelper(
                 it.setSurfaceProvider(binding.previewView.surfaceProvider)
             }
             
-            // Configuración específica para calidad HD consistente:
-            // - Resolución: 1280×720 (HD 720p)
-            // - FPS: 30 cuadros por segundo
+            // Configuración OPTIMIZADA para lenguaje de señas HD:
+            // - Resolución: 1280×720 (HD) - calidad necesaria para ver señas claramente  
             // - Códec: H.264 (AVC) - nativo en CameraX
-            // - Bitrate: 2.0-2.5 Mbps (manejado automáticamente por Quality.HD)
+            // - Bitrate CONTROLADO: usar SOLO HD con fallback hacia abajo
+            
+            // CONFIGURACIÓN ESTRICTA: Solo HD, nunca calidades superiores
             val qualitySelector = QualitySelector.fromOrderedList(
-                listOf(Quality.HD, Quality.FHD, Quality.SD),
-                FallbackStrategy.lowerQualityOrHigherThan(Quality.HD)
+                listOf(Quality.HD), // SOLO HD (720p), sin Quality.FHD ni Quality.UHD
+                FallbackStrategy.lowerQualityThan(Quality.HD) // Si no puede HD, usar SD (nunca 4K)
             )
             
+            // Configuración optimizada para lenguaje de señas
             val recorder = Recorder.Builder()
                 .setQualitySelector(qualitySelector)
+                .setTargetVideoEncodingBitRate(1_500_000) // 1.5 Mbps para HD 720p
                 .build()
             videoCapture = VideoCapture.withOutput(recorder)
             camSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
@@ -88,11 +92,24 @@ class VideoRecordingHelper(
                 
                 // Configurar control de exposición con la cámara
                 camera?.let { 
-                    // IMPORTANTE: Configurar tipo de cámara ANTES de setCamera para evitar race condition
+                    // IMPORTANTE: Configurar la cámara PRIMERO, luego el tipo de cámara para que funcione el brillo automático
                     Log.d("VideoRecording", "CÁMARA LISTA: Configurando exposición para ${if (lensFacing == CameraSelector.LENS_FACING_FRONT) "FRONTAL" else "TRASERA"}")
-                    Log.d("VideoRecording", "CALIDAD CONFIGURADA: HD 720p, 30fps, H.264, ~2.0-2.5 Mbps")
+                    Log.d("VideoRecording", "CALIDAD CONFIGURADA: HD 720p (1.5 Mbps bitrate), optimizado para lenguaje de señas")
+                    
+                    // Verificar qué calidades están disponibles usando la nueva API
+                    try {
+                        val cameraInfo = it.cameraInfo
+                        val videoCapabilities = Recorder.getVideoCapabilities(cameraInfo)
+                        val supportedQualities = videoCapabilities.getSupportedQualities(DynamicRange.SDR)
+                        Log.i("VideoRecording", "Calidades soportadas: ${supportedQualities.joinToString(", ")}")
+                    } catch (e: Exception) {
+                        Log.w("VideoRecording", "No se pudo obtener información de calidades: ${e.message}")
+                    }
+                    
+                    exposureControlHelper.setCamera(it)
                     exposureControlHelper.setFrontCamera(lensFacing == CameraSelector.LENS_FACING_FRONT)
-                    exposureControlHelper.setCamera(it) 
+                    
+                    Log.i("VideoRecording", "� Cámara configurada - medición manual disponible al tocar pantalla")
                 }
                 
             } catch (e: Exception) {
@@ -182,6 +199,11 @@ class VideoRecordingHelper(
         } else {
             CameraSelector.LENS_FACING_FRONT
         }
+        
+        // Actualizar inmediatamente el tipo de cámara en el exposureControlHelper
+        Log.d("VideoRecording", "ROTANDO CÁMARA: Cambiando a ${if (lensFacing == CameraSelector.LENS_FACING_FRONT) "FRONTAL" else "TRASERA"}")
+        exposureControlHelper.setFrontCamera(lensFacing == CameraSelector.LENS_FACING_FRONT)
+        
         iniciarCamara()
     }
     

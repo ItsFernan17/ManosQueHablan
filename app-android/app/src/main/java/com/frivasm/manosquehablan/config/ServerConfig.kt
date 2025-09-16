@@ -21,7 +21,7 @@ object ServerConfig {
      */
     object Development {
         const val LOCAL_IP = "192.168.1.13"
-        const val LOCAL_PORT = 8001
+        const val LOCAL_PORT = 8011
         const val LOCAL_URL = "http://$LOCAL_IP:$LOCAL_PORT/"
         
         // URLs alternativas para pruebas

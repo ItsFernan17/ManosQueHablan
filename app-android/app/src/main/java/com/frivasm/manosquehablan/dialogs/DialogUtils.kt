@@ -1,9 +1,12 @@
 package com.frivasm.manosquehablan.dialogs
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.media.MediaPlayer
 import android.media.MediaScannerConnection
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.EditText
@@ -11,6 +14,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.frivasm.manosquehablan.GrabarVideoActivity
 import com.frivasm.manosquehablan.R
 import java.io.File
 
@@ -393,26 +397,52 @@ object DialogUtils {
      * Muestra diálogo cuando un video no se tradujo correctamente
      */
     fun mostrarDialogoVideoMalTraducido(context: Context) {
-        val inflater = LayoutInflater.from(context)
-        val view = inflater.inflate(R.layout.dialog_video_mal_traducido, null)
-        val btnEntendido = view.findViewById<View>(R.id.btnEntendido)
-        val txtTitulo = view.findViewById<TextView>(R.id.txtTituloVideoMalTraducido)
+        Log.d("DialogUtils", "INICIANDO mostrarDialogoVideoMalTraducido")
+        
+        val mensaje = "TRADUCCIÓN NO EXITOSA\n\n" +
+                "INFORMACIÓN IMPORTANTE:\n" +
+                "• El video no pudo ser traducido correctamente\n" +
+                "• La seña puede no haberse reconocido bien\n" +
+                "• El contenido podría no ser apropiado para traducir\n" +
+                "• El video se ha guardado con una marca especial\n\n" +
+                "SUGERENCIAS PARA MEJORAR:\n" +
+                "• Verifica que la seña sea clara y bien definida\n" +
+                "• Asegúrate de usar buena iluminación\n" +
+                "• Mantén las manos dentro del recuadro\n" +
+                "• Realiza la seña de manera lenta y precisa\n\n" +
+                "ACCIONES DISPONIBLES:\n" +
+                "• Puedes intentar grabar un nuevo video\n" +
+                "• Revisa los consejos de grabación\n" +
+                "• El video actual quedará marcado como no traducido"
 
-        val dialog = AlertDialog.Builder(context)
-            .setView(view)
-            .setCancelable(true)
-            .create()
-            
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        try {
+            Log.d("DialogUtils", "Creando AlertDialog...")
+            val builder = AlertDialog.Builder(context)
+                .setTitle("Video No Traducido")
+                .setMessage(mensaje)
+                .setPositiveButton("Entendido") { dialog, _ ->
+                    Log.d("DialogUtils", "Usuario presionó 'Entendido'")
+                    dialog.dismiss()
+                }
+                .setNeutralButton("Grabar Nuevo") { dialog, _ ->
+                    Log.d("DialogUtils", "Usuario presionó 'Grabar Nuevo'")
+                    dialog.dismiss()
+                    // El usuario puede grabar un nuevo video
+                    if (context is Activity) {
+                        val intent = Intent(context, GrabarVideoActivity::class.java)
+                        context.startActivity(intent)
+                    }
+                }
+                .setCancelable(true)
 
-        // Animar colores del título
-        animarTituloColores(context, txtTitulo)
-
-        btnEntendido.setOnClickListener {
-            dialog.dismiss()
+            val dialog = builder.create()
+            Log.d("DialogUtils", "Mostrando diálogo...")
+            dialog.show()
+            Log.d("DialogUtils", "Diálogo mostrado exitosamente")
+        } catch (e: Exception) {
+            Log.e("DialogUtils", "ERROR al mostrar diálogo de video mal traducido: ${e.message}")
+            e.printStackTrace()
         }
-
-        dialog.show()
     }
 
     /**

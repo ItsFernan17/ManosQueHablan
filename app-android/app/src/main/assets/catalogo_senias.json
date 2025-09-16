@@ -3,44 +3,9 @@
     {
       "id": "frases_cortesia",
       "titulo": "Frases de Cortesía",
-      "descripcion": "Hola • Gracias • Por favor • Perdón • Adiós",
+      "descripcion": "Hola • Adiós • Gracias",
       "boton_texto": "Ver Vocabulario",
-      "enlace": "https://youtube.com/watch?v=ejemplo_frases_cortesia"
-    },
-    {
-      "id": "numeros",
-      "titulo": "Números",
-      "descripcion": "Uno • Dos • Tres • Cuatro • Cinco • Seis • Siete • Ocho • Nueve • Diez",
-      "boton_texto": "Ver Números",
-      "enlace": "https://youtube.com/watch?v=ejemplo_numeros"
-    },
-    {
-      "id": "familia",
-      "titulo": "Familia",
-      "descripcion": "Mamá • Papá • Hermano • Hermana • Abuelo • Abuela • Tío • Tía",
-      "boton_texto": "Ver Familia",
-      "enlace": "https://youtube.com/watch?v=ejemplo_familia"
-    },
-    {
-      "id": "colores",
-      "titulo": "Colores",
-      "descripcion": "Rojo • Azul • Verde • Amarillo • Negro • Blanco • Rosa • Morado",
-      "boton_texto": "Ver Colores",
-      "enlace": "https://youtube.com/watch?v=ejemplo_colores"
-    },
-    {
-      "id": "animales",
-      "titulo": "Animales",
-      "descripcion": "Perro • Gato • Pájaro • Pez • Caballo • Vaca • Cerdo • Pollo",
-      "boton_texto": "Ver Animales",
-      "enlace": "https://youtube.com/watch?v=ejemplo_animales"
-    },
-    {
-      "id": "comida",
-      "titulo": "Comida",
-      "descripcion": "Agua • Pan • Leche • Huevo • Carne • Verduras • Fruta • Arroz",
-      "boton_texto": "Ver Comida",
-      "enlace": "https://youtube.com/watch?v=ejemplo_comida"
+      "enlace": "https://www.youtube.com/watch?v=mjunIw2kh3Y"
     }
   ]
 }

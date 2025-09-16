@@ -155,31 +155,6 @@
                     android:fontFamily="@font/poppins_regular" />
             </LinearLayout>
 
-            <!-- Punto 6 - Responsabilidad del entorno -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="• "
-                    android:textSize="16sp"
-                    android:textColor="@color/violeta"
-                    android:fontFamily="@font/poppins_semibold" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="El sistema graba en calidad HD 720p estable (30fps, H.264) para una traducción óptima y consistente."
-                    android:textSize="14sp"
-                    android:textColor="@color/texto_videos"
-                    android:fontFamily="@font/poppins_medium" />
-            </LinearLayout>
-
             <!-- Sección importante -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -200,7 +175,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="IMPORTANTE: La traducción puede fallar si no hay suficiente luz natural o artificial en tu ubicación, incluso con el ajuste automático."
+                    android:text="IMPORTANTE: La traducción puede fallar si no hay suficiente luz natural o artificial en tu ubicación. Toca la pantalla para que la app ajuste automáticamente el brillo."
                     android:textSize="14sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />

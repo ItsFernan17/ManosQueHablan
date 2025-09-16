@@ -74,12 +74,8 @@ object VideoWorkManager {
             workRequest
         )
         
-        // Mostrar notificación de encolado
-        AppNotificationManager.showQueuedNotification(
-            context,
-            "Video en cola",
-            "Tu video está siendo preparado para procesamiento"
-        )
+        // REMOVIDO: No mostrar "Video en cola" aquí
+        // El Worker manejará todas las notificaciones después de verificar conectividad
         
         Log.i(TAG, "Trabajo encolado exitosamente: $uniqueWorkName")
         return sessionId

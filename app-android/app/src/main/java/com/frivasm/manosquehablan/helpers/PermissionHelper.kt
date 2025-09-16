@@ -21,16 +21,21 @@ class PermissionHelper(private val activity: Activity) {
             Manifest.permission.READ_MEDIA_AUDIO,
             Manifest.permission.READ_MEDIA_IMAGES
         )
-        
+
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
             permisos.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             permisos.add(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
-        
+
+        // Agregar permiso de notificaciones para Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permisos.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
         val noOtorgados = permisos.filter {
             ContextCompat.checkSelfPermission(activity, it) != PackageManager.PERMISSION_GRANTED
         }
-        
+
         if (noOtorgados.isNotEmpty()) {
             ActivityCompat.requestPermissions(
                 activity, noOtorgados.toTypedArray(), REQUEST_CODE_PERMISOS
@@ -39,11 +44,25 @@ class PermissionHelper(private val activity: Activity) {
     }
     
     fun allPermissionsGranted(): Boolean {
-        val permisos = listOf(
+        val permisos = mutableListOf(
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_MEDIA_VIDEO
+            Manifest.permission.READ_MEDIA_VIDEO,
+            Manifest.permission.READ_MEDIA_AUDIO,
+            Manifest.permission.READ_MEDIA_IMAGES
         )
+
+        // Agregar permisos de almacenamiento para versiones anteriores
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+            permisos.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            permisos.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+
+        // Agregar permiso de notificaciones para Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permisos.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
         return permisos.all {
             ContextCompat.checkSelfPermission(activity, it) == PackageManager.PERMISSION_GRANTED
         }

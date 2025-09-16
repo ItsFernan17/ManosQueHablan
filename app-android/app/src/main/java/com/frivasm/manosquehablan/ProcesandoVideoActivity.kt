@@ -6,7 +6,6 @@ import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.Intent
-import android.media.RingtoneManager
 import android.media.MediaScannerConnection
 import android.os.Bundle
 import android.os.Handler
@@ -22,8 +21,10 @@ import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkInfo
+import androidx.activity.OnBackPressedCallback
 import com.frivasm.manosquehablan.api.ApiCliente
 import com.frivasm.manosquehablan.api.RespuestaProcesamiento
 import com.frivasm.manosquehablan.config.ServerConfig
@@ -95,17 +96,27 @@ class ProcesandoVideoActivity : AppCompatActivity() {
     private val activeValueAnimators = mutableListOf<ValueAnimator>()
     private val activeAnimatorSets = mutableListOf<AnimatorSet>()
     private val activeHandlers = mutableListOf<Handler>()
+
+    // Overlay para indicar que la navegación está bloqueada
+    private lateinit var backBlockOverlay: View
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_procesando_video)
-        
+
+        // Configurar protección contra navegación hacia atrás durante procesamiento
+        configurarProteccionBackButton()
+
         // Inicializar vistas
         initializeViews()
-        
+
         // Iniciar animación de loading
         startLoadingAnimation()
-        
+
+        // MOSTRAR NOTIFICACIÓN DE PROCESAMIENTO CON LOGO AL INICIO
+        val notificationHelper = NotificationHelper(this@ProcesandoVideoActivity)
+        notificationHelper.mostrarNotificacionProcesandoVideo()
+
         // Obtener el path del video desde el intent
         currentVideoPath = intent.getStringExtra("VIDEO_PATH")
         if (currentVideoPath != null) {
@@ -118,8 +129,43 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 enviarVideoAPI(currentVideoPath!!)
             }
         } else {
+            // Cancelar notificación de procesamiento
+            NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
             mostrarErrorYRegresarInicio("Error: No se encontró el video a procesar")
         }
+    }
+
+    /**
+     * Configura protección completa contra navegación hacia atrás durante procesamiento
+     */
+    private fun configurarProteccionBackButton() {
+        // Usar el nuevo sistema de back pressed callback para máxima protección
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val isProcessingActive = isApiCallInProgress || isAnimating || currentSessionId != null
+
+                if (!isProcessingActive) {
+                    // Solo permitir regresar si NO hay procesamiento activo
+                    isEnabled = false // Deshabilitar este callback
+                    onBackPressedDispatcher.onBackPressed() // Usar el comportamiento por defecto
+                    isEnabled = true // Re-habilitar
+                } else {
+                    // Mostrar mensaje y mantener bloqueado
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@ProcesandoVideoActivity,
+                            "⏳ Procesamiento en curso. No puedes salir hasta que termine.",
+                            Toast.LENGTH_LONG
+                        ).show()
+
+                        Log.w("ProcesandoVideoActivity", "BACK BLOCKED - Procesamiento activo: API=$isApiCallInProgress, Animación=$isAnimating, WorkManager=${currentSessionId != null}")
+                    }
+                }
+            }
+        }
+
+        // Agregar el callback al dispatcher
+        onBackPressedDispatcher.addCallback(this, callback)
     }
     
     private fun initializeViews() {
@@ -128,7 +174,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         progressCircle = findViewById(R.id.circularProgressIndicator)
         centerCircle = findViewById(R.id.centerCircle)
         videoPreview = findViewById(R.id.videoPreview)
-        
+
         // Círculos animados de fondo
         circle1 = findViewById(R.id.circle1)
         circle2 = findViewById(R.id.circle2)
@@ -148,44 +194,102 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         circle16 = findViewById(R.id.circle16)
         circle17 = findViewById(R.id.circle17)
         circle18 = findViewById(R.id.circle18)
-        
+
         // Puntos de carga animados
         dot1 = findViewById(R.id.dot1)
         dot2 = findViewById(R.id.dot2)
         dot3 = findViewById(R.id.dot3)
+
+        // Inicializar overlay de bloqueo de navegación
+        inicializarOverlayBloqueo()
+    }
+
+    /**
+     * Inicializa el overlay visual que indica que la navegación está bloqueada
+     */
+    private fun inicializarOverlayBloqueo() {
+        // Crear overlay programáticamente
+        backBlockOverlay = View(this).apply {
+            setBackgroundColor(ContextCompat.getColor(this@ProcesandoVideoActivity, R.color.black_overlay_70))
+            alpha = 0f // Inicialmente invisible
+            visibility = View.GONE
+        }
+
+        // Agregar al layout raíz
+        val rootLayout = findViewById<View>(android.R.id.content)
+        if (rootLayout is android.widget.FrameLayout) {
+            rootLayout.addView(backBlockOverlay, android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+            ))
+        }
     }
 
     private fun startLoadingAnimation() {
         isAnimating = true
-        
+
+        // Mostrar overlay de bloqueo de navegación
+        mostrarOverlayBloqueo()
+
         // Iniciar animaciones de los círculos de fondo
         startCirclesAnimation()
-        
+
         // Iniciar animación del círculo de progreso
         startProgressCircleAnimation()
-        
+
         // Iniciar animación de los puntos de carga
         startLoadingDotsAnimation()
     }
     
     private fun stopLoadingAnimation() {
         isAnimating = false
-        
+
+        // Ocultar overlay de bloqueo de navegación
+        ocultarOverlayBloqueo()
+
         // Cancelar todos los animadores activos
         activeAnimators.forEach { it.cancel() }
         activeValueAnimators.forEach { it.cancel() }
         activeAnimatorSets.forEach { it.cancel() }
-        
+
         // Limpiar handlers pendientes
         activeHandlers.forEach { handler ->
             handler.removeCallbacksAndMessages(null)
         }
-        
+
         // Limpiar listas
         activeAnimators.clear()
         activeValueAnimators.clear()
         activeAnimatorSets.clear()
         activeHandlers.clear()
+    }
+
+    /**
+     * Muestra el overlay visual que indica bloqueo de navegación
+     */
+    private fun mostrarOverlayBloqueo() {
+        runOnUiThread {
+            backBlockOverlay.visibility = View.VISIBLE
+            backBlockOverlay.animate()
+                .alpha(0.1f) // Muy sutil, apenas visible
+                .setDuration(300)
+                .start()
+        }
+    }
+
+    /**
+     * Oculta el overlay de bloqueo de navegación
+     */
+    private fun ocultarOverlayBloqueo() {
+        runOnUiThread {
+            backBlockOverlay.animate()
+                .alpha(0f)
+                .setDuration(300)
+                .withEndAction {
+                    backBlockOverlay.visibility = View.GONE
+                }
+                .start()
+        }
     }
     
     private fun startCirclesAnimation() {
@@ -371,6 +475,8 @@ class ProcesandoVideoActivity : AppCompatActivity() {
             
         } catch (e: Exception) {
             Log.e("ProcesandoVideoActivity", "Error iniciando WorkManager: ${e.message}")
+            // Cancelar notificación de procesamiento
+            NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
             isApiCallInProgress = false
             mostrarErrorYRegresarInicio("Error iniciando el procesamiento: ${e.message}")
         }
@@ -398,28 +504,29 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                     WorkInfo.State.SUCCEEDED -> {
                         Log.i("ProcesandoVideoActivity", "Trabajo completado exitosamente")
                         txtProcesando.text = "¡Traducción completada!"
-                        
+
                         // Detener animación
                         stopLoadingAnimation()
                         isApiCallInProgress = false
-                        
-                        // REPRODUCIR SONIDO SUAVE DE CONFIRMACIÓN
-                        reproducirSonidoConfirmacion()
-                        
-                        // Mostrar notificación de éxito
-                        val notificationHelper = NotificationHelper(this@ProcesandoVideoActivity)
-                        notificationHelper.mostrarNotificacionVideoExitoso()
-                        
-                        // Navegar de vuelta al inicio con delay corto
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            val intent = Intent(this, InicioAppActivity::class.java)
-                            startActivity(intent)
-                            finish()
-                        }, 1500)
+
+
+                        // Solo navegar si la actividad está en primer plano
+                        if (!isFinishing && !isDestroyed) {
+                            // Navegar de vuelta al inicio con delay corto
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                if (!isFinishing && !isDestroyed) {
+                                    val intent = Intent(this, InicioAppActivity::class.java)
+                                    startActivity(intent)
+                                    finish()
+                                }
+                            }, 1500)
+                        }
                     }
                     
                     WorkInfo.State.FAILED -> {
                         Log.w("ProcesandoVideoActivity", "Trabajo falló")
+                        // Cancelar notificación de procesamiento
+                        NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
                         stopLoadingAnimation()
                         isApiCallInProgress = false
                         
@@ -451,6 +558,8 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                     
                     WorkInfo.State.CANCELLED -> {
                         Log.w("ProcesandoVideoActivity", "Trabajo cancelado")
+                        // Cancelar notificación de procesamiento
+                        NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
                         stopLoadingAnimation()
                         isApiCallInProgress = false
                         mostrarErrorYRegresarInicio("Procesamiento cancelado")
@@ -552,6 +661,8 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 // Validar que todos los archivos necesarios estén disponibles
                 if (data.video_url.isNullOrBlank()) {
                     Log.e("ProcesandoVideoActivity", "El servidor no proporcionó URL del video")
+                    // Cancelar notificación de procesamiento
+                    NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
                     mostrarErrorYRegresarInicio("Error: el servidor no generó el video")
                     return
                 }
@@ -565,6 +676,8 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                         VideoTranslationStatusHelper.marcarVideoConErrorServidor(videoFile)
                         Log.d("ProcesandoVideoActivity", "Video marcado con ERROR DE SERVIDOR (audio faltante)")
                     }
+                    // Cancelar notificación de procesamiento
+                    NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
                     mostrarErrorYRegresarInicio("Error del servidor: no se generó el archivo de audio")
                     return
                 }
@@ -578,6 +691,8 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                         VideoTranslationStatusHelper.marcarVideoConErrorServidor(videoFile)
                         Log.d("ProcesandoVideoActivity", "Video marcado con ERROR DE SERVIDOR (texto faltante)")
                     }
+                    // Cancelar notificación de procesamiento
+                    NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
                     mostrarErrorYRegresarInicio("Error del servidor: no se generó el archivo de texto")
                     return
                 }
@@ -594,31 +709,29 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                         Log.w("ProcesandoVideoActivity", "Video completado pero marcado como mal traducido")
                         Log.d("ProcesandoVideoActivity", "Video procesado con error - enviando notificación...")
                         
-                        // Mostrar notificación de error y regresar al inicio
+                        // Regresar al inicio sin notificación duplicada
                         runOnUiThread {
                             stopLoadingAnimation()
-                            val notificationHelper = NotificationHelper(this@ProcesandoVideoActivity)
-                            notificationHelper.mostrarNotificacionVideoError()
-                            Log.d("ProcesandoVideoActivity", "Notificación de error enviada")
-                            
+                            Log.d("ProcesandoVideoActivity", "Video mal traducido - sin notificación adicional")
+
                             // Regresar al inicio
                             mostrarErrorYRegresarInicio("Video guardado pero requiere nueva traducción")
                         }
                     } else {
-                        // REPRODUCIR SONIDO SUAVE DE CONFIRMACIÓN
-                        reproducirSonidoConfirmacion()
-                        
-                        // Mostrar notificación de éxito
-                        val notificationHelper = NotificationHelper(this@ProcesandoVideoActivity)
-                        notificationHelper.mostrarNotificacionVideoExitoso()
-                        
-                        // Mostrar toast de éxito y navegar con delay más corto
-                        Toast.makeText(
-                            this@ProcesandoVideoActivity,
-                            "Video guardado correctamente",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        
+                        // Video completamente normal - mostrar notificación de éxito
+                        runOnUiThread {
+                            // Cancelar notificación de procesamiento y mostrar éxito
+                            mostrarNotificacionFinalUnificada(true)
+
+
+                            // Mostrar toast de éxito
+                            Toast.makeText(
+                                this@ProcesandoVideoActivity,
+                                "Video guardado correctamente",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
                         // Delay optimizado para que el usuario vea el toast pero no espere demasiado
                         delay(800)
                         val intent = Intent(this@ProcesandoVideoActivity, InicioAppActivity::class.java)
@@ -634,9 +747,12 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 }
             } else {
                 Log.e("ProcesandoVideoActivity", "API no exitoso: ${response.code()} - ${response.message()}")
-                
+
+                // Cancelar notificación de procesamiento
+                NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
+
                 isApiCallInProgress = false // Reset flag
-                
+
                 // Mostrar error dialog según el tipo de código de respuesta
                 val codigoEstado = response.code()
                 when {
@@ -647,6 +763,8 @@ class ProcesandoVideoActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             Log.e("ProcesandoVideoActivity", "Excepción durante llamada API: ${e.message}")
+            // Cancelar notificación de procesamiento
+            NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
             isApiCallInProgress = false // Reset flag
             mostrarErrorYRegresarInicio("Error de conexión con el servidor")
         }
@@ -822,6 +940,8 @@ class ProcesandoVideoActivity : AppCompatActivity() {
      * Muestra un diálogo de error de conectividad más amigable con opción de reintentar
      */
     private fun mostrarErrorConectividad(estadoServidor: ServerConfig.ServerStatus, videoPath: String) {
+        // Cancelar notificación de procesamiento
+        NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
         stopLoadingAnimation()
         isApiCallInProgress = false // Reset flag para permitir reintentos
         
@@ -885,29 +1005,29 @@ class ProcesandoVideoActivity : AppCompatActivity() {
     @Deprecated("Deprecated in Java")
     @Suppress("DEPRECATION")
     override fun onBackPressed() {
-        // Bloquear el botón de retroceso durante el procesamiento
-        // Llamamos super pero no hacemos nada más
-        super.onBackPressed()
-    }
-    
-    /**
-     * Reproduce un sonido suave y agradable para confirmar que el video se guardó exitosamente
-     * Especialmente útil para personas sin problemas auditivos como complemento a las señas
-     */
-    private fun reproducirSonidoConfirmacion() {
-        try {
-            Log.d("ProcesandoVideoActivity", "Reproduciendo sonido de confirmación...")
-            
-            val toneG = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-            val r = RingtoneManager.getRingtone(applicationContext, toneG)
-            r.play()
-            
-            Log.d("ProcesandoVideoActivity", "Sonido de confirmación reproducido exitosamente")
-            
-        } catch (e: Exception) {
-            Log.w("ProcesandoVideoActivity", "Error reproduciendo sonido de confirmación: ${e.message}")
+        // Bloquear COMPLETAMENTE el botón de retroceso durante cualquier tipo de procesamiento
+        // No permitir regresar ni a la cámara ni al inicio para evitar romper la comunicación
+
+        val isProcessingActive = isApiCallInProgress || isAnimating || currentSessionId != null
+
+        if (!isProcessingActive) {
+            // Solo permitir regresar si NO hay NINGÚN procesamiento activo
+            super.onBackPressed()
+        } else {
+            // Mostrar mensaje claro al usuario indicando que debe esperar
+            runOnUiThread {
+                Toast.makeText(
+                    this,
+                    "Procesamiento en curso. Por favor espera a que termine.",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                // Log para debugging
+                Log.w("ProcesandoVideoActivity", "Intento de salir bloqueado - Procesamiento activo: API=$isApiCallInProgress, Animación=$isAnimating, WorkManager=${currentSessionId != null}")
+            }
         }
     }
+    
     
     override fun onDestroy() {
         super.onDestroy()
@@ -927,7 +1047,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
     private fun marcarVideoComoMalTraducidoYMostrarDialogo() {
         // Detener animación
         stopLoadingAnimation()
-        
+
         // Marcar video como mal traducido
         val videoPath = intent.getStringExtra("VIDEO_PATH")
         videoPath?.let { path ->
@@ -935,16 +1055,33 @@ class ProcesandoVideoActivity : AppCompatActivity() {
             VideoTranslationStatusHelper.marcarVideoComoMalTraducido(videoFile)
             Log.d("ProcesandoVideoActivity", "Video marcado como mal traducido: ${videoFile.name}")
         }
-        
+
         runOnUiThread {
-            // Mostrar notificación de error
-            val notificationHelper = NotificationHelper(this@ProcesandoVideoActivity)
-            notificationHelper.mostrarNotificacionVideoError()
-            
             // Regresar al inicio después de un breve delay
             Handler(Looper.getMainLooper()).postDelayed({
                 mostrarErrorYRegresarInicio("Video guardado pero requiere nueva traducción")
             }, 2000) // Tiempo para que el usuario lea el diálogo
+        }
+    }
+
+    /**
+     * Muestra UNA SOLA notificación final unificada con el logo de la app
+     * Solo muestra notificación de éxito cuando el video es completamente normal
+     */
+    private fun mostrarNotificacionFinalUnificada(esExitoso: Boolean, mensajePersonalizado: String? = null) {
+        val notificationHelper = NotificationHelper(this@ProcesandoVideoActivity)
+
+        // SIEMPRE cancelar la notificación de procesamiento
+        NotificationManagerCompat.from(this).cancel(NotificationHelper.NOTIFICATION_ID_SUCCESS)
+
+        if (esExitoso) {
+            // Solo mostrar notificación de éxito para videos completamente normales
+            notificationHelper.mostrarNotificacionVideoExitoso()
+            Log.d("ProcesandoVideoActivity", "Notificación final: ÉXITO - Video completamente normal")
+        } else {
+            // Para errores o videos mal traducidos, NO mostrar notificación adicional
+            // Solo cancelar la de procesamiento
+            Log.d("ProcesandoVideoActivity", "Notificación final: ERROR/MAL TRADUCIDO - Sin notificación adicional")
         }
     }
 }

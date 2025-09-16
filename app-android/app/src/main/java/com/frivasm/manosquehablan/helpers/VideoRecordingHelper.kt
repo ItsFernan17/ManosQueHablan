@@ -38,6 +38,7 @@ class VideoRecordingHelper(
     var onRecordingStarted: (() -> Unit)? = null
     var onRecordingStopped: (() -> Unit)? = null
     var onRecordingError: ((String) -> Unit)? = null
+    var onCameraError: ((String) -> Unit)? = null
     
     init {
         // Configurar tipo de cámara inicial (frontal por defecto)
@@ -113,18 +114,31 @@ class VideoRecordingHelper(
                 }
                 
             } catch (e: Exception) {
-                // Solo log, sin toast
+                Log.e("VideoRecording", "Error al inicializar cámara: ${e.message}")
+                onCameraError?.invoke("Error al inicializar la cámara: ${e.localizedMessage ?: "Error desconocido"}")
             }
         }, ContextCompat.getMainExecutor(context))
     }
     
     fun iniciarGrabacion() {
         try {
+            // Verificar que videoCapture esté inicializado
+            if (videoCapture == null) {
+                Log.e("VideoRecording", "Error: videoCapture no está inicializado")
+                onRecordingError?.invoke("Error: Cámara no inicializada")
+                return
+            }
+
             currentTempFile = createTempFile()
+            if (currentTempFile == null) {
+                Log.e("VideoRecording", "Error: No se pudo crear archivo temporal")
+                onRecordingError?.invoke("Error al crear archivo de grabación")
+                return
+            }
+
             val outputOptions = FileOutputOptions.Builder(currentTempFile!!).build()
-            val currentCapture = videoCapture ?: return
-            
-            recording = currentCapture.output.prepareRecording(context, outputOptions).apply {
+
+            recording = videoCapture!!.output.prepareRecording(context, outputOptions).apply {
                 if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                     withAudioEnabled()
                 }
@@ -138,11 +152,11 @@ class VideoRecordingHelper(
                     is VideoRecordEvent.Finalize -> {
                         // Notificar al control de exposición que terminó la grabación
                         exposureControlHelper.onRecordingStopped()
-                        
+
                         // Log telemetría del clip si hay datos
                         val tempFilePath = currentTempFile?.name ?: "unknown_clip"
                         exposureControlHelper.logTelemetryForClip(tempFilePath)
-                        
+
                         if (!event.hasError()) {
                             onRecordingStopped?.invoke()
                         }

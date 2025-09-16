@@ -81,18 +81,9 @@ class SmoothPositionModal(
                         hideModalSmoothly()
                     }
                     PositionValidator.PositionState.RED, PositionValidator.PositionState.CRITICAL -> {
-                        if (hasGyroscope) {
-                            // Solo actualizar si hay cambio significativo para suavidad
-                            if (!isShowing || kotlin.math.abs(uxAngle - lastAngle) > UPDATE_SMOOTHNESS_THRESHOLD || currentState != state) {
-                                showModalSmoothly(state, uxAngle, hasGyroscope)
-                                lastAngle = uxAngle
-                            } else {
-                                // Actualización suave solo del ángulo
-                                updateAngleSmoothly(uxAngle)
-                            }
-                        } else {
-                            showModalSmoothly(state, uxAngle, hasGyroscope)
-                        }
+                        // No mostrar modal automáticamente - solo mostrar cuando se presiona el botón
+                        // La guía se proporciona a través del texto de indicaciones
+                        hideModalSmoothly()
                     }
                 }
             }

@@ -36,10 +36,18 @@ object VideoLoader {
 
         if (todosLosVideos.isEmpty()) {
             vistaSinVideos.visibility = View.VISIBLE
+            // Iniciar animación de colores para el título si estamos en InicioAppActivity
+            if (context is com.frivasm.manosquehablan.InicioAppActivity) {
+                context.animarColoresTxtNoHayVideos()
+            }
             return
         }
 
         vistaSinVideos.visibility = View.GONE
+        // Detener animación de colores si estamos en InicioAppActivity
+        if (context is com.frivasm.manosquehablan.InicioAppActivity) {
+            context.detenerAnimacionColoresTxtNoHayVideos()
+        }
         val inflater = LayoutInflater.from(context)
         val formatoFecha = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 

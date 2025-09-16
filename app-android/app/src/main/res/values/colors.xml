@@ -31,6 +31,7 @@
     <color name="dark_navy">#0B132B</color>
     <color name="dark_black">#111827</color>
     <color name="overlay_black">#A6000000</color> <!-- 65% black overlay -->
+    <color name="black_overlay_70">#B3000000</color> <!-- 70% black overlay -->
     <color name="error_color">#E53E3E</color>
     <color name="critical_color">#DC2626</color> <!-- Color crítico más intenso -->
     

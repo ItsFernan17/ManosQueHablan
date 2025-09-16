@@ -76,7 +76,7 @@ object NotificationManager {
         showProgress: Boolean = true
     ): android.app.Notification {
         return NotificationCompat.Builder(context, CHANNEL_ID_PROCESSING)
-            .setSmallIcon(R.drawable.ic_stat_name)
+            .setSmallIcon(R.drawable.ic_stat_mqh)
             .setContentTitle(title)
             .setContentText(message)
             .setOngoing(true)
@@ -101,7 +101,7 @@ object NotificationManager {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
         val channelId = if (isWarning) CHANNEL_ID_ERROR else CHANNEL_ID_COMPLETED
-        val icon = if (isWarning) R.drawable.ic_warning else R.drawable.ic_stat_name
+        val icon = if (isWarning) R.drawable.ic_warning else R.drawable.ic_stat_mqh
         
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(icon)

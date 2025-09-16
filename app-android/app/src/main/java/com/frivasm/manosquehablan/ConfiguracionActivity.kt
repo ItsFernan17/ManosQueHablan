@@ -24,18 +24,15 @@ class ConfiguracionActivity : AppCompatActivity() {
     // Referencias a los switches
     private lateinit var switchRecordatorio: SwitchMaterial
     private lateinit var switchConfirmacionCompartir: SwitchMaterial
-    private lateinit var switchSonidosApp: SwitchMaterial
     
     companion object {
         // Claves para SharedPreferences
         const val PREF_MOSTRAR_RECORDATORIO = "mostrar_recordatorio_grabar"
         const val PREF_CONFIRMAR_COMPARTIR_MAL_TRADUCIDOS = "confirmar_compartir_mal_traducidos"
-        const val PREF_SONIDOS_HABILITADOS = "sonidos_app_habilitados"
         
         // Valores por defecto
         const val DEFAULT_MOSTRAR_RECORDATORIO = true
         const val DEFAULT_CONFIRMAR_COMPARTIR = true
-        const val DEFAULT_SONIDOS = true
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,27 +62,21 @@ class ConfiguracionActivity : AppCompatActivity() {
     private fun inicializarSwitches() {
         switchRecordatorio = findViewById(R.id.switchMostrarRecordatorio)
         switchConfirmacionCompartir = findViewById(R.id.switchConfirmarCompartir)
-        switchSonidosApp = findViewById(R.id.switchSonidosApp)
-        
+
         // Cargar valores guardados
         switchRecordatorio.isChecked = preferences.getBoolean(PREF_MOSTRAR_RECORDATORIO, DEFAULT_MOSTRAR_RECORDATORIO)
         switchConfirmacionCompartir.isChecked = preferences.getBoolean(PREF_CONFIRMAR_COMPARTIR_MAL_TRADUCIDOS, DEFAULT_CONFIRMAR_COMPARTIR)
-        switchSonidosApp.isChecked = preferences.getBoolean(PREF_SONIDOS_HABILITADOS, DEFAULT_SONIDOS)
     }
     
     private fun configurarListeners() {
         switchRecordatorio.setOnCheckedChangeListener { _, isChecked ->
             preferences.edit().putBoolean(PREF_MOSTRAR_RECORDATORIO, isChecked).apply()
         }
-        
+
         switchConfirmacionCompartir.setOnCheckedChangeListener { _, isChecked ->
             preferences.edit().putBoolean(PREF_CONFIRMAR_COMPARTIR_MAL_TRADUCIDOS, isChecked).apply()
         }
-        
-        switchSonidosApp.setOnCheckedChangeListener { _, isChecked ->
-            preferences.edit().putBoolean(PREF_SONIDOS_HABILITADOS, isChecked).apply()
-        }
-        
+
         // Configurar click listener para "Acerca de"
         val cardAcercaDe = findViewById<MaterialCardView>(R.id.cardAcercaDe)
         cardAcercaDe.setOnClickListener {

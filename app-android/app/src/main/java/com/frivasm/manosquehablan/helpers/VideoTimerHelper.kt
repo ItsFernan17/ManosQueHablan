@@ -14,28 +14,28 @@ class VideoTimerHelper(private val temporizadorView: TextView) {
     var onTiempoLimiteAlcanzado: (() -> Unit)? = null
     
     fun iniciarTemporizador() {
-        // Si ya hay un timer corriendo, no crear uno nuevo
-        if (timer != null) return
-        
+        // Si ya hay un timer corriendo, detenerlo primero para evitar duplicados
+        detenerTemporizador()
+
         timer = Timer()
         timer?.scheduleAtFixedRate(object : TimerTask() {
             override fun run() {
                 // Calcular tiempo real considerando pausas
                 val tiempoTranscurrido = System.currentTimeMillis() - tiempoInicioGrabacion - tiempoPausado
                 val segundosReales = (tiempoTranscurrido / 1000).toInt()
-                
+
                 // Solo actualizar si hay un cambio real en los segundos
                 if (segundosReales != segundosAcumulados) {
                     segundosAcumulados = segundosReales
                     val minutos = segundosReales / 60
                     val segundos = segundosReales % 60
                     val tiempoFormateado = String.format("%02d:%02d", minutos, segundos)
-                    
+
                     // Actualizar UI en el hilo principal
                     temporizadorView.post {
                         temporizadorView.text = tiempoFormateado
                     }
-                    
+
                     // Verificar si se alcanzó el límite de tiempo
                     if (segundosReales >= LIMITE_TIEMPO_SEGUNDOS) {
                         temporizadorView.post {
@@ -44,7 +44,7 @@ class VideoTimerHelper(private val temporizadorView: TextView) {
                     }
                 }
             }
-        }, 100, 100) // Actualizar cada 100ms para mayor precisión
+        }, 500, 500) // Actualizar cada 500ms para mejor rendimiento
     }
     
     fun detenerTemporizador() {

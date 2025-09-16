@@ -51,6 +51,7 @@ class InicioAppActivity : AppCompatActivity() {
 
     private lateinit var contenedor: LinearLayout
     private lateinit var vistaSinVideos: LinearLayout
+    private lateinit var txtNoHayVideos: TextView
     private lateinit var btnOpciones: ImageView
     private lateinit var btnCatalogo: ImageView
     private lateinit var btnConfiguracion: ImageView
@@ -74,6 +75,7 @@ class InicioAppActivity : AppCompatActivity() {
 
         contenedor = findViewById(R.id.contenedorVideos)
         vistaSinVideos = findViewById(R.id.vistaSinVideos)
+        txtNoHayVideos = findViewById(R.id.txtNoHayVideos)
         btnOpciones = findViewById(R.id.btnOpciones)
         btnCatalogo = findViewById(R.id.btnCatalogo)
         btnConfiguracion = findViewById(R.id.btnConfiguracion)
@@ -131,7 +133,7 @@ class InicioAppActivity : AppCompatActivity() {
         try {
             // Log estado de trabajos para debugging
             JobStatusUtils.logJobStatus(this)
-            
+
             // Verificar si hay trabajos activos
             val hasActiveWork = VideoWorkManager.hasActiveWork(this)
             if (hasActiveWork) {
@@ -139,9 +141,58 @@ class InicioAppActivity : AppCompatActivity() {
                 // Aquí podrías mostrar una notificación sutil o badge en la UI
                 // Por ejemplo: mostrarIndicadorProcesamientoActivo()
             }
-            
+
         } catch (e: Exception) {
             Log.e("InicioAppActivity", "Error verificando trabajos pendientes: ${e.message}")
+        }
+    }
+
+    /**
+     * Aplica animación de colores al TextView "No hay videos aún"
+     * igual que los otros títulos de la app
+     */
+    fun animarColoresTxtNoHayVideos() {
+        try {
+            val colorRojo = androidx.core.content.ContextCompat.getColor(this, R.color.rojo)
+            val colorCeleste = androidx.core.content.ContextCompat.getColor(this, R.color.celeste)
+
+            val animador = android.animation.ValueAnimator.ofFloat(0f, 1f)
+            animador.duration = 3000 // Un poco más rápido pero aún suave
+            animador.repeatCount = android.animation.ValueAnimator.INFINITE
+            animador.repeatMode = android.animation.ValueAnimator.REVERSE
+            animador.interpolator = android.view.animation.AccelerateDecelerateInterpolator() // Interpolador suave
+
+            animador.addUpdateListener { animation ->
+                val progreso = animation.animatedValue as Float
+                val color = android.animation.ArgbEvaluator().evaluate(progreso, colorRojo, colorCeleste) as Int
+                txtNoHayVideos.setTextColor(color)
+            }
+
+            // Guardar referencia del animador en el tag de la vista para poder cancelarlo después
+            txtNoHayVideos.tag = animador
+            animador.start()
+
+            Log.d("InicioAppActivity", "Animación de colores iniciada para 'No hay videos aún'")
+        } catch (e: Exception) {
+            Log.e("InicioAppActivity", "Error iniciando animación de colores: ${e.message}")
+        }
+    }
+
+    /**
+     * Detiene la animación de colores del TextView
+     */
+    fun detenerAnimacionColoresTxtNoHayVideos() {
+        try {
+            val animador = txtNoHayVideos.tag as? android.animation.ValueAnimator
+            animador?.cancel()
+            txtNoHayVideos.tag = null
+
+            // Restaurar color original
+            txtNoHayVideos.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.texto_splash))
+
+            Log.d("InicioAppActivity", "Animación de colores detenida para 'No hay videos aún'")
+        } catch (e: Exception) {
+            Log.e("InicioAppActivity", "Error deteniendo animación de colores: ${e.message}")
         }
     }
 
@@ -310,6 +361,8 @@ class InicioAppActivity : AppCompatActivity() {
                     // Si no quedan más videos, mostrar la vista sin videos
                     if (contenedor.childCount == 0) {
                         vistaSinVideos.visibility = View.VISIBLE
+                        // Iniciar animación de colores para el título
+                        animarColoresTxtNoHayVideos()
                     } else if (esPrimerVideo && contenedor.childCount > 0 && ordenActual == ORDEN_RECIENTES) {
                         // Si eliminamos el video destacado y estamos en modo "recientes", promover el siguiente
                         promoverSiguienteVideoADestacado()
@@ -405,5 +458,8 @@ class InicioAppActivity : AppCompatActivity() {
         currentTransitionAnimator = null
         currentEliminationAnimator = null
         currentPromotionAnimator = null
+
+        // Detener animación de colores del título
+        detenerAnimacionColoresTxtNoHayVideos()
     }
 }

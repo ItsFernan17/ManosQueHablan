@@ -74,9 +74,17 @@ object VideoOrdenamientoAlfabeticoViewHelper {
 
                 if (itemsOrdenados.isEmpty()) {
                     vistaSinVideos.visibility = View.VISIBLE
+                    // Iniciar animación de colores para el título si estamos en InicioAppActivity
+                    if (context is com.frivasm.manosquehablan.InicioAppActivity) {
+                        context.animarColoresTxtNoHayVideos()
+                    }
                     return@withContext
                 }
                 vistaSinVideos.visibility = View.GONE
+                // Detener animación de colores si estamos en InicioAppActivity
+                if (context is com.frivasm.manosquehablan.InicioAppActivity) {
+                    context.detenerAnimacionColoresTxtNoHayVideos()
+                }
 
                 // Cargar preferencias de configuración
                 val mostrarLetras = PreferenciasHelper.obtenerMostrarLetrasEnVista(context)

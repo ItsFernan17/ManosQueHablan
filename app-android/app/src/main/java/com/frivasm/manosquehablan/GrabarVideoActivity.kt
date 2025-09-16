@@ -9,6 +9,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraSelector
+import androidx.core.content.ContextCompat
+import androidx.activity.OnBackPressedCallback
 import com.frivasm.manosquehablan.databinding.ActivityGrabarVideoBinding
 import com.frivasm.manosquehablan.dialogs.DialogUtils
 import com.frivasm.manosquehablan.helpers.*
@@ -56,10 +58,13 @@ class GrabarVideoActivity : AppCompatActivity() {
         
         // Verificar permisos
         permissionHelper.verificarPermisos()
-        
+
         if (permissionHelper.allPermissionsGranted()) {
             videoRecordingHelper.iniciarCamara()
         }
+
+        // Configurar manejo moderno del botón back
+        configurarBackPressedCallback()
         
         // Inicializar estado del botón de pausar (deshabilitado al inicio)
         binding.btnPausar.isEnabled = false
@@ -102,6 +107,12 @@ class GrabarVideoActivity : AppCompatActivity() {
         videoRecordingHelper.onRecordingError = { error ->
             // Solo log para errores de grabación
             Log.e("GrabarVideo", "Error de grabación: $error")
+        }
+
+        videoRecordingHelper.onCameraError = { error ->
+            // Mostrar error de cámara al usuario
+            Log.e("GrabarVideo", "Error de cámara: $error")
+            mostrarDialogoErrorCamara(error)
         }
         
         // Configurar callback de exposición para mostrar información sutil
@@ -612,7 +623,7 @@ class GrabarVideoActivity : AppCompatActivity() {
             // Ocultar la vista de cámara y mostrar solo el diálogo de carga
             binding.previewView.visibility = android.view.View.GONE
             binding.fondoCamara.visibility = android.view.View.GONE
-            
+
             // Enviar video a API
             val path = videoRecordingHelper.getRecordingPath()
             if (path != null) {
@@ -621,13 +632,8 @@ class GrabarVideoActivity : AppCompatActivity() {
         } else {
             // Si es reinicio manual, solo logear y mantener UI
             Log.i("GrabarVideo", "Reinicio manual - Video NO enviado al servidor")
-            
-            // Restaurar estado del botón de grabar después de un breve retraso
-            binding.btnGrabar.postDelayed({
-                updateRecordButtonState()
-            }, 500)
         }
-        
+
         // Restaurar estado del botón de grabar después de un breve retraso
         binding.btnGrabar.postDelayed({
             updateRecordButtonState()
@@ -641,7 +647,65 @@ class GrabarVideoActivity : AppCompatActivity() {
         if (permissionHelper.handlePermissionResult(requestCode, grantResults)) {
             videoRecordingHelper.iniciarCamara()
         } else {
-            finish()
+            // Mostrar diálogo explicativo cuando se deniegan permisos
+            mostrarDialogoPermisosDenegados()
+        }
+    }
+
+    private fun mostrarDialogoPermisosDenegados() {
+        val deniedPermissions = mutableListOf<String>()
+
+        // Verificar qué permisos fueron denegados
+        if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            deniedPermissions.add("Cámara")
+        }
+        if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            deniedPermissions.add("Micrófono")
+        }
+        if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_MEDIA_VIDEO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            deniedPermissions.add("Acceso a videos")
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+            androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            deniedPermissions.add("Notificaciones")
+        }
+
+        val permissionsText = deniedPermissions.joinToString(", ")
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Permisos requeridos")
+            .setMessage("La aplicación necesita los siguientes permisos para funcionar correctamente: $permissionsText.\n\nPuedes conceder los permisos desde la configuración de la aplicación.")
+            .setPositiveButton("Ir a configuración") { _, _ ->
+                // Abrir configuración de la app
+                val intent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = android.net.Uri.parse("package:$packageName")
+                }
+                startActivity(intent)
+                finish()
+            }
+            .setNegativeButton("Salir") { _, _ ->
+                finish()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun mostrarDialogoErrorCamara(errorMessage: String) {
+        runOnUiThread {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Error de cámara")
+                .setMessage("No se pudo inicializar la cámara: $errorMessage\n\nPosibles soluciones:\n• Verifica que la cámara no esté siendo usada por otra aplicación\n• Reinicia el dispositivo\n• Verifica que la cámara funcione correctamente")
+                .setPositiveButton("Reintentar") { _, _ ->
+                    // Reintentar inicializar la cámara
+                    if (permissionHelper.allPermissionsGranted()) {
+                        videoRecordingHelper.iniciarCamara()
+                    }
+                }
+                .setNegativeButton("Salir") { _, _ ->
+                    finish()
+                }
+                .setCancelable(false)
+                .show()
         }
     }
 
@@ -660,6 +724,54 @@ class GrabarVideoActivity : AppCompatActivity() {
         super.onResume()
         // Reanudar validación de posición cuando la actividad está activa
         positionValidator.startValidation()
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Manejar cambios de configuración (rotación) sin destruir la actividad
+        Log.d("GrabarVideo", "Configuración cambiada - Rotación detectada")
+
+        // Actualizar la vista de cámara si es necesario
+        binding.previewView.post {
+            // Forzar actualización del layout después de la rotación
+            binding.previewView.requestLayout()
+        }
+
+        // Si hay una grabación en curso, mantener el estado
+        if (videoRecordingHelper.isRecording()) {
+            Log.i("GrabarVideo", "Grabación en curso durante rotación - manteniendo estado")
+        }
+    }
+
+    /**
+     * Configura el manejo moderno del botón back usando OnBackPressedCallback
+     */
+    private fun configurarBackPressedCallback() {
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Prevenir que el usuario salga accidentalmente durante la grabación
+                if (videoRecordingHelper.isRecording()) {
+                    Log.w("GrabarVideo", "Intento de salir durante grabación - bloqueado")
+                    // Mostrar mensaje sutil sin interrumpir la grabación
+                    runOnUiThread {
+                        binding.textIndicaciones.text = "Grabando... Presiona el botón rojo para detener"
+                        binding.textIndicaciones.postDelayed({
+                            binding.textIndicaciones.text = "Grabando... Mantén tus manos visibles"
+                        }, 3000)
+                    }
+                    // No hacer nada más - el callback ya maneja el bloqueo
+                    return
+                }
+
+                // Si no hay grabación, permitir salir normalmente
+                isEnabled = false // Deshabilitar temporalmente para permitir el comportamiento por defecto
+                onBackPressedDispatcher.onBackPressed()
+                isEnabled = true // Re-habilitar
+            }
+        }
+
+        // Agregar el callback al dispatcher
+        onBackPressedDispatcher.addCallback(this, callback)
     }
 
     override fun onDestroy() {

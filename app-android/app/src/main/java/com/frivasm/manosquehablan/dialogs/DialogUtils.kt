@@ -322,8 +322,11 @@ object DialogUtils {
     fun mostrarDialogoRecordatorioGrabar(context: Context, onContinuar: () -> Unit) {
         // Mostrar primer diálogo con recordatorios
         mostrarPrimerDialogoRecordatorio(context) {
-            // Cuando se presiona "Siguiente", mostrar segundo diálogo con imagen de posición
-            mostrarSegundoDialogoPosicion(context, onContinuar)
+            // Cuando se presiona "Siguiente", mostrar diálogo de uso responsable
+            mostrarDialogoUsoResponsable(context) {
+                // Después del uso responsable, mostrar segundo diálogo con imagen de posición
+                mostrarSegundoDialogoPosicion(context, onContinuar)
+            }
         }
     }
     
@@ -361,6 +364,36 @@ object DialogUtils {
         mostrarSegundoDialogoPosicion(context, onContinuar)
     }
 
+    fun mostrarDialogoUsoResponsable(context: Context, onSiguiente: () -> Unit) {
+        val inflater = LayoutInflater.from(context)
+        val view = inflater.inflate(R.layout.dialog_uso_responsable, null)
+        val btnSiguiente = view.findViewById<LinearLayout>(R.id.btnSiguienteUsoResponsable)
+        val txtTitulo = (view as LinearLayout).getChildAt(0) as TextView
+
+        val dialog = AlertDialog.Builder(context)
+            .setView(view)
+            .setCancelable(false)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        btnSiguiente.setOnClickListener {
+            dialog.dismiss()
+            onSiguiente()
+        }
+
+        // Animación del título con colores rojo y celeste
+        animarTituloColores(context, txtTitulo)
+
+        // Cancelar animación cuando el diálogo se cierre
+        dialog.setOnDismissListener {
+            val animador = txtTitulo.tag as? android.animation.ValueAnimator
+            animador?.cancel()
+        }
+
+        dialog.show()
+    }
+
     private fun mostrarSegundoDialogoPosicion(context: Context, onContinuar: () -> Unit) {
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.dialog_posicion_usuario, null)
@@ -372,7 +405,7 @@ object DialogUtils {
             .setView(view)
             .setCancelable(false)
             .create()
-            
+
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         btnEntendido.setOnClickListener {
@@ -380,7 +413,7 @@ object DialogUtils {
             if (checkNoMostrarMas.isChecked) {
                 com.frivasm.manosquehablan.helpers.ConfigHelper.deshabilitarRecordatorio(context)
             }
-            
+
             dialog.dismiss()
             onContinuar() // Continuar con la navegación a la cámara
         }

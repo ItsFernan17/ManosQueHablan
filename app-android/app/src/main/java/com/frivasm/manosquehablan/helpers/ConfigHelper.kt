@@ -33,15 +33,6 @@ object ConfigHelper {
         )
     }
     
-    /**
-     * Verifica si los sonidos están habilitados
-     */
-    fun sonidosHabilitados(context: Context): Boolean {
-        return getPreferences(context).getBoolean(
-            ConfiguracionActivity.PREF_SONIDOS_HABILITADOS,
-            ConfiguracionActivity.DEFAULT_SONIDOS
-        )
-    }
     
     /**
      * Deshabilita el recordatorio (cuando el usuario marca "No volver a mostrar")

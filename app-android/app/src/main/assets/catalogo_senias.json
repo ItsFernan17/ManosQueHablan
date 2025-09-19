@@ -6,6 +6,13 @@
       "descripcion": "Hola • Adiós • Gracias",
       "boton_texto": "Ver Vocabulario",
       "enlace": "https://www.youtube.com/watch?v=mjunIw2kh3Y"
+    },
+    {
+      "id": "las_emociones",
+      "titulo": "Las Emociones",
+      "descripcion": "Feliz • Dolor • Reír",
+      "boton_texto": "Ver Vocabulario",
+      "enlace": "https://www.youtube.com/watch?v=25xtTMdZqa8&t=24s"
     }
   ]
 }

@@ -277,7 +277,19 @@
             android:textSize="24sp"
             android:textColor="@color/texto_principal"
             android:fontFamily="@font/poppins_semibold"
-            android:layout_marginBottom="50dp"
+            android:layout_marginBottom="16dp"
+            android:gravity="center" />
+
+        <!-- Texto adicional pequeño -->
+        <TextView
+            android:id="@+id/txtMensajeSalir"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Puedes salir de la app mientras se procesa el video."
+            android:textSize="14sp"
+            android:textColor="@color/texto_secundario"
+            android:fontFamily="@font/poppins_regular"
+            android:layout_marginBottom="30dp"
             android:gravity="center" />
 
         <!-- Circular Progress Indicator Material Design -->

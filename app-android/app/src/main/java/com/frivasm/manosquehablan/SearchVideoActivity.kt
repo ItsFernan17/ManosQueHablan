@@ -406,11 +406,27 @@ class SearchVideoActivity : AppCompatActivity() {
     }
 
     /**
-     * Implementa búsqueda flexible y robusta
-     * - Búsqueda exacta
-     * - Búsqueda por palabras parciales
-     * - Búsqueda por prefijos/sufijos
-     * - Manejo especial para letras individuales
+     * Función para calcular distancia de Levenshtein (errores de escritura)
+     */
+    private fun distanciaLevenshtein(s1: String, s2: String): Int {
+        val costs = IntArray(s1.length + 1) { it }
+        for (i in 1..s2.length) {
+            var prevCost = costs[0]
+            costs[0] = i
+            for (j in 1..s1.length) {
+                val cost = if (s1[j - 1] == s2[i - 1]) prevCost else prevCost + 1
+                prevCost = costs[j]
+                costs[j] = minOf(cost, costs[j - 1] + 1, prevCost + 1)
+            }
+        }
+        return costs[s1.length]
+    }
+
+    /**
+     * Implementa búsqueda inteligente adaptada a la longitud del query
+     * - 1 carácter: Solo prefijos de palabra (evita ruido)
+     * - 2-3 caracteres: Prefijos de palabra en archivo y carpeta
+     * - 4+ caracteres: Subcadenas con tolerancia a errores
      */
     private fun coincideBusquedaFlexible(query: String, carpeta: String, archivo: String): Boolean {
         if (query.isEmpty()) return true
@@ -418,49 +434,66 @@ class SearchVideoActivity : AppCompatActivity() {
         // Dividir la query en palabras para búsqueda más granular
         val palabrasQuery = query.split("\\s+".toRegex()).filter { it.isNotEmpty() }
 
-        // Función auxiliar para verificar si una palabra coincide
-        fun palabraCoincide(palabra: String, texto: String): Boolean {
+        // Función auxiliar para verificar coincidencia según longitud del query
+        fun verificarCoincidencia(palabra: String, texto: String): Boolean {
             if (palabra.isEmpty() || texto.isEmpty()) return false
 
-            val palabrasTexto = texto.split("\\s+".toRegex())
+            // Tokenización mejorada con normalización y eliminación de acentos
+            val palabrasTexto = java.text.Normalizer.normalize((texto).lowercase(), java.text.Normalizer.Form.NFD)
+                .replace("\\p{Mn}+".toRegex(), "")       // quita acentos
+                .replace("[^a-z0-9]+".toRegex(), " ")    // separa por no alfanumérico
+                .trim()
+                .split(" ")
+                .filter { it.isNotBlank() }
 
-            // Para letras individuales (longitud 1), ser más restrictivo
-            if (palabra.length == 1) {
-                // Solo buscar al inicio de palabras para letras individuales
-                return palabrasTexto.any { it.startsWith(palabra) }
+            val longitudQuery = palabra.length
+
+            return when {
+                // 1 CARÁCTER: Solo prefijos de palabra (muy restrictivo para evitar ruido)
+                longitudQuery == 1 -> {
+                    palabrasTexto.any { it.startsWith(palabra, ignoreCase = true) }
+                }
+
+                // 2-3 CARACTERES: SOLO prefijos de palabra (sin contains para evitar falsos positivos)
+                longitudQuery in 2..3 -> {
+                    palabrasTexto.any { it.startsWith(palabra, ignoreCase = true) }
+                }
+
+                // 4+ CARACTERES: Subcadenas con tolerancia a errores
+                else -> {
+                    // 1. Coincidencia exacta (máxima prioridad)
+                    if (palabrasTexto.any { it.equals(palabra, ignoreCase = true) }) return true
+
+                    // 2. Prefijo de palabra (alta prioridad)
+                    if (palabrasTexto.any { it.startsWith(palabra, ignoreCase = true) }) return true
+
+                    // 3. Subcadena contenida
+                    if (texto.contains(palabra, ignoreCase = true)) return true
+
+                    // 4. Tolerancia a un error de escritura (distancia de Levenshtein = 1)
+                    palabrasTexto.any { distanciaLevenshtein(it, palabra) <= 1 }
+                }
             }
-
-            // Para palabras cortas (2-3 letras), ser moderadamente restrictivo
-            if (palabra.length <= 3) {
-                // Buscar al inicio de palabras o coincidencia exacta
-                return palabrasTexto.any { it.startsWith(palabra) } || texto.contains(palabra)
-            }
-
-            // Para palabras más largas, búsqueda más flexible
-            // 1. Coincidencia exacta
-            if (texto.contains(palabra)) return true
-
-            // 2. Coincidencia por prefijo (inicio de palabra)
-            if (palabrasTexto.any { it.startsWith(palabra) }) return true
-
-            // 3. Coincidencia por sufijo (fin de palabra)
-            if (palabrasTexto.any { it.endsWith(palabra) }) return true
-
-            // 4. Coincidencia parcial (contenida en cualquier parte de las palabras)
-            if (palabrasTexto.any { it.contains(palabra) }) return true
-
-            return false
         }
 
-        // Verificar coincidencia en carpeta
-        val carpetaCoincide = palabrasQuery.all { palabra ->
-            palabraCoincide(palabra, carpeta)
+        // Determinar estrategia según longitud del query más corto
+        val longitudMinimaQuery = palabrasQuery.minOf { it.length }
+
+        val (buscarEnCarpeta, buscarEnArchivo) = when {
+            // Para queries cortas (1-3 letras), SOLO buscar en nombre de archivo
+            // para evitar contaminación por nombres de carpetas como "Sesion_15611..."
+            longitudMinimaQuery <= 3 -> Pair(false, true) // Solo archivo para queries cortas
+            else -> Pair(true, true) // Ambos para palabras largas (4+ letras)
         }
 
-        // Verificar coincidencia en archivo
-        val archivoCoincide = palabrasQuery.all { palabra ->
-            palabraCoincide(palabra, archivo)
-        }
+        // Verificar coincidencias
+        val carpetaCoincide = if (buscarEnCarpeta) {
+            palabrasQuery.all { palabra -> verificarCoincidencia(palabra, carpeta) }
+        } else false
+
+        val archivoCoincide = if (buscarEnArchivo) {
+            palabrasQuery.all { palabra -> verificarCoincidencia(palabra, archivo) }
+        } else false
 
         return carpetaCoincide || archivoCoincide
     }

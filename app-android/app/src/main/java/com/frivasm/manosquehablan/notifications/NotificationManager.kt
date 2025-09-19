@@ -139,9 +139,10 @@ object NotificationManager {
         context: Context,
         title: String,
         message: String,
-        showProgress: Boolean = true
+        showProgress: Boolean = true,
+        sessionId: String? = null
     ): android.app.Notification {
-        return NotificationCompat.Builder(context, CHANNEL_ID_PROCESSING)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID_PROCESSING)
             .setSmallIcon(R.drawable.ic_stat_mqh)
             .setContentTitle(title)
             .setContentText(message)
@@ -157,7 +158,31 @@ object NotificationManager {
                     setProgress(0, 0, true) // Indeterminado
                 }
             }
-            .build()
+
+        // Agregar acción de cancelar si hay sessionId
+        if (sessionId != null) {
+            val cancelIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+                action = "CANCEL_UPLOAD"
+                putExtra("sessionId", sessionId)
+            }
+
+            val cancelPendingIntent = PendingIntent.getBroadcast(
+                context,
+                sessionId.hashCode(), // requestCode único por sesión
+                cancelIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            builder.addAction(
+                R.drawable.icono_cerrar, // Icono de cancelar
+                "Cancelar",
+                cancelPendingIntent
+            )
+
+            Log.d("NotificationManager", "Acción de cancelar agregada a notificación para sesión: $sessionId")
+        }
+
+        return builder.build()
     }
 
     /**
@@ -241,8 +266,8 @@ object NotificationManager {
      */
     fun showErrorNotification(
         context: Context,
-        title: String = "Error en traducción",
-        message: String = "Ocurrió un problema procesando tu video"
+        title: String = "Problema de conexión",
+        message: String = "Revisa tu conexión a internet e intenta nuevamente"
     ) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 

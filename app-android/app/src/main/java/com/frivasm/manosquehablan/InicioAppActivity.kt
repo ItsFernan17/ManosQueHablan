@@ -32,6 +32,7 @@ import com.frivasm.manosquehablan.dialogs.DialogUtils
 import com.frivasm.manosquehablan.config.ServerConfig
 import com.frivasm.manosquehablan.utils.JobStatusUtils
 import com.frivasm.manosquehablan.workers.VideoWorkManager
+import com.frivasm.manosquehablan.persistence.VideoProcessingJobManager
 import java.io.File
 import java.text.SimpleDateFormat
 import kotlinx.coroutines.launch
@@ -127,24 +128,118 @@ class InicioAppActivity : AppCompatActivity() {
     }
     
     /**
-     * Verifica si hay trabajos de procesamiento pendientes y muestra información relevante
+     * Verifica si hay trabajos de procesamiento pendientes y pregunta al usuario qué hacer
      */
     private fun verificarTrabajosPendientes() {
         try {
             // Log estado de trabajos para debugging
             JobStatusUtils.logJobStatus(this)
 
-            // Verificar si hay trabajos activos
-            val hasActiveWork = VideoWorkManager.hasActiveWork(this)
-            if (hasActiveWork) {
-                Log.i("InicioAppActivity", "Hay trabajos de procesamiento activos en segundo plano")
-                // Aquí podrías mostrar una notificación sutil o badge en la UI
-                // Por ejemplo: mostrarIndicadorProcesamientoActivo()
+            // Verificar si hay trabajos pendientes (no activos, sino pausados)
+            val jobManager = com.frivasm.manosquehablan.persistence.VideoProcessingJobManager(this)
+            val pendingJobs = jobManager.getResumableJobs()
+
+            if (pendingJobs.isNotEmpty()) {
+                Log.i("InicioAppActivity", "=== PENDING JOBS === Se encontraron ${pendingJobs.size} trabajos pendientes para reanudar")
+
+                // Mostrar diálogo preguntando si quiere reanudar
+                mostrarDialogoTrabajosPendientes(pendingJobs)
+
+            } else {
+                // Verificar si hay trabajos activos
+                val hasActiveWork = VideoWorkManager.hasActiveWork(this)
+                if (hasActiveWork) {
+                    Log.i("InicioAppActivity", "Hay trabajos de procesamiento activos en segundo plano")
+                    // Aquí podrías mostrar una notificación sutil o badge en la UI
+                    // Por ejemplo: mostrarIndicadorProcesamientoActivo()
+                }
             }
 
         } catch (e: Exception) {
             Log.e("InicioAppActivity", "Error verificando trabajos pendientes: ${e.message}")
         }
+    }
+
+    /**
+     * Muestra un diálogo preguntando al usuario qué hacer con trabajos pendientes
+     */
+    private fun mostrarDialogoTrabajosPendientes(pendingJobs: List<VideoProcessingJobManager.ProcessingJob>) {
+        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+        val inflater = layoutInflater
+        val view = inflater.inflate(R.layout.dialog_error_mejorado, null)
+
+        val txtTitulo = view.findViewById<TextView>(R.id.txtTitulo)
+        val txtMensaje = view.findViewById<TextView>(R.id.txtMensaje)
+        val txtSugerencia = view.findViewById<TextView>(R.id.txtSugerencia)
+        val btnAceptar = view.findViewById<View>(R.id.btnAceptar)
+        val btnCancelar = view.findViewById<View>(R.id.btnCancelar)
+
+        txtTitulo.setText("Trabajos pendientes")
+        txtMensaje.setText("Se encontraron ${pendingJobs.size} video(s) que estaban siendo procesados cuando la app se cerró. ¿Quieres reanudar el procesamiento?")
+        txtSugerencia.setText("Puedes reanudar ahora o cancelar los trabajos si ya no los necesitas.")
+
+        // Configurar botones
+        (btnAceptar as? TextView)?.setText("Reanudar")
+        (btnCancelar as? TextView)?.setText("Cancelar trabajos")
+
+        val dialog = builder.setView(view).setCancelable(false).create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        btnAceptar.setOnClickListener {
+            dialog.dismiss()
+            reanudarTrabajosPendientes(pendingJobs)
+        }
+
+        btnCancelar.setOnClickListener {
+            dialog.dismiss()
+            cancelarTrabajosPendientes(pendingJobs)
+        }
+
+        dialog.show()
+    }
+
+    /**
+     * Reanuda los trabajos pendientes seleccionados por el usuario
+     */
+    private fun reanudarTrabajosPendientes(pendingJobs: List<VideoProcessingJobManager.ProcessingJob>) {
+        Log.i("InicioAppActivity", "Usuario decidió reanudar ${pendingJobs.size} trabajos pendientes")
+
+        try {
+            Log.d("InicioAppActivity", "Llamando a VideoWorkManager.resumePendingJobs()")
+            VideoWorkManager.resumePendingJobs(this) // Esto reanudará todos los trabajos pendientes
+        } catch (e: Exception) {
+            Log.e("InicioAppActivity", "Error reanudando trabajos pendientes: ${e.message}")
+        }
+    }
+
+    /**
+     * Cancela los trabajos pendientes seleccionados por el usuario
+     */
+    private fun cancelarTrabajosPendientes(pendingJobs: List<VideoProcessingJobManager.ProcessingJob>) {
+        Log.i("InicioAppActivity", "Usuario decidió cancelar ${pendingJobs.size} trabajos pendientes")
+
+        val jobManager = VideoProcessingJobManager(this)
+
+        pendingJobs.forEach { job ->
+            try {
+                Log.d("InicioAppActivity", "Cancelando trabajo pendiente: ${job.id}")
+                jobManager.cancelJob(job.id)
+
+                // También intentar cancelar en WorkManager si existe
+                val sessionId = job.id.substringAfter("job_")
+                VideoWorkManager.cancelVideoProcessing(this, sessionId)
+
+            } catch (e: Exception) {
+                Log.e("InicioAppActivity", "Error cancelando trabajo ${job.id}: ${e.message}")
+            }
+        }
+
+        // Mostrar mensaje de confirmación
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Trabajos cancelados")
+            .setMessage("${pendingJobs.size} trabajo(s) de procesamiento fueron cancelados.")
+            .setPositiveButton("Aceptar", null)
+            .show()
     }
 
     /**

@@ -1041,14 +1041,24 @@ class ProcesandoVideoActivity : AppCompatActivity() {
     
     override fun onDestroy() {
         super.onDestroy()
+        Log.d("ProcesandoVideoActivity", "onDestroy() called - isApiCallInProgress=$isApiCallInProgress, currentSessionId=$currentSessionId")
+
         // Detener todas las animaciones para evitar memory leaks
         stopLoadingAnimation()
-        
+
         // Reset flag en caso de que la actividad se destruya
         isApiCallInProgress = false
-        
+
         // Si usamos WorkManager, el trabajo continúa en segundo plano
         // No cancelamos aquí para permitir que el procesamiento continúe
+        // LOG: Verificar si hay trabajos activos que continúan
+        if (currentSessionId != null) {
+            Log.w("ProcesandoVideoActivity", "WARNING: Activity destroyed but WorkManager job $currentSessionId is still running in background")
+            val workInfo = VideoWorkManager.getWorkStatus(this, currentSessionId!!)
+            Log.w("ProcesandoVideoActivity", "Work status on destroy: ${workInfo?.state}")
+        } else {
+            Log.d("ProcesandoVideoActivity", "No active WorkManager session on destroy")
+        }
     }
 
     /**

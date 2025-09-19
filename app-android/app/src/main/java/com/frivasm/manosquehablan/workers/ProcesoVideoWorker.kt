@@ -102,9 +102,10 @@ class ProcesoVideoWorker(
     override suspend fun doWork(): Result {
         val videoPath = inputData.getString(KEY_VIDEO_PATH) ?: return Result.failure()
         val sessionId = inputData.getString(KEY_SESSION_ID) ?: UUID.randomUUID().toString()
-        
-        Log.i(TAG, "Iniciando procesamiento de video: $videoPath (sesión: $sessionId)")
-        
+
+        Log.i(TAG, "=== WORKER START === Iniciando procesamiento de video: $videoPath (sesión: $sessionId)")
+        Log.d(TAG, "Worker isStopped: $isStopped")
+
         // Crear trabajo en sistema de persistencia
         val job = jobManager.createJob(videoPath)
         
@@ -114,7 +115,7 @@ class ProcesoVideoWorker(
             notificationManager.createNotificationChannels(appContext.applicationContext)
             
             // Configurar foreground service
-            setForeground(createForegroundInfo("Procesando tu video, por favor espera...", STATE_CONECTANDO))
+            setForeground(createForegroundInfo("Procesando tu video, por favor espera...", STATE_CONECTANDO, sessionId))
             
             // 1. Verificar conectividad
             jobManager.updateJobState(job.id, VideoProcessingJobManager.STATE_UPLOADING, "Verificando conexión...")
@@ -122,7 +123,14 @@ class ProcesoVideoWorker(
             val conectividadOk = verificarConectividad()
             if (!conectividadOk) {
                 // Sin conexión - cancelar definitivamente el trabajo
-                return handleFinalError(job.id, "Sin conexión al servidor. Verifica tu conexión a internet e intenta nuevamente.", videoPath)
+                Log.w(TAG, "Conectividad fallida - cancelando trabajo")
+                return handleFinalError(job.id, "No hay conexión a internet. Verifica que tengas Wi-Fi o datos móviles activados y vuelve a intentar.", videoPath)
+            }
+
+            // Verificar si el trabajo fue cancelado después de la verificación de conectividad
+            if (isStopped) {
+                Log.w(TAG, "Trabajo cancelado después de verificación de conectividad")
+                return Result.failure()
             }
             
             // 2. Subir video
@@ -190,12 +198,12 @@ class ProcesoVideoWorker(
                 }
             }
             
-            Log.i(TAG, "Procesamiento completado exitosamente")
+            Log.i(TAG, "=== WORKER SUCCESS === Procesamiento completado exitosamente para sesión: $sessionId")
             return Result.success()
-            
+
         } catch (e: Exception) {
-            Log.e(TAG, "Error durante el procesamiento: ${e.message}", e)
-            return handleFinalError(job.id, "Error inesperado: ${e.message}", videoPath)
+            Log.e(TAG, "=== WORKER ERROR === Error durante el procesamiento: ${e.message}", e)
+            return handleFinalError(job.id, "Error inesperado durante el procesamiento. Inténtalo de nuevo.", videoPath)
         }
     }
 
@@ -351,7 +359,7 @@ class ProcesoVideoWorker(
                 }
                 response.code() in 500..599 -> {
                     // Error del servidor - no reintentar
-                    val errorMsg = "Error del servidor (${response.code()}). Intenta más tarde."
+                    val errorMsg = "El servidor está temporalmente fuera de línea. Espera unos minutos e intenta de nuevo."
                     Log.e(TAG, errorMsg)
                     return UploadResult(
                         isSuccess = false,
@@ -361,7 +369,7 @@ class ProcesoVideoWorker(
                 }
                 response.code() in 400..499 -> {
                     // Error del cliente - no reintentar
-                    val errorMsg = "Error en la petición (${response.code()}): ${response.message()}"
+                    val errorMsg = "Error al enviar el video. Verifica que el archivo no esté corrupto e intenta de nuevo."
                     Log.e(TAG, errorMsg)
                     return UploadResult(
                         isSuccess = false,
@@ -371,7 +379,7 @@ class ProcesoVideoWorker(
                 }
                 else -> {
                     // Otros errores - permitir un reintento
-                    val errorMsg = "Error de conexión. Código: ${response.code()}"
+                    val errorMsg = "Conexión inestable. Reintentando automáticamente..."
                     Log.e(TAG, errorMsg)
                     return UploadResult(
                         isSuccess = false,
@@ -388,10 +396,16 @@ class ProcesoVideoWorker(
                             e is java.net.ConnectException || 
                             e is java.io.IOException
             
+            val userFriendlyMessage = if (shouldRetry) {
+                "Conexión inestable. Reintentando automáticamente..."
+            } else {
+                "Error de conexión. Verifica tu internet e intenta de nuevo."
+            }
+
             return UploadResult(
                 isSuccess = false,
                 shouldRetry = shouldRetry,
-                errorMessage = "Error de conexión: ${e.message}"
+                errorMessage = userFriendlyMessage
             )
         }
     }
@@ -512,17 +526,17 @@ class ProcesoVideoWorker(
 
     private suspend fun updateProgress(state: String, message: String) {
         Log.d(TAG, "Estado: $state - $message")
-        
+
         setProgress(workDataOf(
             PROGRESS_STATE to state,
             PROGRESS_MESSAGE to message
         ))
-        
+
         // Actualizar foreground info con nueva notificación
-        setForeground(createForegroundInfo(message, state))
+        setForeground(createForegroundInfo(message, state, inputData.getString(KEY_SESSION_ID)))
     }
 
-    private fun createForegroundInfo(message: String, state: String): ForegroundInfo {
+    private fun createForegroundInfo(message: String, state: String, sessionId: String? = null): ForegroundInfo {
         val title = when (state) {
             STATE_CONECTANDO -> "Conectando..."
             STATE_SUBIENDO -> "Subiendo video"
@@ -536,7 +550,8 @@ class ProcesoVideoWorker(
         val notification = notificationManager.createProcessingNotification(
             context = appContext.applicationContext,
             title = title,
-            message = message
+            message = message,
+            sessionId = sessionId
         )
         return ForegroundInfo(NOTIFICATION_ID, notification)
     }
@@ -556,7 +571,7 @@ class ProcesoVideoWorker(
             val notificationManager = com.frivasm.manosquehablan.notifications.NotificationManager
             notificationManager.showErrorNotification(
                 context = appContext.applicationContext,
-                title = "Error en traducción",
+                title = "Problema de conexión",
                 message = errorMessage
             )
             Log.d(TAG, "Notificación de error mostrada")
@@ -584,7 +599,7 @@ class ProcesoVideoWorker(
             val notificationManager = com.frivasm.manosquehablan.notifications.NotificationManager
             notificationManager.showErrorNotification(
                 context = appContext.applicationContext,
-                title = "Error en traducción",
+                title = "Problema de conexión",
                 message = errorMessage
             )
             Log.d(TAG, "Notificación de error crítico mostrada")

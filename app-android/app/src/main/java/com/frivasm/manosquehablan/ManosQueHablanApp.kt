@@ -40,10 +40,22 @@ class ManosQueHablanApp : Application() {
     
     private fun resumePendingWork() {
         try {
-            VideoWorkManager.resumePendingJobs(this)
-            Log.d(TAG, "Trabajos pendientes verificados y reanudados si es necesario")
+            // NO reanudar automáticamente los trabajos pendientes
+            // En su lugar, verificar si hay trabajos pendientes y dejar que la UI principal los maneje
+            val jobManager = com.frivasm.manosquehablan.persistence.VideoProcessingJobManager(this)
+            val pendingJobs = jobManager.getResumableJobs()
+
+            if (pendingJobs.isNotEmpty()) {
+                Log.i(TAG, "=== APP RESTART === Se encontraron ${pendingJobs.size} trabajos pendientes. La UI principal preguntará al usuario si desea reanudarlos.")
+            } else {
+                Log.d(TAG, "=== APP RESTART === No hay trabajos pendientes para reanudar")
+            }
+
+            // Solo limpiar trabajos antiguos, no reanudar automáticamente
+            jobManager.cleanupOldJobs()
+
         } catch (e: Exception) {
-            Log.e(TAG, "Error reanudando trabajos pendientes: ${e.message}")
+            Log.e(TAG, "Error verificando trabajos pendientes: ${e.message}")
         }
     }
 }

@@ -103,20 +103,36 @@ object VideoWorkManager {
      * Cancela un trabajo de procesamiento
      */
     fun cancelVideoProcessing(context: Context, sessionId: String): Boolean {
+        Log.d(TAG, "Intentando cancelar trabajo para sessionId: $sessionId")
+
         return try {
             val uniqueWorkName = "$WORK_NAME_PREFIX$sessionId"
+            Log.d(TAG, "Nombre único del trabajo: $uniqueWorkName")
+
+            // Verificar estado antes de cancelar
+            val workInfoBefore = getWorkStatus(context, sessionId)
+            Log.d(TAG, "Estado del trabajo antes de cancelar: ${workInfoBefore?.state}")
+
             WorkManager.getInstance(context).cancelUniqueWork(uniqueWorkName)
-            
+
+            // Verificar estado después de cancelar
+            val workInfoAfter = getWorkStatus(context, sessionId)
+            Log.d(TAG, "Estado del trabajo después de cancelar: ${workInfoAfter?.state}")
+
             // Actualizar estado en persistencia
             val jobManager = VideoProcessingJobManager(context)
+            val activeJobs = jobManager.getActiveJobs()
+            Log.d(TAG, "Trabajos activos encontrados: ${activeJobs.size}")
+
             jobManager.getActiveJobs().find { it.id.contains(sessionId) }?.let { job ->
+                Log.d(TAG, "Cancelando trabajo en persistencia: ${job.id}")
                 jobManager.cancelJob(job.id)
             }
-            
-            Log.i(TAG, "Trabajo cancelado: $uniqueWorkName")
+
+            Log.i(TAG, "Trabajo cancelado exitosamente: $uniqueWorkName")
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Error cancelando trabajo: ${e.message}")
+            Log.e(TAG, "Error cancelando trabajo: ${e.message}", e)
             false
         }
     }
@@ -161,34 +177,43 @@ object VideoWorkManager {
     /**
      * Reanudar trabajos pendientes después de reinicio de la app
      */
-    fun resumePendingJobs(context: Context) {
-        try {
-            val jobManager = VideoProcessingJobManager(context)
-            val pendingJobs = jobManager.getResumableJobs()
-            
-            if (pendingJobs.isNotEmpty()) {
-                Log.i(TAG, "Encontrados ${pendingJobs.size} trabajos para reanudar")
-                
-                pendingJobs.forEach { job ->
-                    // Verificar si el trabajo aún existe en WorkManager
-                    val sessionId = job.id.substringAfter("job_")
-                    val workInfo = getWorkStatus(context, sessionId)
-                    
-                    if (workInfo == null || workInfo.state.isFinished) {
-                        // Trabajo no existe en WorkManager, encolar de nuevo
-                        Log.i(TAG, "Reanudando trabajo: ${job.id} para video: ${job.videoPath}")
-                        enqueueVideoProcessing(context, job.videoPath, allowReplace = true)
-                    }
-                }
-            }
-            
-            // Limpiar trabajos antiguos
-            jobManager.cleanupOldJobs()
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "Error reanudando trabajos: ${e.message}")
-        }
-    }
+     fun resumePendingJobs(context: Context) {
+         try {
+             Log.d(TAG, "=== RESUME PENDING JOBS === Reanudando trabajos pendientes")
+
+             val jobManager = VideoProcessingJobManager(context)
+             val pendingJobs = jobManager.getResumableJobs()
+
+             Log.d(TAG, "Trabajos pendientes encontrados: ${pendingJobs.size}")
+
+             if (pendingJobs.isNotEmpty()) {
+                 Log.i(TAG, "=== RESUME PENDING JOBS === Reanudando ${pendingJobs.size} trabajos")
+
+                 pendingJobs.forEach { job ->
+                     Log.d(TAG, "Reanudando trabajo pendiente: ${job.id} - Video: ${job.videoPath}")
+
+                     // Verificar si el trabajo aún existe en WorkManager
+                     val sessionId = job.id.substringAfter("job_")
+                     val workInfo = getWorkStatus(context, sessionId)
+
+                     Log.d(TAG, "Estado del trabajo en WorkManager: ${workInfo?.state}")
+
+                     if (workInfo == null || workInfo.state.isFinished) {
+                         // Trabajo no existe en WorkManager, encolar de nuevo
+                         Log.i(TAG, "=== RESUME PENDING JOBS === Encolando trabajo: ${job.id} para video: ${job.videoPath}")
+                         enqueueVideoProcessing(context, job.videoPath, allowReplace = true)
+                     } else {
+                         Log.d(TAG, "Trabajo ${job.id} aún activo en WorkManager, no se reanuda")
+                     }
+                 }
+             } else {
+                 Log.d(TAG, "=== RESUME PENDING JOBS === No hay trabajos pendientes para reanudar")
+             }
+
+         } catch (e: Exception) {
+             Log.e(TAG, "=== RESUME PENDING JOBS === Error reanudando trabajos: ${e.message}", e)
+         }
+     }
     
     /**
      * Obtiene estadísticas de trabajos

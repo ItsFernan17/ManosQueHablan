@@ -59,6 +59,11 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <!-- BroadcastReceiver para acciones de notificaciones -->
+        <receiver
+            android:name=".notifications.NotificationActionReceiver"
+            android:exported="false" />
+
         <!-- WorkManager SystemForegroundService -->
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"

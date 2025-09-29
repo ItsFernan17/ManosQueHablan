@@ -1,15 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Configuración para desarrollo local - permitir HTTP solo para IPs específicas -->
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">192.168.1.13</domain>
-        <domain includeSubdomains="true">172.20.10.2</domain>
-        <domain includeSubdomains="false">127.0.0.1</domain>
-        <domain includeSubdomains="false">localhost</domain>
-        <domain includeSubdomains="false">10.0.2.2</domain>
-    </domain-config>
-    
-    <!-- Configuración por defecto para producción - solo HTTPS -->
+    <!-- Configuración por defecto - solo HTTPS -->
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system"/>

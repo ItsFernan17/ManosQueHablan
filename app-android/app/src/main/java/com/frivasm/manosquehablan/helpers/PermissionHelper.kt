@@ -16,11 +16,15 @@ class PermissionHelper(private val activity: Activity) {
     fun verificarPermisos() {
         val permisos = mutableListOf(
             Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_MEDIA_VIDEO,
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.READ_MEDIA_IMAGES
+            Manifest.permission.RECORD_AUDIO
         )
+
+        // Permisos de medios para Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permisos.add(Manifest.permission.READ_MEDIA_VIDEO)
+            permisos.add(Manifest.permission.READ_MEDIA_AUDIO)
+            permisos.add(Manifest.permission.READ_MEDIA_IMAGES)
+        }
 
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
             permisos.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -46,11 +50,15 @@ class PermissionHelper(private val activity: Activity) {
     fun allPermissionsGranted(): Boolean {
         val permisos = mutableListOf(
             Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_MEDIA_VIDEO,
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.READ_MEDIA_IMAGES
+            Manifest.permission.RECORD_AUDIO
         )
+
+        // Permisos de medios para Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permisos.add(Manifest.permission.READ_MEDIA_VIDEO)
+            permisos.add(Manifest.permission.READ_MEDIA_AUDIO)
+            permisos.add(Manifest.permission.READ_MEDIA_IMAGES)
+        }
 
         // Agregar permisos de almacenamiento para versiones anteriores
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {

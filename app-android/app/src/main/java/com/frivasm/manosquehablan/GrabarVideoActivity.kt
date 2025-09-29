@@ -114,6 +114,11 @@ class GrabarVideoActivity : AppCompatActivity() {
         videoRecordingHelper.exposureControlHelper.onExposureChanged = { luma, evCompensation, torchEnabled ->
             updateExposureIndicator(luma, evCompensation, torchEnabled)
         }
+
+        // Configurar callback para feedback inmediato al tocar pantalla
+        videoRecordingHelper.exposureControlHelper.onTouchFeedback = { changeAmount, newEv, cameraType ->
+            showTouchBrightnessFeedback(changeAmount, newEv, cameraType)
+        }
     }
     
     private fun initializePositionValidator() {
@@ -300,7 +305,7 @@ class GrabarVideoActivity : AppCompatActivity() {
     
     private fun updateIndicationsWithExposureContext(contextMessage: String, luma: Float, hasEvSupport: Boolean) {
         val currentText = binding.textIndicaciones.text.toString()
-        
+
         // Solo actualizar si no estamos en un mensaje crítico de posición
         if (!currentText.contains("¡Posición crítica!") && !currentText.contains("Endereza el teléfono")) {
             val baseMessage = "Coloca tus manos dentro del marco"
@@ -311,13 +316,71 @@ class GrabarVideoActivity : AppCompatActivity() {
                 luma >= 0.47f && luma <= 0.60f -> "Iluminación perfecta"
                 else -> contextMessage
             }
-            
+
             // Mostrar el hint de exposición primero, luego el mensaje base
             binding.textIndicaciones.text = if (exposureHint.isNotEmpty() && exposureHint != "Solo medición") {
                 "$exposureHint\n$baseMessage"
             } else {
                 baseMessage
             }
+        }
+    }
+
+    private fun showTouchBrightnessFeedback(changeAmount: Int, newEv: Int, cameraType: String) {
+        runOnUiThread {
+            val indicator = binding.exposureIndicator
+
+            // Mostrar indicador inmediatamente
+            indicator.visibility = android.view.View.VISIBLE
+
+            // Determinar texto basado en el cambio
+            val feedbackText = when {
+                changeAmount > 0 -> "+$changeAmount"
+                changeAmount < 0 -> "$changeAmount"
+                else -> "●" // Sin cambio
+            }
+
+            // Color basado en el cambio
+            val color = when {
+                changeAmount > 0 -> getColor(android.R.color.holo_green_light) // Más brillo
+                changeAmount < 0 -> getColor(android.R.color.holo_red_light)   // Menos brillo
+                else -> getColor(android.R.color.holo_blue_light)             // Sin cambio
+            }
+
+            // Actualizar indicador
+            indicator.text = feedbackText
+            indicator.setTextColor(color)
+
+            // Mostrar información adicional en las indicaciones
+            val brightnessMessage = when {
+                changeAmount > 0 -> "Brillo aumentado (+$changeAmount) - $cameraType"
+                changeAmount < 0 -> "Brillo reducido ($changeAmount) - $cameraType"
+                else -> "Sin ajuste de brillo necesario - $cameraType"
+            }
+
+            // Solo mostrar si no estamos grabando
+            if (!videoRecordingHelper.isRecording()) {
+                val currentText = binding.textIndicaciones.text.toString()
+                if (!currentText.contains("¡Posición crítica!") && !currentText.contains("Endereza el teléfono")) {
+                    binding.textIndicaciones.text = brightnessMessage
+                    // Restaurar mensaje original después de 2 segundos
+                    binding.textIndicaciones.postDelayed({
+                        if (!videoRecordingHelper.isRecording()) {
+                            binding.textIndicaciones.text = "Coloca tus manos dentro del marco"
+                        }
+                    }, 2000)
+                }
+            }
+
+            // Ocultar indicador después de 3 segundos si no hay más actividad
+            indicator.postDelayed({
+                if (!videoRecordingHelper.isRecording() &&
+                    videoRecordingHelper.exposureControlHelper.getCurrentEvCompensation() == newEv) {
+                    indicator.visibility = android.view.View.GONE
+                }
+            }, 3000)
+
+            Log.d("GrabarVideo", "Feedback de brillo: cambio=$changeAmount, EV=$newEv, cámara=$cameraType")
         }
     }
     

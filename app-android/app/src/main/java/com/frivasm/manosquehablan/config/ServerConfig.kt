@@ -4,40 +4,25 @@ import com.frivasm.manosquehablan.BuildConfig
 
 /**
  * Configuración central de servidor para Manos Que Hablan
- * 
- * Manejo dinámico de URLs según el entorno:
- * - DEBUG: Desarrollo local (192.168.1.13:5000)
- * - RELEASE: Producción (https://api.manosquehablan.com)
+ *
+ * Configuración de producción: http://www.manosquehablan.org
  */
 object ServerConfig {
-    
+
     /**
      * URL base principal del servidor
      */
     val BASE_URL: String get() = BuildConfig.BASE_URL
     
     /**
-     * Configuraciones específicas para desarrollo
-     */
-    object Development {
-        const val LOCAL_IP = "192.168.1.13"
-        const val LOCAL_PORT = 8011
-        const val LOCAL_URL = "http://$LOCAL_IP:$LOCAL_PORT/"
-        
-        // URLs alternativas para pruebas
-        const val LOCALHOST_URL = "http://127.0.0.1:$LOCAL_PORT/"
-        const val EMULATOR_URL = "http://10.0.2.2:$LOCAL_PORT/"
-    }
-    
-    /**
-     * Configuraciones para producción
+     * Configuración de producción
      */
     object Production {
-        const val DOMAIN = "api.manosquehablan.com"
+        const val DOMAIN = "www.manosquehablan.org"
         const val PRODUCTION_URL = "https://$DOMAIN/"
-        
+
         // Backup/failover URLs si es necesario
-        const val BACKUP_URL = "https://backup-api.manosquehablan.com/"
+        const val BACKUP_URL = "https://backup.manosquehablan.org/"
     }
     
     /**

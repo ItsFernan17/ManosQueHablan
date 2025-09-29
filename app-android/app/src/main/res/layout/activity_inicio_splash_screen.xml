@@ -53,7 +53,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="100dp"
         android:fontFamily="@font/poppins_medium"
-        android:text="Desarrollado por Fernando Rivas"
+        android:text="Desarrollado por Fernando Josué Rivas Mauricio"
         android:textColor="@color/texto_splash"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"

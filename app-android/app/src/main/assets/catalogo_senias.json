@@ -13,6 +13,13 @@
       "descripcion": "Feliz • Dolor • Reír",
       "boton_texto": "Ver Vocabulario",
       "enlace": "https://www.youtube.com/watch?v=25xtTMdZqa8&t=24s"
+    },
+    {
+      "id": "interrogantes",
+      "titulo": "Interrogantes",
+      "descripcion": "¿Por qué? • ¿Dónde? • ¿Cuál?",
+      "boton_texto": "Ver Vocabulario",
+      "enlace": "https://www.youtube.com/watch?v=kxHIUMcL9Is&list=PLd40dkghU2zd7Jt5-mKOoarLaY0S8Fy0y&index=13"
     }
   ]
 }

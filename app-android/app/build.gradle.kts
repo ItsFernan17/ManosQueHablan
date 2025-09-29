@@ -8,15 +8,13 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.frivasm.manosquehablan"
+        applicationId = "org.manosquehablan"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true
-
-        buildConfigField("String", "DEFAULT_BASE_URL", "\"http://192.168.1.13:8011/\"")
     }
     
     splits {
@@ -47,13 +45,13 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "BASE_URL", "\"http://192.168.1.13:8011/\"")
+            buildConfigField("String", "BASE_URL", "\"https://www.manosquehablan.org/\"")
             buildConfigField("boolean", "ENABLE_LOGGING", "true")
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            buildConfigField("String", "BASE_URL", "\"https://api.manosquehablan.com/\"")
+            buildConfigField("String", "BASE_URL", "\"https://www.manosquehablan.org/\"")
             buildConfigField("boolean", "ENABLE_LOGGING", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

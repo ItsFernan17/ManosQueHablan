@@ -19,6 +19,7 @@ import com.frivasm.manosquehablan.models.CategoriaSeña
 import com.frivasm.manosquehablan.models.CatalogoSenias
 import com.google.gson.Gson
 import java.io.IOException
+import java.io.InputStreamReader
 
 class CatalogoSeniasActivity : AppCompatActivity() {
     
@@ -51,18 +52,20 @@ class CatalogoSeniasActivity : AppCompatActivity() {
      */
     private fun cargarCategoriasDesdeJSON() {
         try {
-            // Leer el archivo JSON desde assets
-            val jsonString = assets.open("catalogo_senias.json").bufferedReader().use { it.readText() }
-            
+            // Leer el archivo JSON desde assets, manejando posible BOM
+            val inputStream = assets.open("catalogo_senias.json")
+            val reader = InputStreamReader(inputStream, Charsets.UTF_8)
+            val jsonString = reader.readText().removePrefix("\uFEFF")
+
             // Parsear JSON usando Gson
             val gson = Gson()
             val catalogoSenias = gson.fromJson(jsonString, CatalogoSenias::class.java)
-            
+
             // Agregar cada categoría dinámicamente
             catalogoSenias.categorias.forEach { categoria ->
                 agregarCategoriaAlLayout(categoria)
             }
-            
+
         } catch (e: IOException) {
             Log.e("CatalogoSenias", "Error al cargar categorías desde JSON", e)
             // En caso de error, mostrar mensaje al usuario

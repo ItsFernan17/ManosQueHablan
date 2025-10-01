@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
 import android.util.Log
@@ -52,10 +53,8 @@ class NotificationHelper(private val context: Context) {
                 setBypassDnd(true) // Saltar modo No Molestar para emergentes
 
                 // Configuración adicional para heads-up
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    setImportance(NotificationManager.IMPORTANCE_HIGH)
-                    setSound(null, null) // Sin sonido personalizado para usar el por defecto
-                }
+                setImportance(NotificationManager.IMPORTANCE_HIGH)
+                setSound(null, null) // Sin sonido personalizado para usar el por defecto
             }
 
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -100,7 +99,7 @@ class NotificationHelper(private val context: Context) {
             .setAutoCancel(false) // NO se auto-cancela - persiste como Gmail/Twitter
             .setOngoing(true) // HACERLA ONGOING para que aparezca siempre
             .setVibrate(longArrayOf(0, 250, 250, 250))
-            .setSound(Uri.EMPTY, 0) // SIN SONIDO para notificación de subida
+            .setSound(null, AudioManager.STREAM_NOTIFICATION) // SIN SONIDO para notificación de subida
             .setWhen(System.currentTimeMillis()) // Timestamp actual
             .setShowWhen(true) // Mostrar timestamp
             .setCategory(NotificationCompat.CATEGORY_PROGRESS) // Categoría de progreso
@@ -298,7 +297,7 @@ class NotificationHelper(private val context: Context) {
             .setAutoCancel(false) // NO se auto-cancela - persiste como Gmail/Twitter
             .setOngoing(true) // HACERLA ONGOING para que aparezca siempre
             .setVibrate(longArrayOf(0, 250, 250, 250))
-            .setSound(Uri.EMPTY, 0) // SIN SONIDO para notificación de subida
+            .setSound(null, AudioManager.STREAM_NOTIFICATION) // SIN SONIDO para notificación de subida
             .setWhen(System.currentTimeMillis()) // Timestamp actual
             .setShowWhen(true) // Mostrar timestamp
             .setCategory(NotificationCompat.CATEGORY_PROGRESS) // Categoría de progreso

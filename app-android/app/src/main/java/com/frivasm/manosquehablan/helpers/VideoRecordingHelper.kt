@@ -13,6 +13,7 @@ import androidx.camera.video.*
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.frivasm.manosquehablan.databinding.ActivityGrabarVideoBinding
+import com.frivasm.manosquehablan.helpers.ExposureControlHelper
 import java.io.File
 import java.util.concurrent.ExecutorService
 
@@ -31,10 +32,9 @@ class VideoRecordingHelper(
     private var currentTempFile: File? = null
     private var isPaused = false
     private var camera: Camera? = null
-    
-    // Control de exposición inteligente
-    val exposureControlHelper = ExposureControlHelper(context, binding.previewView, cameraExecutor)
-    
+    private val exposureControlHelper = ExposureControlHelper(context, binding.previewView, cameraExecutor)
+
+
     var onRecordingStarted: (() -> Unit)? = null
     var onRecordingStopped: (() -> Unit)? = null
     var onRecordingError: ((String) -> Unit)? = null
@@ -43,14 +43,6 @@ class VideoRecordingHelper(
     init {
         // Configurar tipo de cámara inicial (frontal por defecto)
         Log.d("VideoRecording", "INIT: Configurando cámara frontal por defecto")
-        exposureControlHelper.setFrontCamera(lensFacing == CameraSelector.LENS_FACING_FRONT)
-        
-        // Configurar callback para notificaciones de exposición
-        exposureControlHelper.onExposureChanged = { luma, evCompensation, torchEnabled ->
-            val supportInfo = if (exposureControlHelper.isExposureSupported()) "EV" else "Solo medición"
-            val torchInfo = if (exposureControlHelper.isTorchSupported()) "linterna" else "sin linterna"
-            Log.d("VideoRecording", "Exposición [$supportInfo,$torchInfo]: luma=${String.format("%.3f", luma)}, EV=$evCompensation, torch=$torchEnabled")
-        }
     }
     
     fun iniciarCamara() {
@@ -82,14 +74,9 @@ class VideoRecordingHelper(
 
             try {
                 provider.unbindAll()
-                
-                // Vincular preview, videoCapture y análisis de imagen para exposición
-                val imageAnalysis = exposureControlHelper.getImageAnalysis()
-                if (imageAnalysis != null) {
-                    camera = provider.bindToLifecycle(lifecycleOwner, camSelector, preview, videoCapture, imageAnalysis)
-                } else {
-                    camera = provider.bindToLifecycle(lifecycleOwner, camSelector, preview, videoCapture)
-                }
+
+                // Vincular preview y videoCapture
+                camera = provider.bindToLifecycle(lifecycleOwner, camSelector, preview, videoCapture)
                 
                 // Configurar control de exposición con la cámara
                 camera?.let { 

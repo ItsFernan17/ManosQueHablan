@@ -38,7 +38,6 @@ class GrabarVideoActivity : AppCompatActivity() {
     private var isRecordingAllowed = false
     private var isManualRestart = false // Bandera para reinicio manual
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityGrabarVideoBinding.inflate(layoutInflater)
@@ -110,15 +109,10 @@ class GrabarVideoActivity : AppCompatActivity() {
             mostrarDialogoErrorCamara(error)
         }
         
-        // Configurar callback de exposición para mostrar información sutil
-        videoRecordingHelper.exposureControlHelper.onExposureChanged = { luma, evCompensation, torchEnabled ->
-            updateExposureIndicator(luma, evCompensation, torchEnabled)
-        }
-
-        // Configurar callback para feedback inmediato al tocar pantalla
-        videoRecordingHelper.exposureControlHelper.onTouchFeedback = { changeAmount, newEv, cameraType ->
-            showTouchBrightnessFeedback(changeAmount, newEv, cameraType)
-        }
+        // Configurar callback para ajuste de brillo al tocar pantalla (DESHABILITADO)
+        // videoRecordingHelper.exposureControlHelper.onTouchFeedback = { changeAmount, newEv, cameraType ->
+        //     showTouchBrightnessFeedback(changeAmount, newEv, cameraType)
+        // }
     }
     
     private fun initializePositionValidator() {
@@ -189,7 +183,7 @@ class GrabarVideoActivity : AppCompatActivity() {
                 }
                 PositionValidator.PositionState.RED -> {
                     if (hasGyroscope) {
-                        "Endereza el teléfono (ideal 70-90°) - Actual: ${String.format("%.0f", uxAngle)}°"
+                        "Endereza el teléfono (ideal 70-90°) - Actual: ${String.format(java.util.Locale.getDefault(), "%.0f", uxAngle)}°"
                     } else {
                         "Sin giroscopio: coloca el teléfono verticalmente"
                     }
@@ -232,75 +226,7 @@ class GrabarVideoActivity : AppCompatActivity() {
     }
     
     private fun updateExposureIndicator(luma: Float, evCompensation: Int, torchEnabled: Boolean) {
-        runOnUiThread {
-            val indicator = binding.exposureIndicator
-            
-            // Verificar soporte del dispositivo
-            val hasEvSupport = videoRecordingHelper.exposureControlHelper.isExposureSupported()
-            val hasTorchSupport = videoRecordingHelper.exposureControlHelper.isTorchSupported()
-            
-            // Solo mostrar durante la grabación o si hay ajustes significativos
-            val shouldShow = videoRecordingHelper.isRecording() || 
-                           (hasEvSupport && evCompensation != 0) || 
-                           (hasTorchSupport && torchEnabled) || 
-                           luma < 0.3f || 
-                           luma > 0.7f
-            
-            if (shouldShow) {
-                indicator.visibility = android.view.View.VISIBLE
-                
-                // Actualizar texto basado en estado y soporte
-                val text = when {
-                    torchEnabled && hasTorchSupport -> "ON"
-                    evCompensation > 0 && hasEvSupport -> "+$evCompensation"
-                    evCompensation < 0 && hasEvSupport -> "$evCompensation"
-                    luma < 0.3f && !hasEvSupport -> "◐" // Oscuro pero sin control EV
-                    luma > 0.7f && !hasEvSupport -> "◑" // Brillante pero sin control EV
-                    luma < 0.3f -> "◐"
-                    luma > 0.7f -> "◑"
-                    !hasEvSupport -> "○" // Modo solo medición
-                    else -> "●"
-                }
-                
-                // Color y mensaje contextual basado en calidad de exposición
-                val color: Int
-                val contextMessage: String
-                
-                when {
-                    !hasEvSupport -> {
-                        color = getColor(android.R.color.holo_blue_light)
-                        contextMessage = if (luma < 0.35f) "Busca mejor luz" else "Solo medición"
-                    }
-                    luma >= 0.47f && luma <= 0.60f -> {
-                        color = getColor(android.R.color.holo_green_light)
-                        contextMessage = "Iluminación óptima"
-                    }
-                    luma >= 0.35f && luma <= 0.70f -> {
-                        color = getColor(android.R.color.holo_orange_light)
-                        contextMessage = "Sistema ajustando"
-                    }
-                    luma < 0.35f -> {
-                        color = getColor(android.R.color.holo_red_light)
-                        contextMessage = "Necesitas más luz"
-                    }
-                    else -> {
-                        color = getColor(android.R.color.holo_red_light)
-                        contextMessage = "Evita luz directa"
-                    }
-                }
-                
-                indicator.text = text
-                indicator.setTextColor(color)
-                
-                // Actualizar las indicaciones con contexto de iluminación
-                if (!videoRecordingHelper.isRecording()) {
-                    updateIndicationsWithExposureContext(contextMessage, luma, hasEvSupport)
-                }
-                
-            } else {
-                indicator.visibility = android.view.View.GONE
-            }
-        }
+        // Sin indicador visual - solo callback para compatibilidad
     }
     
     private fun updateIndicationsWithExposureContext(contextMessage: String, luma: Float, hasEvSupport: Boolean) {
@@ -326,63 +252,13 @@ class GrabarVideoActivity : AppCompatActivity() {
         }
     }
 
-    private fun showTouchBrightnessFeedback(changeAmount: Int, newEv: Int, cameraType: String) {
-        runOnUiThread {
-            val indicator = binding.exposureIndicator
-
-            // Mostrar indicador inmediatamente
-            indicator.visibility = android.view.View.VISIBLE
-
-            // Determinar texto basado en el cambio
-            val feedbackText = when {
-                changeAmount > 0 -> "+$changeAmount"
-                changeAmount < 0 -> "$changeAmount"
-                else -> "●" // Sin cambio
-            }
-
-            // Color basado en el cambio
-            val color = when {
-                changeAmount > 0 -> getColor(android.R.color.holo_green_light) // Más brillo
-                changeAmount < 0 -> getColor(android.R.color.holo_red_light)   // Menos brillo
-                else -> getColor(android.R.color.holo_blue_light)             // Sin cambio
-            }
-
-            // Actualizar indicador
-            indicator.text = feedbackText
-            indicator.setTextColor(color)
-
-            // Mostrar información adicional en las indicaciones
-            val brightnessMessage = when {
-                changeAmount > 0 -> "Brillo aumentado (+$changeAmount) - $cameraType"
-                changeAmount < 0 -> "Brillo reducido ($changeAmount) - $cameraType"
-                else -> "Sin ajuste de brillo necesario - $cameraType"
-            }
-
-            // Solo mostrar si no estamos grabando
-            if (!videoRecordingHelper.isRecording()) {
-                val currentText = binding.textIndicaciones.text.toString()
-                if (!currentText.contains("¡Posición crítica!") && !currentText.contains("Endereza el teléfono")) {
-                    binding.textIndicaciones.text = brightnessMessage
-                    // Restaurar mensaje original después de 2 segundos
-                    binding.textIndicaciones.postDelayed({
-                        if (!videoRecordingHelper.isRecording()) {
-                            binding.textIndicaciones.text = "Coloca tus manos dentro del marco"
-                        }
-                    }, 2000)
-                }
-            }
-
-            // Ocultar indicador después de 3 segundos si no hay más actividad
-            indicator.postDelayed({
-                if (!videoRecordingHelper.isRecording() &&
-                    videoRecordingHelper.exposureControlHelper.getCurrentEvCompensation() == newEv) {
-                    indicator.visibility = android.view.View.GONE
-                }
-            }, 3000)
-
-            Log.d("GrabarVideo", "Feedback de brillo: cambio=$changeAmount, EV=$newEv, cámara=$cameraType")
-        }
-    }
+    // FUNCIÓN DESHABILITADA - Eliminado feedback visual de brillo al tocar
+    // private fun showTouchBrightnessFeedback(changeAmount: Int, newEv: Int, cameraType: String) {
+    //     runOnUiThread {
+    //         val indicator = binding.exposureIndicator
+    //         // Código comentado para mantener la funcionalidad natural sin efectos
+    //     }
+    // }
     
     private fun setupListeners() {
         binding.btnGrabar.setOnClickListener {
@@ -663,8 +539,8 @@ class GrabarVideoActivity : AppCompatActivity() {
         val permissionsText = deniedPermissions.joinToString(", ")
 
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Permisos requeridos")
-            .setMessage("La aplicación necesita los siguientes permisos para funcionar correctamente: $permissionsText.\n\nPuedes conceder los permisos desde la configuración de la aplicación.")
+            .setTitle("Necesitamos tu autorización")
+            .setMessage("Para poder traducir tus señas, necesitamos que autorices: $permissionsText.\n\nPuedes activar estos permisos desde la configuración de tu dispositivo.")
             .setPositiveButton("Ir a configuración") { _, _ ->
                 // Abrir configuración de la app
                 val intent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
@@ -683,8 +559,8 @@ class GrabarVideoActivity : AppCompatActivity() {
     private fun mostrarDialogoErrorCamara(errorMessage: String) {
         runOnUiThread {
             androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Error de cámara")
-                .setMessage("No se pudo inicializar la cámara: $errorMessage\n\nPosibles soluciones:\n• Verifica que la cámara no esté siendo usada por otra aplicación\n• Reinicia el dispositivo\n• Verifica que la cámara funcione correctamente")
+                .setTitle("¡Ups! Problema con la cámara")
+                .setMessage("No pudimos iniciar la cámara: $errorMessage\n\n¿Qué puedes hacer?\n• Cierra otras apps que puedan estar usando la cámara\n• Reinicia tu dispositivo\n• Verifica que la cámara funcione en otras aplicaciones")
                 .setPositiveButton("Reintentar") { _, _ ->
                     // Reintentar inicializar la cámara
                     if (permissionHelper.allPermissionsGranted()) {

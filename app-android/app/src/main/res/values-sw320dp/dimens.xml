@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dialog dimensions - Very small screens (320dp width and up) -->
+    <dimen name="dialog_padding">16dp</dimen>
+    <dimen name="dialog_padding_small">12dp</dimen>
+    <dimen name="dialog_icon_size">64dp</dimen>
+    <dimen name="dialog_icon_size_small">48dp</dimen>
+    <dimen name="dialog_text_size_title">18sp</dimen>
+    <dimen name="dialog_text_size_body">14sp</dimen>
+    <dimen name="dialog_text_size_hint">12sp</dimen>
+    <dimen name="dialog_max_width">280dp</dimen>
+    <dimen name="dialog_button_margin">16dp</dimen>
+    <dimen name="dialog_spacing_small">8dp</dimen>
+    <dimen name="dialog_spacing_medium">12dp</dimen>
+    <dimen name="dialog_spacing_large">16dp</dimen>
+    <dimen name="dialog_spacing_xlarge">20dp</dimen>
+    <!-- Dialog size limits - More conservative for small screens -->
+    <dimen name="dialog_max_screen_width">0.90</dimen>
+    <dimen name="dialog_scroll_max_height">300dp</dimen>
+</resources>

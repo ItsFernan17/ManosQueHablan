@@ -1,110 +1,119 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Consejos iniciales -->
+    <string name="consejo_distancia">Mantener al menos 35 cm de distancia (no mucho más)</string>
+    <string name="consejo_iluminacion">Estar en un lugar bien iluminado (evita luz detrás de ti)</string>
+    <string name="consejo_manos">Mantener tus manos dentro del recuadro en pantalla</string>
+    <string name="consejo_velocidad">Hacer las señas despacio y sin movimientos bruscos</string>
+
+    <!-- Descripciones generales -->
+    <string name="cd_fondo">Fondo</string>
+    <string name="cd_logo">Logo de la aplicación</string>
+    <string name="splash_creditos">Desarrollado por Fernando Josué Rivas Mauricio</string>
     <string name="app_name">Manos Que Hablan</string>
+
+    <!-- Videos -->
     <string name="videos_recientes_hoy">Grabados hoy</string>
     <string name="videos_anteriores">Grabados anteriormente</string>
     <string name="videos_recientes_ayer">Grabados ayer</string>
     <string name="videos_este_mes">Este mes</string>
-    
+
     <!-- Configuración -->
     <string name="configuracion_titulo">Configuración de la Aplicación</string>
     <string name="consejos_antes_grabar">Consejos antes de grabar</string>
     <string name="recordatorio_al_grabar">Recordatorio al grabar</string>
     <string name="recordatorio_descripcion">Muestra consejos útiles cada vez que grabes un video en lengua de señas.</string>
-    <string name="confirmacion_videos_problematicos">Confirmación para videos problemáticos</string>
-    <string name="confirmar_compartir_videos">Confirmar al compartir videos sin traducción</string>
-    <string name="confirmar_compartir_descripcion">Pide confirmación antes de compartir videos que no se tradujeron correctamente.</string>
+    <string name="confirmacion_videos_problematicos">Confirmación para videos sin traducción</string>
+    <string name="confirmar_compartir_videos">Preguntar antes de compartir videos sin traducción</string>
+    <string name="confirmar_compartir_descripcion">Te preguntaremos antes de compartir videos que no se hayan traducido correctamente.</string>
     <string name="sonidos_notificaciones">Sonidos y notificaciones</string>
     <string name="sonidos_descripcion">Activa un sonido cuando se completen acciones importantes en la app.</string>
     <string name="acerca_de">Acerca de</string>
     <string name="informacion_aplicacion">Información de la aplicación</string>
     <string name="informacion_descripcion">Ver detalles sobre la app, versión y desarrolladores</string>
     <string name="cambios_guardados">Los cambios se guardan automáticamente</string>
-    
+
     <!-- Pantalla principal -->
     <string name="no_hay_videos">¡No hay videos aún!</string>
     <string name="presiona_grabar">Presiona el botón para grabar tu primer video.</string>
     <string name="grabar_nuevo_video">Grabar Nuevo Video</string>
-    
+
     <!-- Diálogos -->
-    <string name="video_mal_traducido_titulo">Video no traducido correctamente</string>
-    <string name="video_mal_traducido_mensaje">El sistema no pudo generar la traducción de audio y texto para este video.</string>
-    <string name="para_mejorar_traduccion">Para mejorar la traducción, recuerda:</string>
-    <string name="consejo_distancia">Mantén distancia de 30-40 cm del teléfono</string>
-    <string name="consejo_iluminacion">Usa buena luz frontal y evita contraluz</string>
-    <string name="consejo_manos">Mantén las manos dentro del recuadro</string>
-    <string name="consejo_velocidad">Haz la seña despacio y con estabilidad</string>
+    <string name="video_mal_traducido_titulo">¡Ups! Algo salió mal</string>
+    <string name="video_mal_traducido_mensaje">No pudimos traducir tu video correctamente esta vez.</string>
+    <string name="para_mejorar_traduccion">Para una mejor traducción, asegúrate de:</string>
     <string name="entendido">Entendido</string>
-    
-    <string name="confirmar_compartir_titulo">Video mal traducido</string>
-    <string name="confirmar_compartir_mensaje">Este video no se tradujo correctamente. ¿Estás seguro de que quieres compartirlo?</string>
-    
+
+    <string name="confirmar_compartir_titulo">¿Compartir de todas formas?</string>
+    <string name="confirmar_compartir_mensaje">Este video no se pudo traducir correctamente. ¿Quieres compartirlo sin la traducción?</string>
+
     <string name="escuchar_traduccion">Escuchar traducción</string>
     <string name="texto_traducido">Texto traducido</string>
-    
+
     <!-- Botones generales -->
     <string name="cancelar">Cancelar</string>
     <string name="btn_cancelar">Cancelar</string>
     <string name="compartir">Compartir</string>
     <string name="aceptar">Aceptar</string>
     <string name="reintentar">Reintentar</string>
-    
+
     <!-- Mensajes de conexión y servidor -->
-    <string name="conexion_problema">Conexión al servidor</string>
-    <string name="error_conexion_servidor">No se pudo conectar con el servidor de traducción</string>
-    <string name="sugerencia_conexion">Verifica tu conexión a internet e intenta nuevamente</string>
-    <string name="verificando_servidor">Verificando conexión al servidor...</string>
-    <string name="servidor_no_disponible">El servidor de traducción no está disponible en este momento</string>
-    <string name="servidor_lento">El servidor está tardando más de lo esperado. Por favor, ten paciencia...</string>
-    <string name="reintentando_conexion">Reintentando conexión...</string>
-    
+    <string name="conexion_problema">¡Ups! Hay un problema</string>
+    <string name="error_conexion_servidor">No pudimos conectarnos con el servidor de traducción en este momento</string>
+    <string name="sugerencia_conexion">Revisa tu conexión a internet y vuelve a intentarlo</string>
+    <string name="verificando_servidor">Verificando conexión con el servidor…</string>
+    <string name="servidor_no_disponible" tools:ignore="Typos">El servidor de traducción está tomando un descanso. Vuelve a intentarlo en unos minutos</string>
+    <string name="servidor_lento">El servidor está más ocupado de lo normal. ¡Gracias por tu paciencia!</string>
+    <string name="reintentando_conexion">Intentando conectar de nuevo…</string>
+
     <!-- Estados del servidor -->
-    <string name="servidor_disponible">Servidor disponible</string>
-    <string name="servidor_no_responde">El servidor no responde</string>
-    <string name="sin_conexion">Sin conexión al servidor</string>
-    <string name="error_servidor_interno">Error interno del servidor</string>
-    
+    <string name="servidor_disponible">Todo listo para traducir</string>
+    <string name="servidor_no_responde">El servidor no está respondiendo en este momento</string>
+    <string name="sin_conexion">No hay conexión con el servidor</string>
+    <string name="error_servidor_interno">Algo salió mal en el servidor</string>
+
     <!-- Acciones de video -->
     <string name="compartir_video">Compartir Video</string>
     <string name="ver_texto_traducido">Ver Texto Traducido</string>
     <string name="escuchar_traduccion_btn">Escuchar Traducción</string>
     <string name="eliminar_video">Eliminar Video</string>
-    
+
     <!-- Estados -->
     <string name="mal_traducido">MAL TRADUCIDO</string>
     <string name="hoy">Hoy</string>
-    
+
     <!-- Categorías -->
     <string name="titulo_categoria">Título de la Categoría</string>
     <string name="descripcion_senias">Descripción de las señas</string>
-    
+
     <!-- Símbolos -->
     <string name="bullet_point">• </string>
-    
+
     <!-- Diálogo recordatorio grabar -->
-    <string name="titulo_antes_de_grabar">Recuerda antes de grabar</string>
+    <string name="titulo_antes_de_grabar">Antes de grabar</string>
     <string name="tab_consejos">Consejos</string>
     <string name="tab_uso_responsable">Uso Responsable</string>
     <string name="btn_siguiente">Siguiente</string>
-    
+
     <!-- Consejos adicionales -->
     <string name="consejo_recuadro">Coloca tus manos dentro del recuadro en pantalla.</string>
-    <string name="consejo_estabilidad">Haz la seña despacio y con estabilidad.</string>
+    <string name="consejo_estabilidad">Te recomendamos usar una base o soporte para el teléfono. Esto ayudará a mantener la estabilidad y obtener mejores resultados en la traducción.</string>
     <string name="consejo_angulo">Al entrar, espera mientras se verifica el ángulo del teléfono automáticamente.</string>
-    
+
     <!-- Sección importante -->
     <string name="titulo_importante">Importante:</string>
-    <string name="mensaje_importante">La traducción puede fallar si no hay suficiente luz natural o artificial en tu ubicación.</string>
-    
+    <string name="mensaje_importante">Para una mejor traducción, asegúrate de estar en un lugar bien iluminado con luz natural o artificial.</string>
+
     <!-- Uso responsable -->
     <string name="mensaje_uso_responsable">Por favor, evita grabarte haciendo señas inapropiadas o vulgares.</string>
     <string name="uso_educativo">Usa la app para traducir la lengua de señas de manera adecuada y respetuosa</string>
     <string name="evitar_vulgares">Evita gestos inapropiados, ofensivos o vulgares</string>
     <string name="respetar_comunidad">Respeta a quienes se comunican en lengua de señas</string>
-    
+
     <!-- Recordatorio uso responsable -->
     <string name="titulo_recuerda">Recuerda:</string>
     <string name="mensaje_recuerda">Esta app está diseñada para traducir la lengua de señas de forma respetuosa. Tu uso responsable ayuda a mantener un entorno positivo para la comunidad.</string>
-    
+
     <!-- Notificaciones -->
     <string name="notif_channel_name">Traducción de Videos</string>
     <string name="notif_channel_desc">Notificaciones cuando el video termine de procesarse</string>
@@ -112,7 +121,8 @@
     <string name="notif_video_procesado_mensaje">Tu video ha sido traducido exitosamente</string>
     <string name="notif_video_error_titulo">Error en traducción</string>
     <string name="notif_video_error_mensaje">Hubo un problema al procesar tu video</string>
-    
+
     <!-- Títulos de diálogos secuenciales -->
     <string name="titulo_uso_responsable">Uso Responsable</string>
+
 </resources>

@@ -29,8 +29,8 @@ object ServerConfig {
      * Endpoints específicos de la API
      */
     object Endpoints {
-        const val UPLOAD_VIDEO = "upload"
-        const val PROCESS_VIDEO = "process" 
+        const val UPLOAD_VIDEO = "upload_video"
+        const val PROCESS_VIDEO = "process"
         const val DOWNLOAD_AUDIO = "download/audio"
         const val DOWNLOAD_TEXT = "download/text"
         const val HEALTH_CHECK = "health"

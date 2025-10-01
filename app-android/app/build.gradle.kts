@@ -9,21 +9,12 @@ android {
 
     defaultConfig {
         applicationId = "org.manosquehablan"
-        minSdk = 26
+        minSdk = 29
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.0.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true
-    }
-    
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("arm64-v8a", "armeabi-v7a")
-            isUniversalApk = true
-        }
     }
     
     packaging {
@@ -84,9 +75,9 @@ android {
 }
 
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
-    
-    implementation("com.github.bumptech.glide:glide:4.16.0")
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    implementation(libs.glide)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -108,8 +99,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     
     // WorkManager para trabajos en segundo plano robustos
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
-    
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.activity:activity-ktx:1.9.0")
+
     // Gson para persistencia de estado
     implementation("com.google.code.gson:gson:2.10.1")
 

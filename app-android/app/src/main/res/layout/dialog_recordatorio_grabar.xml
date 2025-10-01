@@ -6,30 +6,28 @@
     android:padding="24dp"
     android:background="@drawable/fondo_popup_redondeado">
 
-    <!-- Título -->
-    <TextView
-        android:id="@+id/txtTituloRecordatorio"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/titulo_antes_de_grabar"
-        android:textSize="20sp"
-        android:textColor="@color/texto_videos"
-        android:fontFamily="@font/poppins_semibold"
-        android:gravity="center"
-        android:layout_marginBottom="16dp" />
-
-    <!-- Contenido -->
+    <!-- Todo el contenido scrolleable -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
-        android:maxHeight="300dp">
+        android:scrollbars="vertical">
 
         <LinearLayout
-            android:id="@+id/contenidoDialog"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
+            <!-- Título -->
+            <TextView
+                android:id="@+id/txtTituloRecordatorio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/titulo_antes_de_grabar"
+                android:textSize="20sp"
+                android:textColor="@color/texto_videos"
+                android:fontFamily="@font/poppins_semibold"
+                android:gravity="center"
+                android:layout_marginBottom="16dp" />
 
             <!-- Punto 1 -->
             <LinearLayout
@@ -50,7 +48,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Mantén tus manos a 30-40 cm del teléfono."
+                    android:text="Mantén tus manos a una distancia mínima de 35 cm del teléfono."
                     android:textSize="15sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
@@ -75,7 +73,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Usa buena luz frontal y evita contraluz. Toca la pantalla para ajustar el brillo manualmente."
+                    android:text="Asegúrate de tener buena iluminación frontal. Evita grabar con luz detrás de ti (contraluz)."
                     android:textSize="15sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
@@ -162,7 +160,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/fondo_importante"
-                android:padding="12dp">
+                android:padding="12dp"
+                android:layout_marginBottom="20dp">
 
                 <TextView
                     android:layout_width="match_parent"
@@ -182,39 +181,27 @@
                     android:fontFamily="@font/poppins_regular" />
             </LinearLayout>
 
+            <!-- Botón Siguiente -->
+            <LinearLayout
+                android:id="@+id/btnSiguienteRecordatorio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:paddingVertical="12dp"
+                android:paddingHorizontal="20dp"
+                android:background="@drawable/boton_redondeado_aceptar">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/btn_siguiente"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/poppins_semibold" />
+            </LinearLayout>
+
         </LinearLayout>
     </ScrollView>
-
-    <!-- Botones -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginTop="8dp">
-
-        <!-- Botón Siguiente -->
-        <LinearLayout
-            android:id="@+id/btnSiguienteRecordatorio"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:paddingVertical="12dp"
-            android:paddingHorizontal="20dp"
-            android:background="@drawable/boton_redondeado_aceptar"
-            android:layout_marginEnd="8dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/btn_siguiente"
-                android:textColor="@android:color/white"
-                android:textSize="16sp"
-                android:fontFamily="@font/poppins_semibold" />
-        </LinearLayout>
-
-    </LinearLayout>
 
 </LinearLayout>

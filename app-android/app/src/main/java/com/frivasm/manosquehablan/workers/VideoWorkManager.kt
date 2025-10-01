@@ -23,63 +23,80 @@ object VideoWorkManager {
      * Encola un nuevo trabajo de procesamiento de video
      * Utiliza unique work para evitar duplicados y permitir reintentos con backoff
      */
-    fun enqueueVideoProcessing(
-        context: Context,
-        videoPath: String,
-        allowReplace: Boolean = false
-    ): String {
-        
-        // Crear identificador único para este video
-        val sessionId = UUID.randomUUID().toString()
-        val uniqueWorkName = "$WORK_NAME_PREFIX$sessionId"
-        
-        Log.i(TAG, "Encolando procesamiento de video: $videoPath (trabajo: $uniqueWorkName)")
-        
-        // Crear canales de notificación (NotificationHelper lo hace automáticamente)
-        val notificationHelper = NotificationHelper(context)
-        
-        // Configurar restricciones del trabajo
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .setRequiresBatteryNotLow(false) // Permitir con batería baja
-            .setRequiresStorageNotLow(true)  // Necesitamos espacio para descargas
-            .build()
-        
-        // Crear petición de trabajo
-        val workRequest = OneTimeWorkRequestBuilder<ProcesoVideoWorker>()
-            .setInputData(workDataOf(
-                ProcesoVideoWorker.KEY_VIDEO_PATH to videoPath,
-                ProcesoVideoWorker.KEY_SESSION_ID to sessionId
-            ))
-            .setConstraints(constraints)
-            .setBackoffCriteria(
-                BackoffPolicy.EXPONENTIAL,
-                30, TimeUnit.SECONDS // Empezar con 30 segundos, duplicar en cada intento
-            )
-            .addTag("video_processing")
-            .addTag(sessionId)
-            .build()
-        
-        // Política de trabajo único
-        val existingWorkPolicy = if (allowReplace) {
-            ExistingWorkPolicy.REPLACE
-        } else {
-            ExistingWorkPolicy.KEEP // Mantener el trabajo existente si ya hay uno
-        }
-        
-        // Encolar trabajo único
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            uniqueWorkName,
-            existingWorkPolicy,
-            workRequest
-        )
-        
-        // REMOVIDO: No mostrar "Video en cola" aquí
-        // El Worker manejará todas las notificaciones después de verificar conectividad
-        
-        Log.i(TAG, "Trabajo encolado exitosamente: $uniqueWorkName")
-        return sessionId
-    }
+     fun enqueueVideoProcessing(
+         context: Context,
+         videoPath: String,
+         allowReplace: Boolean = false
+     ): String? {
+
+         // Verificar si ya hay una subida activa para evitar duplicados
+         if (hasActiveWork(context)) {
+             Log.w(TAG, "Ya hay una subida activa - ignorando nueva solicitud para evitar duplicados")
+             return null // Retornar null para indicar que no se encoló
+         }
+
+         // Crear identificador único para este video
+         val sessionId = UUID.randomUUID().toString()
+         val uniqueWorkName = "$WORK_NAME_PREFIX$sessionId"
+
+         Log.i(TAG, "Encolando procesamiento de video: $videoPath (trabajo: $uniqueWorkName)")
+
+         // Crear canales de notificación (NotificationHelper lo hace automáticamente)
+         val notificationHelper = NotificationHelper(context)
+
+         // Configurar restricciones del trabajo - compatibles con todas las versiones de Android
+         val constraints = Constraints.Builder()
+             .setRequiredNetworkType(NetworkType.CONNECTED)
+             .setRequiresBatteryNotLow(false) // Permitir con batería baja
+             .setRequiresStorageNotLow(true)  // Necesitamos espacio para descargas
+             .apply {
+                 // Configuraciones específicas para versiones más nuevas
+                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                     // Android 6.0+ - requerir dispositivo idle para optimización de batería
+                     setRequiresDeviceIdle(false)
+                 }
+                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                     // Android 7.0+ - permitir ejecución mientras se carga
+                     setRequiresCharging(false)
+                 }
+             }
+             .build()
+
+         // Crear petición de trabajo
+         val workRequest = OneTimeWorkRequestBuilder<ProcesoVideoWorker>()
+             .setInputData(workDataOf(
+                 ProcesoVideoWorker.KEY_VIDEO_PATH to videoPath,
+                 ProcesoVideoWorker.KEY_SESSION_ID to sessionId
+             ))
+             .setConstraints(constraints)
+             .setBackoffCriteria(
+                 BackoffPolicy.EXPONENTIAL,
+                 30, TimeUnit.SECONDS // Empezar con 30 segundos, duplicar en cada intento
+             )
+             .addTag("video_processing")
+             .addTag(sessionId)
+             .build()
+
+         // Política de trabajo único
+         val existingWorkPolicy = if (allowReplace) {
+             ExistingWorkPolicy.REPLACE
+         } else {
+             ExistingWorkPolicy.KEEP // Mantener el trabajo existente si ya hay uno
+         }
+
+         // Encolar trabajo único
+         WorkManager.getInstance(context).enqueueUniqueWork(
+             uniqueWorkName,
+             existingWorkPolicy,
+             workRequest
+         )
+
+         // REMOVIDO: No mostrar "Video en cola" aquí
+         // El Worker manejará todas las notificaciones después de verificar conectividad
+
+         Log.i(TAG, "Trabajo encolado exitosamente: $uniqueWorkName")
+         return sessionId
+     }
     
     /**
      * Observa el progreso de un trabajo específico

@@ -1,10 +1,12 @@
 package com.frivasm.manosquehablan.workers
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
+import androidx.annotation.RequiresApi
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.*
@@ -31,6 +33,19 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+
+/**
+ * Helper function to create ForegroundInfo with MEDIA_PROCESSING type for API >=29
+ * This ensures no ForegroundInfo is created with type=0 (unknown) which causes crashes in Android 14+
+ */
+fun ForegroundInfoMP(notiId: Int, notification: Notification): ForegroundInfo {
+    return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+        ForegroundInfo(notiId, notification,
+            android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROCESSING)
+    } else {
+        ForegroundInfo(notiId, notification)
+    }
+}
 
 /**
  * Worker robusto para procesamiento de video que encapsula todo el flujo:
@@ -78,8 +93,8 @@ class ProcesoVideoWorker(
         const val KEY_SESSION_ID = "sessionId"
         
         // Keys para progreso
-        const val PROGRESS_STATE = "state"
-        const val PROGRESS_MESSAGE = "message"
+        const val PROGRESS_STAGE = "PROGRESS_STAGE"
+        const val PROGRESS_PERCENT = "PROGRESS_PERCENT"
         
         // Estados del procesamiento
         const val STATE_CONECTANDO = "conectando"
@@ -99,13 +114,41 @@ class ProcesoVideoWorker(
     private val notificationManager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private val jobManager = VideoProcessingJobManager(appContext)
 
+    override suspend fun getForegroundInfo(): ForegroundInfo {
+        // Notificación inicial válida para el arranque del servicio
+        val notificationManager = com.frivasm.manosquehablan.notifications.NotificationManager
+        val notification = notificationManager.createProcessingNotification(
+            context = appContext.applicationContext,
+            title = "Procesando",
+            message = "Preparando...",
+            sessionId = null
+        )
+
+        // Usar helper para asegurar tipo correcto desde el inicio
+        return createForegroundInfoFixed(notification)
+    }
+
     override suspend fun doWork(): Result {
+        // 1) El servicio ya está en foreground iniciado por WorkManager con getForegroundInfo()
+        Log.i(TAG, "FGS-ORDER: Servicio foreground ya iniciado por WorkManager")
+
+        // 2) Lee inputs
         val videoPath = inputData.getString(KEY_VIDEO_PATH) ?: return Result.failure()
         val sessionId = inputData.getString(KEY_SESSION_ID) ?: UUID.randomUUID().toString()
 
         Log.i(TAG, "=== WORKER START === Iniciando procesamiento de video: $videoPath (sesión: $sessionId)")
         Log.d(TAG, "Worker isStopped: $isStopped")
 
+        // 3) Validaciones tempranas
+        val videoFile = File(videoPath)
+        if (!videoFile.exists()) {
+            Log.e(TAG, "Archivo de video no existe: $videoPath - Finalizando sin reintento")
+            return Result.failure(
+                workDataOf(
+                    PROGRESS_STAGE to "Error: El archivo de video ya no existe"
+                )
+            )
+        }
         // Crear trabajo en sistema de persistencia
         val job = jobManager.createJob(videoPath)
         
@@ -114,12 +157,22 @@ class ProcesoVideoWorker(
             val notificationManager = com.frivasm.manosquehablan.notifications.NotificationManager
             notificationManager.createNotificationChannels(appContext.applicationContext)
             
-            // Configurar foreground service
-            setForeground(createForegroundInfo("Procesando tu video, por favor espera...", STATE_CONECTANDO, sessionId))
+            // Foreground service ya iniciado por getForegroundInfo()
+            // Verificar permisos de notificación antes de continuar
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val notificationManager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                if (!notificationManager.areNotificationsEnabled()) {
+                    Log.w(TAG, "Notificaciones no habilitadas - foreground service podría fallar en Android 14+")
+                    // En Android 14, si no hay permisos de notificación, el foreground service fallará
+                    // pero el trabajo puede continuar en segundo plano
+                }
+            }
+
+            Log.d(TAG, "Foreground service ya iniciado por getForegroundInfo()")
             
             // 1. Verificar conectividad
             jobManager.updateJobState(job.id, VideoProcessingJobManager.STATE_UPLOADING, "Verificando conexión...")
-            updateProgress(STATE_CONECTANDO, "Procesando tu video, por favor espera...")
+            updateProgress("Verificando conexión, por favor espera...")
             val conectividadOk = verificarConectividad()
             if (!conectividadOk) {
                 // Sin conexión - cancelar definitivamente el trabajo
@@ -135,7 +188,7 @@ class ProcesoVideoWorker(
             
             // 2. Subir video
             jobManager.updateJobState(job.id, VideoProcessingJobManager.STATE_UPLOADING, "Subiendo video...")
-            updateProgress(STATE_SUBIENDO, "Procesando tu video, por favor espera...")
+            updateProgress("Optimizando video, por favor espera...")
             val uploadResult = subirVideo(videoPath, job.id)
             when {
                 uploadResult.isSuccess -> {
@@ -153,7 +206,7 @@ class ProcesoVideoWorker(
             
             // 3. Monitorear procesamiento
             jobManager.updateJobState(job.id, VideoProcessingJobManager.STATE_PROCESSING, "Procesando video...")
-            updateProgress(STATE_PROCESANDO, "Procesando tu video, por favor espera...")
+            updateProgress("Procesando en servidor, por favor espera...")
             val resultados = esperarResultado(uploadResult.uploadId!!, job.id)
             if (resultados == null) {
                 return handleFinalError(job.id, "Error en el procesamiento del video", videoPath)
@@ -161,12 +214,12 @@ class ProcesoVideoWorker(
             
             // 4. Descargar resultados
             jobManager.updateJobState(job.id, VideoProcessingJobManager.STATE_DOWNLOADING, "Descargando archivos...")
-            updateProgress(STATE_DESCARGANDO, "Procesando tu video, por favor espera...")
+            updateProgress("Descargando video, por favor espera...")
             val esMalTraducido = descargarResultados(resultados, job.id, videoPath)
             
             // 5. Completar trabajo
             jobManager.updateJobState(job.id, VideoProcessingJobManager.STATE_COMPLETED, "Traducción completada")
-            updateProgress(STATE_COMPLETADO, "¡Traducción completada!")
+            updateProgress("Completado")
             
             if (esMalTraducido) {
                 // Para videos mal traducidos, mostrar notificación de advertencia
@@ -199,11 +252,62 @@ class ProcesoVideoWorker(
             }
             
             Log.i(TAG, "=== WORKER SUCCESS === Procesamiento completado exitosamente para sesión: $sessionId")
+
+            // La notificación de éxito ya se mostró arriba (showSuccessNotification)
+            // No mostrar StatusNotification.done() para evitar duplicados
+
+            // Limpiar archivos temporales en éxito
+            limpiarArchivosTemporales()
+
             return Result.success()
 
         } catch (e: Exception) {
-            Log.e(TAG, "=== WORKER ERROR === Error durante el procesamiento: ${e.message}", e)
-            return handleFinalError(job.id, "Error inesperado durante el procesamiento. Inténtalo de nuevo.", videoPath)
+            Log.e(TAG, "=== WORKER ERROR === Error durante el procesamiento: ${e.javaClass.simpleName} - ${e.message}", e)
+
+            // La notificación de error se mostrará en handleFinalError
+            // No mostrar StatusNotification.done() para evitar duplicados
+
+            // Limpiar archivos temporales en error
+            limpiarArchivosTemporales()
+
+            // Determinar el mensaje según el tipo de excepción
+            val mensajeError = when (e) {
+                is java.net.UnknownHostException -> 
+                    "No hay conexión a internet. Activa Wi-Fi o datos móviles e intenta de nuevo."
+                is java.net.ConnectException -> 
+                    "No pudimos conectar con el servidor. Verifica tu conexión a internet."
+                is java.net.SocketTimeoutException -> 
+                    "La conexión está muy lenta. Intenta más tarde."
+                is java.io.IOException -> 
+                    "Problema de conexión. Verifica tu internet e intenta de nuevo."
+                else -> 
+                    "Error inesperado durante el procesamiento. Inténtalo de nuevo."
+            }
+
+            return handleFinalError(job.id, mensajeError, videoPath)
+        }
+    }
+
+
+    private fun limpiarArchivosTemporales() {
+        try {
+            val cacheDir = appContext.cacheDir
+            val tempFiles = cacheDir.listFiles { file ->
+                file.name.startsWith("temp_video")
+            }
+
+            tempFiles?.forEach { file ->
+                if (file.delete()) {
+                    Log.d(TAG, "Archivo temporal eliminado: ${file.name}")
+                } else {
+                    Log.w(TAG, "No se pudo eliminar archivo temporal: ${file.name}")
+                }
+            }
+
+            Log.d(TAG, "Limpieza completada - ${tempFiles?.size ?: 0} archivos temporales eliminados")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error limpiando archivos temporales: ${e.message}")
         }
     }
 
@@ -212,21 +316,21 @@ class ProcesoVideoWorker(
             val conectividadHelper = ConectividadHelper(appContext)
             
             // NO USAR REINTENTOS - verificar una sola vez
-            updateProgress(STATE_CONECTANDO, "Procesando tu video, por favor espera...")
+            updateProgress("Verificando conexión...")
             val estadoServidor = ServerConfig.verificarDisponibilidadServidor()
             
             Log.d(TAG, "Verificación única de conectividad: ${estadoServidor.mensaje}")
             
             if (!estadoServidor.esDisponible) {
                 Log.w(TAG, "❌ Sin conexión al servidor - cancelando inmediatamente")
-                updateProgress(STATE_ERROR, "Sin conexión al servidor")
+                updateProgress("Error de conexión")
             }
             
             estadoServidor.esDisponible
             
         } catch (e: Exception) {
             Log.e(TAG, "Error verificando conectividad: ${e.message}")
-            updateProgress(STATE_ERROR, "Error verificando conexión")
+            updateProgress("Error verificando conexión")
             false
         }
     }
@@ -285,51 +389,19 @@ class ProcesoVideoWorker(
             }
             
             Log.i(TAG, "📦 Tamaño final del archivo: ${String.format("%.2f", originalSizeMB)} MB")
-            
-            // OPTIMIZACIÓN: Verificar video antes de subir
-            val videoToUpload = if (originalSizeMB > 20.0) { // Videos >20MB son grandes con HD optimizado
-                updateProgress(STATE_SUBIENDO, "Procesando tu video, por favor espera...")
-                
-                Log.w(TAG, "⚠️  ADVERTENCIA: Video de ${String.format("%.2f", originalSizeMB)}MB es grande")
-                Log.w(TAG, "⚠️  Con la configuración HD optimizada, 1 minuto debería ser ~9-11MB")
-                Log.w(TAG, "⚠️  Posible problema: video muy largo o grabación con bitrate alto")
-                
-                val tempDir = File(appContext.cacheDir, "video_compression")
-                if (!tempDir.exists()) tempDir.mkdirs()
-                
-                val optimizedVideoPath = procesarVideoOptimizado(videoPath, tempDir.absolutePath)
-                if (optimizedVideoPath != null) {
-                    val optimizedFile = File(optimizedVideoPath)
-                    val optimizedSizeMB = optimizedFile.length() / (1024.0 * 1024.0)
-                    Log.i(TAG, "✅ Tamaño optimizado: ${String.format("%.2f", optimizedSizeMB)} MB (reducción: ${String.format("%.1f", ((originalSizeMB - optimizedSizeMB) / originalSizeMB) * 100)}%)")
-                    optimizedFile
-                } else {
-                    Log.w(TAG, "⚠️  Video grande detectado - Activando compresión FFmpeg")
-                    Log.i(TAG, "🎬 Comprimiendo video con FFmpeg-Android para optimizar tamaño")
-                    updateProgress(STATE_SUBIENDO, "Procesando tu video, por favor espera...")
-                    videoFile
-                }
-            } else {
-                Log.i(TAG, "✅ Video HD de tamaño apropiado para subida directa")
-                videoFile
-            }
+
+            // Usar el video tal como se grabó (ya optimizado con H.264 a 1.5 Mbps)
+            val videoToUpload = videoFile
+            Log.i(TAG, "✅ Video listo para subida - grabado en HD con H.264 optimizado")
             
             val requestFile = videoToUpload.asRequestBody("video/mp4".toMediaTypeOrNull())
             val body = MultipartBody.Part.createFormData("video", videoToUpload.name, requestFile)
             
-            updateProgress(STATE_SUBIENDO, "Procesando tu video, por favor espera...")
+            updateProgress("Subiendo video, por favor espera...")
             
             val response = ApiCliente.instance.procesarVideo(body)
             
-            // Limpiar archivo temporal si fue comprimido
-            if (videoToUpload != videoFile) {
-                try {
-                    videoToUpload.delete()
-                    Log.d(TAG, "Archivo temporal eliminado")
-                } catch (e: Exception) {
-                    Log.w(TAG, "No se pudo eliminar archivo temporal: ${e.message}")
-                }
-            }
+            // Video original - no hay archivos temporales que limpiar
             
             when {
                 response.isSuccessful && response.body() != null -> {
@@ -390,16 +462,29 @@ class ProcesoVideoWorker(
             }
             
         } catch (e: Exception) {
-            Log.e(TAG, "Excepción al subir video: ${e.message}")
-            // Permitir reintento solo para excepciones de red
-            val shouldRetry = e is java.net.SocketTimeoutException || 
-                            e is java.net.ConnectException || 
-                            e is java.io.IOException
+            Log.e(TAG, "Excepción al subir video: ${e.javaClass.simpleName} - ${e.message}")
             
-            val userFriendlyMessage = if (shouldRetry) {
-                "Conexión inestable. Reintentando automáticamente..."
-            } else {
-                "Error de conexión. Verifica tu internet e intenta de nuevo."
+            // Clasificar el tipo de error
+            val (shouldRetry, userFriendlyMessage) = when (e) {
+                is java.net.UnknownHostException -> {
+                    // Sin conexión a internet
+                    false to "No hay conexión a internet. Activa Wi-Fi o datos móviles e intenta de nuevo."
+                }
+                is java.net.ConnectException -> {
+                    // No se puede conectar al servidor
+                    false to "No pudimos conectar con el servidor. Verifica tu conexión a internet e intenta de nuevo."
+                }
+                is java.net.SocketTimeoutException -> {
+                    // Timeout - puede ser conexión lenta
+                    true to "Tu conexión está muy lenta. Reintentando automáticamente..."
+                }
+                is java.io.IOException -> {
+                    // Otros errores de IO
+                    true to "Problema de red. Reintentando automáticamente..."
+                }
+                else -> {
+                    false to "Error inesperado: ${e.message}. Intenta de nuevo."
+                }
             }
 
             return UploadResult(
@@ -440,7 +525,7 @@ class ProcesoVideoWorker(
             Log.d(TAG, "Iniciando descarga de archivos...")
             
             // Descargar video
-            updateProgress(STATE_DESCARGANDO, "Procesando tu video, por favor espera...")
+            updateProgress("Descargando video, por favor espera...")
             val videoInfo = guardarArchivoSeguro(
                 storageManager,
                 ApiCliente.urlAbsoluta(data.video_url!!),
@@ -448,9 +533,9 @@ class ProcesoVideoWorker(
                 "Video_$fecha.mp4",
                 "video/mp4"
             )
-            
+
             // Descargar audio
-            updateProgress(STATE_DESCARGANDO, "Procesando tu video, por favor espera...")
+            updateProgress("Descargando audio, por favor espera...")
             val audioInfo = guardarArchivoSeguro(
                 storageManager,
                 ApiCliente.urlAbsoluta(data.audio_url!!),
@@ -458,9 +543,9 @@ class ProcesoVideoWorker(
                 "audio_traducido.mp3",
                 "audio/mp3"
             )
-            
+
             // Descargar texto
-            updateProgress(STATE_DESCARGANDO, "Procesando tu video, por favor espera...")
+            updateProgress("Descargando resultados, por favor espera...")
             val textoInfo = guardarArchivoSeguro(
                 storageManager,
                 ApiCliente.urlAbsoluta(data.texto_url!!),
@@ -524,16 +609,32 @@ class ProcesoVideoWorker(
         return savedFileInfo
     }
 
-    private suspend fun updateProgress(state: String, message: String) {
-        Log.d(TAG, "Estado: $state - $message")
+    private suspend fun updateProgress(stage: String, percent: Int? = null) {
+        Log.d(TAG, "Progreso: $stage - ${percent ?: "indeterminado"}%")
 
-        setProgress(workDataOf(
-            PROGRESS_STATE to state,
-            PROGRESS_MESSAGE to message
-        ))
+        val progressData = if (percent != null) {
+            workDataOf(PROGRESS_STAGE to stage, PROGRESS_PERCENT to percent)
+        } else {
+            workDataOf(PROGRESS_STAGE to stage)
+        }
 
-        // Actualizar foreground info con nueva notificación
-        setForeground(createForegroundInfo(message, state, inputData.getString(KEY_SESSION_ID)))
+        setProgress(progressData)
+
+        // Mostrar notificación de estado independiente del FGS
+        try {
+            com.frivasm.manosquehablan.notifications.NotificationManager.StatusNotification.show(
+                appContext,
+                "Traducción en curso",
+                stage,
+                percent
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error mostrando notificación de estado: ${e.message}")
+        }
+
+        // NOTA: No actualizar foreground notification para evitar crashes en Android 14+
+        // La notificación inicial permanece estática durante todo el procesamiento
+        Log.d(TAG, "FGS: Notificación permanece estática para estabilidad")
     }
 
     private fun createForegroundInfo(message: String, state: String, sessionId: String? = null): ForegroundInfo {
@@ -553,7 +654,13 @@ class ProcesoVideoWorker(
             message = message,
             sessionId = sessionId
         )
-        return ForegroundInfo(NOTIFICATION_ID, notification)
+
+        // Usar helper para evitar pasar 0 y asegurar compatibilidad
+        return createForegroundInfoFixed(notification)
+    }
+
+    private fun createForegroundInfoFixed(notification: Notification): ForegroundInfo {
+        return ForegroundInfoMP(NOTIFICATION_ID, notification)
     }
 
     private suspend fun handleError(jobId: String, errorMessage: String, videoPath: String): Result {
@@ -579,7 +686,7 @@ class ProcesoVideoWorker(
             Log.e(TAG, "Error mostrando notificación de error: ${e.message}")
         }
 
-        updateProgress(STATE_ERROR, errorMessage)
+        updateProgress("Error: $errorMessage")
         
         return Result.retry()
     }
@@ -607,13 +714,12 @@ class ProcesoVideoWorker(
             Log.e(TAG, "Error mostrando notificación de error crítico: ${e.message}")
         }
 
-        updateProgress(STATE_ERROR, errorMessage)
+        updateProgress("Error: $errorMessage")
         
         // Retornar failure para cancelar definitivamente el trabajo
         return Result.failure(
             workDataOf(
-                PROGRESS_STATE to STATE_ERROR,
-                PROGRESS_MESSAGE to errorMessage
+                PROGRESS_STAGE to "Error: $errorMessage"
             )
         )
     }
@@ -621,7 +727,7 @@ class ProcesoVideoWorker(
     private suspend fun procesarVideoOptimizado(videoPath: String, outputDir: String): String? {
         return try {
             Log.i(TAG, "Analizando video para optimización: $videoPath")
-            updateProgress(STATE_SUBIENDO, "Procesando tu video, por favor espera...")
+            updateProgress("Subiendo video...")
             
             // Analizar video original
             val videoInfo = analizarVideo(videoPath)

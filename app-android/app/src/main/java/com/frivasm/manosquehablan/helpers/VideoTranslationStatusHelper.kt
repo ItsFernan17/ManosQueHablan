@@ -1,6 +1,9 @@
 package com.frivasm.manosquehablan.helpers
 
 import android.content.Context
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 
 /**
@@ -12,13 +15,16 @@ object VideoTranslationStatusHelper {
     private const val BAD_TRANSLATION_MARKER = ".mal_traducido"
     private const val SERVER_ERROR_MARKER = ".error_servidor"
 
+    // Coroutine scope for background operations
+    private val ioScope = CoroutineScope(Dispatchers.IO)
+
     /**
      * Marca un video como mal traducido de forma asíncrona para evitar bloqueos
      */
     fun marcarVideoComoMalTraducido(videoFile: File) {
-        // Ejecutar operación I/O en thread background para evitar bloqueos
-        Thread {
-            val parentDir = videoFile.parentFile ?: return@Thread
+        // Ejecutar operación I/O en coroutine background para evitar bloqueos
+        ioScope.launch {
+            val parentDir = videoFile.parentFile ?: return@launch
             val markerFile = File(parentDir, BAD_TRANSLATION_MARKER)
             try {
                 if (!markerFile.exists()) {
@@ -27,16 +33,16 @@ object VideoTranslationStatusHelper {
             } catch (e: Exception) {
                 // Ignorar errores de marcado, no es crítico
             }
-        }.start()
+        }
     }
 
     /**
      * Marca un video con error de servidor (cuando el servidor no genera archivos)
      */
     fun marcarVideoConErrorServidor(videoFile: File) {
-        // Ejecutar operación I/O en thread background para evitar bloqueos
-        Thread {
-            val parentDir = videoFile.parentFile ?: return@Thread
+        // Ejecutar operación I/O en coroutine background para evitar bloqueos
+        ioScope.launch {
+            val parentDir = videoFile.parentFile ?: return@launch
             val markerFile = File(parentDir, SERVER_ERROR_MARKER)
             try {
                 if (!markerFile.exists()) {
@@ -45,7 +51,7 @@ object VideoTranslationStatusHelper {
             } catch (e: Exception) {
                 // Ignorar errores de marcado, no es crítico
             }
-        }.start()
+        }
     }
 
     /**

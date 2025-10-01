@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.frivasm.manosquehablan.InicioAppActivity
 import com.frivasm.manosquehablan.R
@@ -26,6 +27,7 @@ object NotificationManager {
 
     /**
      * Crea todos los canales de notificación necesarios y limpia duplicados
+     * Compatible con Android 8.0+ (API 26+) y optimizado para Android 11+
      */
     fun createNotificationChannels(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -34,7 +36,7 @@ object NotificationManager {
             // LIMPIAR CANALES DUPLICADOS ANTES DE CREAR NUEVOS
             cleanDuplicateChannels(notificationManager)
 
-            // Canal para procesamiento en curso
+            // Canal para procesamiento en curso - IMPORTANCE_LOW para Android 11+
             val processingChannel = NotificationChannel(
                 CHANNEL_ID_PROCESSING,
                 "Procesamiento de video",
@@ -45,9 +47,14 @@ object NotificationManager {
                 enableVibration(false) // SIN VIBRACIÓN
                 setSound(null, null) // SIN SONIDO para notificaciones de subida
                 setImportance(NotificationManager.IMPORTANCE_LOW) // Baja importancia
+
+                // Configuraciones específicas para Android 11+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    setAllowBubbles(false) // No permitir burbujas para procesamiento
+                }
             }
 
-            // Canal para completados - FORZAR IMPORTANCE_HIGH para heads-up
+            // Canal para completados - IMPORTANCE_HIGH para heads-up en Android 11+
             val completedChannel = NotificationChannel(
                 CHANNEL_ID_COMPLETED,
                 "Traducción completada",
@@ -62,9 +69,14 @@ object NotificationManager {
                 setBypassDnd(true)
                 // FORZAR configuración para heads-up
                 setImportance(NotificationManager.IMPORTANCE_HIGH)
+
+                // Configuraciones específicas para Android 11+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    setAllowBubbles(true) // Permitir burbujas para notificaciones importantes
+                }
             }
 
-            // Canal para errores - FORZAR IMPORTANCE_HIGH para heads-up
+            // Canal para errores - IMPORTANCE_HIGH para heads-up en Android 11+
             val errorChannel = NotificationChannel(
                 CHANNEL_ID_ERROR,
                 "Errores de traducción",
@@ -79,15 +91,32 @@ object NotificationManager {
                 setBypassDnd(true)
                 // FORZAR configuración para heads-up
                 setImportance(NotificationManager.IMPORTANCE_HIGH)
+
+                // Configuraciones específicas para Android 11+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    setAllowBubbles(true) // Permitir burbujas para errores
+                }
             }
 
-            notificationManager.createNotificationChannels(listOf(
-                processingChannel,
-                completedChannel,
-                errorChannel
-            ))
-
-            Log.d("NotificationManager", "Canales de notificación creados y duplicados limpiados")
+            try {
+                notificationManager.createNotificationChannels(listOf(
+                    processingChannel,
+                    completedChannel,
+                    errorChannel
+                ))
+                Log.d("NotificationManager", "Canales de notificación creados exitosamente - Android ${Build.VERSION.SDK_INT}")
+            } catch (e: Exception) {
+                Log.e("NotificationManager", "Error creando canales de notificación: ${e.message}")
+                // En caso de error, intentar crear canales individualmente
+                try {
+                    notificationManager.createNotificationChannel(processingChannel)
+                    notificationManager.createNotificationChannel(completedChannel)
+                    notificationManager.createNotificationChannel(errorChannel)
+                    Log.d("NotificationManager", "Canales creados individualmente después de error")
+                } catch (e2: Exception) {
+                    Log.e("NotificationManager", "Error creando canales individualmente: ${e2.message}")
+                }
+            }
         }
     }
 
@@ -194,7 +223,22 @@ object NotificationManager {
         message: String = "Tu video fue procesado correctamente",
         isWarning: Boolean = false
     ) {
+        // Verificar permiso de notificaciones en Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                Log.w("NotificationManager", "Permiso de notificaciones no concedido - no se muestra notificación de éxito")
+                return
+            }
+        }
+
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        
+        // CANCELAR la notificación de "Traducción en curso" antes de mostrar la de éxito
+        notificationManager.cancel(StatusNotification.NOTIF_ID)
+        Log.d("NotificationManager", "Notificación de progreso cancelada (ID: ${StatusNotification.NOTIF_ID})")
 
         val channelId = if (isWarning) CHANNEL_ID_ERROR else CHANNEL_ID_COMPLETED
         val icon = if (isWarning) R.drawable.ic_warning else R.drawable.ic_stat_mqh
@@ -210,22 +254,31 @@ object NotificationManager {
             context,
             if (isWarning) NOTIFICATION_ID_ERROR else NOTIFICATION_ID_COMPLETED, // requestCode único
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or
+            (if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                PendingIntent.FLAG_IMMUTABLE
+            } else {
+                PendingIntent.FLAG_UPDATE_CURRENT // Para versiones anteriores a Android 6.0
+            })
         )
 
-        // Crear FullScreenIntent para forzar heads-up en algunos dispositivos
-        val fullScreenIntent = PendingIntent.getActivity(
-            context,
-            if (isWarning) NOTIFICATION_ID_ERROR + 100 else NOTIFICATION_ID_COMPLETED + 100,
-            Intent(context, InicioAppActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra("from_notification", true)
-                putExtra("fullscreen_notification", true)
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        // Crear FullScreenIntent para forzar heads-up en algunos dispositivos (Android 10+)
+        val fullScreenIntent = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            PendingIntent.getActivity(
+                context,
+                if (isWarning) NOTIFICATION_ID_ERROR + 100 else NOTIFICATION_ID_COMPLETED + 100,
+                Intent(context, InicioAppActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra("from_notification", true)
+                    putExtra("fullscreen_notification", true)
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            null // FullScreenIntent no disponible en versiones anteriores
+        }
 
-        val notification = NotificationCompat.Builder(context, channelId)
+        val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(icon)
             .setContentTitle(title)
             .setContentText(message)
@@ -236,9 +289,14 @@ object NotificationManager {
             .setOnlyAlertOnce(false) // Permitir múltiples alertas
             .setCategory(NotificationCompat.CATEGORY_MESSAGE) // Categoría apropiada
             .setDefaults(NotificationCompat.DEFAULT_SOUND) // FORZAR SONIDO DEL SISTEMA
-            .setFullScreenIntent(fullScreenIntent, true) // FORZAR HEADS-UP
             .setContentIntent(pendingIntent) // Agregar PendingIntent para abrir app
-            .build()
+
+        // Agregar FullScreenIntent solo si está disponible (Android 10+)
+        if (fullScreenIntent != null) {
+            notificationBuilder.setFullScreenIntent(fullScreenIntent, true) // FORZAR HEADS-UP
+        }
+
+        val notification = notificationBuilder.build()
 
         val notificationId = if (isWarning) NOTIFICATION_ID_ERROR else NOTIFICATION_ID_COMPLETED
 
@@ -269,7 +327,22 @@ object NotificationManager {
         title: String = "Problema de conexión",
         message: String = "Revisa tu conexión a internet e intenta nuevamente"
     ) {
+        // Verificar permiso de notificaciones en Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                Log.w("NotificationManager", "Permiso de notificaciones no concedido - no se muestra notificación de error")
+                return
+            }
+        }
+
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        
+        // CANCELAR la notificación de "Traducción en curso" antes de mostrar la de error
+        notificationManager.cancel(StatusNotification.NOTIF_ID)
+        Log.d("NotificationManager", "Notificación de progreso cancelada (ID: ${StatusNotification.NOTIF_ID})")
 
         // Crear PendingIntent para abrir la app
         val intent = Intent(context, InicioAppActivity::class.java).apply {
@@ -285,19 +358,23 @@ object NotificationManager {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Crear FullScreenIntent para forzar heads-up en algunos dispositivos
-        val fullScreenIntent = PendingIntent.getActivity(
-            context,
-            NOTIFICATION_ID_ERROR + 100,
-            Intent(context, InicioAppActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra("from_notification", true)
-                putExtra("fullscreen_notification", true)
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        // Crear FullScreenIntent para forzar heads-up en algunos dispositivos (Android 10+)
+        val fullScreenIntent = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            PendingIntent.getActivity(
+                context,
+                NOTIFICATION_ID_ERROR + 100,
+                Intent(context, InicioAppActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra("from_notification", true)
+                    putExtra("fullscreen_notification", true)
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            null // FullScreenIntent no disponible en versiones anteriores
+        }
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID_ERROR)
+        val errorNotificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID_ERROR)
             .setSmallIcon(R.drawable.ic_error)
             .setContentTitle(title)
             .setContentText(message)
@@ -308,9 +385,14 @@ object NotificationManager {
             .setOnlyAlertOnce(false) // Permitir múltiples alertas
             .setCategory(NotificationCompat.CATEGORY_ERROR) // Categoría apropiada
             .setDefaults(NotificationCompat.DEFAULT_SOUND) // FORZAR SONIDO DEL SISTEMA
-            .setFullScreenIntent(fullScreenIntent, true) // FORZAR HEADS-UP
             .setContentIntent(pendingIntent) // Agregar PendingIntent para abrir app
-            .build()
+
+        // Agregar FullScreenIntent solo si está disponible (Android 10+)
+        if (fullScreenIntent != null) {
+            errorNotificationBuilder.setFullScreenIntent(fullScreenIntent, true) // FORZAR HEADS-UP
+        }
+
+        val notification = errorNotificationBuilder.build()
 
         // Asegurar que se muestre la notificación
         try {
@@ -339,6 +421,17 @@ object NotificationManager {
         title: String = "Video en cola",
         message: String = "Tu video está en cola para ser procesado"
     ) {
+        // Verificar permiso de notificaciones en Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                Log.w("NotificationManager", "Permiso de notificaciones no concedido - no se muestra notificación en cola")
+                return
+            }
+        }
+
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Crear PendingIntent para abrir la app
@@ -373,6 +466,139 @@ object NotificationManager {
             Log.d("NotificationManager", "Notificación en cola mostrada exitosamente")
         } catch (e: Exception) {
             Log.e("NotificationManager", "Error mostrando notificación en cola: ${e.message}")
+        }
+    }
+
+    /**
+     * Notificación de estado de progreso (no-FGS) que actualiza una sola notificación
+     */
+    object StatusNotification {
+        const val CHANNEL_ID = "video_status_channel"
+        const val NOTIF_ID = 2451  // ID único para todas las notificaciones de estado
+        private var created = false
+
+        private fun ensureChannel(ctx: Context) {
+            if (created) return
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+                if (nm.getNotificationChannel(CHANNEL_ID) == null) {
+                    nm.createNotificationChannel(
+                        android.app.NotificationChannel(
+                            CHANNEL_ID,
+                            "Estado de traducción",
+                            android.app.NotificationManager.IMPORTANCE_LOW
+                        ).apply {
+                            description = "Notificación de progreso del procesamiento de video"
+                            setShowBadge(false)
+                            enableVibration(false)
+                            setSound(null, null)
+                        }
+                    )
+                }
+            }
+            created = true
+        }
+
+        fun show(ctx: Context, title: String, text: String, progress: Int? = null) {
+            // Verificar permiso de notificaciones en Android 13+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                if (androidx.core.content.ContextCompat.checkSelfPermission(
+                        ctx,
+                        android.Manifest.permission.POST_NOTIFICATIONS
+                    ) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    Log.w("StatusNotification", "Permiso de notificaciones no concedido - no se muestra notificación")
+                    return
+                }
+            }
+
+            ensureChannel(ctx)
+
+            val builder = androidx.core.app.NotificationCompat.Builder(ctx, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_mqh)  // usar el logo correcto
+                .setContentTitle(title)
+                .setContentText(text)
+                .setOnlyAlertOnce(true)
+                .setOngoing(true) // mantener activa durante procesamiento
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
+                .setCategory(androidx.core.app.NotificationCompat.CATEGORY_PROGRESS)
+
+            if (progress != null) {
+                builder.setProgress(100, progress.coerceIn(0,100), false)
+            } else {
+                builder.setProgress(0, 0, true) // indeterminado
+            }
+
+            // Crear PendingIntent para abrir la app
+            val intent = android.content.Intent(ctx, com.frivasm.manosquehablan.InicioAppActivity::class.java).apply {
+                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("from_notification", true)
+            }
+
+            val pendingIntent = android.app.PendingIntent.getActivity(
+                ctx,
+                NOTIF_ID, // mismo requestCode para actualizar
+                intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+
+            builder.setContentIntent(pendingIntent)
+
+            val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            nm.notify(NOTIF_ID, builder.build())
+
+            Log.d("StatusNotification", "Notificación actualizada - Texto: $text")
+        }
+
+        fun done(ctx: Context, success: Boolean) {
+            // Verificar permiso de notificaciones en Android 13+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                if (androidx.core.content.ContextCompat.checkSelfPermission(
+                        ctx,
+                        android.Manifest.permission.POST_NOTIFICATIONS
+                    ) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    Log.w("StatusNotification", "Permiso de notificaciones no concedido - no se muestra notificación final")
+                    return
+                }
+            }
+
+            ensureChannel(ctx)
+
+            // Cancelar la notificación de procesamiento activa
+            val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            nm.cancel(NOTIF_ID)
+
+            // Mostrar notificación final
+            val title = if (success) "¡Traducción completada!" else "Error en traducción"
+            val text = if (success) "Tu video fue procesado correctamente" else "Hubo un problema durante el procesamiento"
+
+            val builder = androidx.core.app.NotificationCompat.Builder(ctx, CHANNEL_ID)
+                .setSmallIcon(if (success) R.drawable.ic_stat_mqh else R.drawable.ic_error)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setAutoCancel(true)
+                .setPriority(if (success) androidx.core.app.NotificationCompat.PRIORITY_DEFAULT else androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+
+            if (!success) {
+                builder.setCategory(androidx.core.app.NotificationCompat.CATEGORY_ERROR)
+            }
+
+            // Crear PendingIntent para abrir la app
+            val intent = android.content.Intent(ctx, com.frivasm.manosquehablan.InicioAppActivity::class.java).apply {
+                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("from_notification", true)
+            }
+
+            val pendingIntent = android.app.PendingIntent.getActivity(
+                ctx,
+                if (success) NOTIF_ID + 1 else NOTIF_ID + 2, // IDs diferentes para éxito/error
+                intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+
+            builder.setContentIntent(pendingIntent)
+
+            nm.notify(if (success) NOTIF_ID + 1 else NOTIF_ID + 2, builder.build())
+            Log.d("StatusNotification", "Notificación final mostrada - Éxito: $success")
         }
     }
 }

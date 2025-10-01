@@ -55,30 +55,26 @@ class ExposureControlHelper(
     private var isExposureCompensationSupported = false
     private var isTorchSupported = false
     
-    // Parámetros de exposición optimizados para MediaPipe y detección de keypoints
-    // Rangos más estrictos para mejor detección de manos y poses
-    // Configuración para cámara TRASERA (principal)
-    private val TARGET_LUMA_MIN_BACK = 0.40f    // Reducido para mejor contraste
-    private val TARGET_LUMA_MAX_BACK = 0.50f    // Reducido para evitar sobreexposición
-    private val HYSTERESIS_MIN_BACK = 0.38f     // Ajustado para detección más sensible
-    private val HYSTERESIS_MAX_BACK = 0.52f     // Ajustado para evitar bombeo
-    private val CRITICAL_LOW_LUMA_BACK = 0.30f  // Muy oscuro, keypoints no visibles
-    private val CRITICAL_HIGH_LUMA_BACK = 0.55f // Muy brillante, keypoints se pierden
+    // Parámetros de exposición NATURALES (reducidos para menos brillo automático)
+    // Configuración para cámara TRASERA (principal) - Valores más naturales
+    private val TARGET_LUMA_MIN_BACK = 0.30f    // Reducido para exposición más natural
+    private val TARGET_LUMA_MAX_BACK = 0.40f    // Reducido para evitar exceso de brillo
+    private val HYSTERESIS_MIN_BACK = 0.28f     // Ajustado para detección natural
+    private val HYSTERESIS_MAX_BACK = 0.42f     // Ajustado para evitar bombeo
+    private val CRITICAL_LOW_LUMA_BACK = 0.20f  // Más tolerante a la oscuridad natural
+    private val CRITICAL_HIGH_LUMA_BACK = 0.45f // Límite natural de brillo
 
-    // Configuración para cámara FRONTAL (selfie)
-    private val TARGET_LUMA_MIN_FRONT = 0.45f   // Más brillante para selfies
-    private val TARGET_LUMA_MAX_FRONT = 0.55f   // Más tolerante a sobreexposición
-    private val HYSTERESIS_MIN_FRONT = 0.43f    // Ajustado para selfies
-    private val HYSTERESIS_MAX_FRONT = 0.57f    // Más amplio para selfies
-    private val CRITICAL_LOW_LUMA_FRONT = 0.35f // Más tolerante para selfies
-    private val CRITICAL_HIGH_LUMA_FRONT = 0.60f // Más tolerante para selfies
+    // Configuración para cámara FRONTAL (selfie) - Valores naturales
+    private val TARGET_LUMA_MIN_FRONT = 0.35f   // Natural para selfies sin exceso
+    private val TARGET_LUMA_MAX_FRONT = 0.45f   // Moderado para evitar sobreexposición
+    private val HYSTERESIS_MIN_FRONT = 0.33f    // Natural para selfies
+    private val HYSTERESIS_MAX_FRONT = 0.47f    // Controlado para selfies
+    private val CRITICAL_LOW_LUMA_FRONT = 0.25f // Tolerante a luz natural
+    private val CRITICAL_HIGH_LUMA_FRONT = 0.50f // Límite natural para selfies
 
-    // Parámetros comunes
-    private val TORCH_ENABLE_THRESHOLD = 0.25f // Activar linterna antes
-    private val TORCH_DISABLE_THRESHOLD = 0.35f // Mantener equilibrio
+    // Parámetros para bloqueo durante grabación
     private val RECORDING_LOCK_MIN = 0.38f // Rango de bloqueo durante grabación
     private val RECORDING_LOCK_MAX = 0.52f
-    private val CLIPPING_THRESHOLD = 0.010f // 1% - Más estricto para MediaPipe
 
     // Propiedades calculadas según la cámara actual
     private val TARGET_LUMA_MIN: Float get() = if (isFrontCamera) TARGET_LUMA_MIN_FRONT else TARGET_LUMA_MIN_BACK
@@ -121,8 +117,8 @@ class ExposureControlHelper(
     // Callback para notificar cambios
     var onExposureChanged: ((luma: Float, evCompensation: Int, torchEnabled: Boolean) -> Unit)? = null
 
-    // Callback para feedback inmediato al tocar la pantalla
-    var onTouchFeedback: ((changeAmount: Int, newEv: Int, cameraType: String) -> Unit)? = null
+    // DESHABILITADO - Callback para feedback inmediato al tocar la pantalla
+    // var onTouchFeedback: ((changeAmount: Int, newEv: Int, cameraType: String) -> Unit)? = null
     
     // Variables para evitar ajustes excesivos (optimizado para MediaPipe)
     private var lastAdjustmentTime = 0L
@@ -132,22 +128,24 @@ class ExposureControlHelper(
     private val TOUCH_RESET_TIME = 3000L // Reset contador de toques después de 3 segundos
     
     init {
-        setupTouchListener()
-        // Restaurar última configuración EV del usuario
-        currentEvCompensation = sharedPrefs.getInt("last_ev_compensation", 0)
+        // DESHABILITADO - setupTouchListener() para mantener exposición natural
+        // Inicializar con exposición NEUTRAL (0) en lugar de recuperar última configuración
+        currentEvCompensation = 0  // Valor neutral para exposición natural
+        // No guardar/restaurar configuraciones automáticas para mantener naturalidad
     }
     
-    private fun setupTouchListener() {
-        previewView.setOnTouchListener { view, event ->
-            if (event.action == MotionEvent.ACTION_DOWN) {
-                lastTouchX = event.x
-                lastTouchY = event.y
-                performTouchExposure(event.x, event.y, view.width, view.height)
-                return@setOnTouchListener true
-            }
-            false
-        }
-    }
+    // DESHABILITADO - Función para configurar el listener de toques
+    // private fun setupTouchListener() {
+    //     previewView.setOnTouchListener { view, event ->
+    //         if (event.action == MotionEvent.ACTION_DOWN) {
+    //             lastTouchX = event.x
+    //             lastTouchY = event.y
+    //             performTouchExposure(event.x, event.y, view.width, view.height)
+    //             return@setOnTouchListener true
+    //         }
+    //         false
+    //     }
+    // }
     
     fun setFrontCamera(isFront: Boolean) {
         val wasChanged = isFrontCamera != isFront
@@ -236,10 +234,7 @@ class ExposureControlHelper(
                         currentLuma = smoothedLuma
                         lastLumaUpdateTime = currentTime
                         
-                        // Actualizar telemetría
-                        updateTelemetry(smoothedLuma, clippingPercentage)
-                        
-                        // Procesar ajustes automáticos de exposición con luma suavizada
+                        // Procesar medición para feedback táctil (sin ajustes automáticos)
                         processExposureAdjustment(smoothedLuma, clippingPercentage)
                     }
                 }
@@ -317,198 +312,122 @@ class ExposureControlHelper(
     }
     
     private fun updateTelemetry(luma: Float, clippingPercentage: Float) {
-        clipTelemetry["luma_avg"] = String.format("%.3f", luma)
+        clipTelemetry["luma_avg"] = String.format(java.util.Locale.getDefault(), "%.3f", luma)
         clipTelemetry["ev_compensation"] = currentEvCompensation
         clipTelemetry["torch_enabled"] = isTorchEnabled
         clipTelemetry["ae_locked"] = isAeLocked
-        clipTelemetry["clipping_percent"] = String.format("%.2f", clippingPercentage * 100)
+        clipTelemetry["clipping_percent"] = String.format(java.util.Locale.getDefault(), "%.2f", clippingPercentage * 100)
         clipTelemetry["timestamp"] = System.currentTimeMillis()
     }
     
-    private fun performTouchExposure(touchX: Float, touchY: Float, viewWidth: Int, viewHeight: Int) {
-        try {
-            val currentTime = System.currentTimeMillis()
-
-            // Reset contador de toques si ha pasado suficiente tiempo
-            if (currentTime - lastTouchTime > TOUCH_RESET_TIME) {
-                consecutiveTouchCount = 0
-            }
-
-            consecutiveTouchCount++
-            lastTouchTime = currentTime
-
-            // Evitar demasiados toques consecutivos (spam)
-            if (consecutiveTouchCount > 5) {
-                Log.w("ExposureControl", "Demasiados toques consecutivos, ignorando")
-                // Mostrar feedback incluso en caso de spam
-                onTouchFeedback?.invoke(0, currentEvCompensation, if (isFrontCamera) "FRONTAL" else "TRASERA")
-                return
-            }
-
-            // Validar coordenadas
-            if (viewWidth <= 0 || viewHeight <= 0) {
-                Log.w("ExposureControl", "Dimensiones de vista inválidas: ${viewWidth}x${viewHeight}")
-                onTouchFeedback?.invoke(0, currentEvCompensation, if (isFrontCamera) "FRONTAL" else "TRASERA")
-                return
-            }
-
-            if (touchX < 0 || touchX > viewWidth || touchY < 0 || touchY > viewHeight) {
-                Log.w("ExposureControl", "Coordenadas de toque fuera de límites: ($touchX, $touchY)")
-                onTouchFeedback?.invoke(0, currentEvCompensation, if (isFrontCamera) "FRONTAL" else "TRASERA")
-                return
-            }
-
-            // Guardar EV anterior para mostrar el cambio
-            val previousEvCompensation = currentEvCompensation
-
-            // Convertir coordenadas de vista a coordenadas normalizadas (0.0 - 1.0)
-            val normalizedX = touchX / viewWidth
-            val normalizedY = touchY / viewHeight
-
-            // Mostrar feedback inmediato del toque (antes de cualquier procesamiento)
-            val cameraType = if (isFrontCamera) "FRONTAL" else "TRASERA"
-            onTouchFeedback?.invoke(0, currentEvCompensation, cameraType) // 0 = procesando
-
-            cameraControl?.let { control ->
-                // Crear punto de medición para el toque
-                val meteringPoint = previewView.meteringPointFactory.createPoint(normalizedX, normalizedY)
-
-                // Configurar medición puntual de enfoque y exposición
-                val action = androidx.camera.core.FocusMeteringAction.Builder(meteringPoint)
-                    .setAutoCancelDuration(3, java.util.concurrent.TimeUnit.SECONDS)
-                    .build()
-
-                // Ejecutar medición
-                val meteringResult = control.startFocusAndMetering(action)
-
-                // Añadir callback para detectar cambios y ajustar exposición si es necesario
-                meteringResult.addListener({
-                    try {
-                        // Pequeño delay para que la cámara procese el ajuste inicial
-                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                            // Medir luma en el punto tocado para determinar si necesita ajuste de brillo
-                            measureAndAdjustExposure(normalizedX, normalizedY, previousEvCompensation)
-                        }, 300)
-                    } catch (e: Exception) {
-                        Log.e("ExposureControl", "Error procesando resultado de medición: ${e.message}")
-                        // Mostrar feedback de error
-                        onTouchFeedback?.invoke(0, currentEvCompensation, cameraType)
-                    }
-                }, ContextCompat.getMainExecutor(context))
-
-                Log.d("ExposureControl", "Medición puntual iniciada en coordenadas: (${normalizedX.format(3)}, ${normalizedY.format(3)}) - $cameraType")
-
-            } ?: run {
-                Log.w("ExposureControl", "CameraControl no disponible para medición puntual")
-                // Intentar ajuste basado en luma actual sin medición puntual
-                measureAndAdjustExposure(normalizedX, normalizedY, previousEvCompensation)
-            }
-
-        } catch (e: Exception) {
-            Log.e("ExposureControl", "Error en medición puntual: ${e.message}")
-            // Mostrar feedback de error
-            onTouchFeedback?.invoke(0, currentEvCompensation, if (isFrontCamera) "FRONTAL" else "TRASERA")
-        }
-    }
+    // DESHABILITADO - Función para realizar ajuste de exposición por toque
+    // private fun performTouchExposure(touchX: Float, touchY: Float, viewWidth: Int, viewHeight: Int) {
+    //     // Función comentada para mantener exposición natural sin control manual por toques
+    // }
     
     // Helper para formatear flotantes
     private fun Float.format(decimals: Int): String = "%.${decimals}f".format(this)
     
-    private fun measureAndAdjustExposure(touchX: Float, touchY: Float, previousEvCompensation: Int) {
-        try {
-            if (!isExposureCompensationSupported) {
-                Log.i("ExposureControl", "Toque registrado - ajuste EV no soportado en este dispositivo")
-                // Mostrar feedback visual incluso si no hay soporte EV
-                onTouchFeedback?.invoke(0, currentEvCompensation, if (isFrontCamera) "FRONTAL" else "TRASERA")
-                return
+    // DESHABILITADO - Función para medir y ajustar exposición por toque
+    // private fun measureAndAdjustExposure(touchX: Float, touchY: Float, previousEvCompensation: Int) {
+    //     // Función comentada para mantener exposición automática natural
+    // }
+
+    private fun calculateAdaptiveBrightnessAdjustment(currentLuma: Float, previousEv: Int): Pair<Int, Int> {
+        // Algoritmo adaptativo que considera:
+        // 1. Capacidades del dispositivo (rango EV disponible)
+        // 2. Tipo de cámara (frontal vs trasera)
+        // 3. Historial de ajustes previos
+        // 4. Versión de Android y capacidades de hardware
+
+        val evRange = MAX_EV_COMPENSATION - MIN_EV_COMPENSATION
+        val isLimitedDevice = evRange <= 4 // Dispositivos con rango EV limitado
+
+        // Parámetros adaptativos según el dispositivo
+        val (targetLuma, tolerance, stepSize) = when {
+            isLimitedDevice -> {
+                // Dispositivos limitados: ajustes más conservadores
+                Triple((TARGET_LUMA_MIN + TARGET_LUMA_MAX) / 2f, 0.06f, 1)
             }
-
-            // Analizar la luma actual para determinar si necesita ajuste
-            val currentLumaValue = currentLuma
-            Log.d("ExposureControl", "Medición en toque: luma=${String.format("%.3f", currentLumaValue)}, EV actual=$currentEvCompensation")
-
-            // Usar parámetros específicos de la cámara actual
-            val targetLuma = (TARGET_LUMA_MIN + TARGET_LUMA_MAX) / 2f // Punto medio del rango objetivo
-            val tolerance = 0.08f // Tolerancia para evitar ajustes innecesarios
-
-            var newEvCompensation = currentEvCompensation
-            var changeAmount = 0
-
-            when {
-                // Muy oscuro - subir brillo significativamente
-                currentLumaValue < (targetLuma - tolerance - 0.1f) -> {
-                    newEvCompensation = kotlin.math.min(currentEvCompensation + 2, MAX_EV_COMPENSATION)
-                    changeAmount = newEvCompensation - previousEvCompensation
-                    Log.i("ExposureControl", "Zona muy oscura detectada - subiendo brillo +2 (${if (isFrontCamera) "frontal" else "trasera"})")
-                }
-                // Oscuro - subir brillo gradualmente
-                currentLumaValue < (targetLuma - tolerance) -> {
-                    newEvCompensation = kotlin.math.min(currentEvCompensation + 1, MAX_EV_COMPENSATION)
-                    changeAmount = newEvCompensation - previousEvCompensation
-                    Log.i("ExposureControl", "Zona oscura detectada - subiendo brillo +1 (${if (isFrontCamera) "frontal" else "trasera"})")
-                }
-                // Muy brillante - bajar brillo significativamente
-                currentLumaValue > (targetLuma + tolerance + 0.1f) -> {
-                    newEvCompensation = kotlin.math.max(currentEvCompensation - 2, MIN_EV_COMPENSATION)
-                    changeAmount = newEvCompensation - previousEvCompensation
-                    Log.i("ExposureControl", "Zona muy brillante detectada - bajando brillo -2 (${if (isFrontCamera) "frontal" else "trasera"})")
-                }
-                // Brillante - bajar brillo gradualmente
-                currentLumaValue > (targetLuma + tolerance) -> {
-                    newEvCompensation = kotlin.math.max(currentEvCompensation - 1, MIN_EV_COMPENSATION)
-                    changeAmount = newEvCompensation - previousEvCompensation
-                    Log.i("ExposureControl", "Zona brillante detectada - bajando brillo -1 (${if (isFrontCamera) "frontal" else "trasera"})")
-                }
-                // En rango óptimo
-                else -> {
-                    Log.i("ExposureControl", "Luminosidad óptima - sin ajuste necesario (${if (isFrontCamera) "frontal" else "trasera"})")
-                    changeAmount = 0
-                }
+            isFrontCamera -> {
+                // Cámara frontal: más tolerante a cambios
+                Triple((TARGET_LUMA_MIN_FRONT + TARGET_LUMA_MAX_FRONT) / 2f, 0.08f, 1)
             }
-
-            // Mostrar feedback inmediato del toque
-            val cameraType = if (isFrontCamera) "FRONTAL" else "TRASERA"
-            onTouchFeedback?.invoke(changeAmount, newEvCompensation, cameraType)
-
-            // Aplicar ajuste si es diferente
-            if (newEvCompensation != currentEvCompensation) {
-                val evChange = newEvCompensation - previousEvCompensation
-                val changeText = if (evChange > 0) "+$evChange" else "$evChange"
-
-                Log.i("ExposureControl", "Ajuste manual por toque: EV $previousEvCompensation → $newEvCompensation ($changeText)")
-                Log.i("ExposureControl", "Coordenadas: (${touchX.format(2)}, ${touchY.format(2)}) | Luma: ${String.format("%.3f", currentLumaValue)} | Cámara: $cameraType")
-
-                adjustEvCompensation(newEvCompensation)
-            } else {
-                Log.i("ExposureControl", "Toque manual #$consecutiveTouchCount: Sin cambio de EV necesario (${touchX.format(2)}, ${touchY.format(2)}) | Cámara: $cameraType")
+            else -> {
+                // Cámara trasera: más precisa para lenguaje de señas
+                Triple((TARGET_LUMA_MIN_BACK + TARGET_LUMA_MAX_BACK) / 2f, 0.07f, 1)
             }
-
-        } catch (e: Exception) {
-            Log.e("ExposureControl", "Error ajustando exposición por toque: ${e.message}")
-            // Mostrar feedback de error
-            onTouchFeedback?.invoke(0, currentEvCompensation, if (isFrontCamera) "FRONTAL" else "TRASERA")
         }
+
+        // Lógica de ajuste inteligente
+        val lumaDiff = currentLuma - targetLuma
+        val absDiff = kotlin.math.abs(lumaDiff)
+
+        var newEvCompensation = previousEv
+        var changeAmount = 0
+
+        when {
+            // Zona crítica oscura - ajuste agresivo pero controlado
+            currentLuma < CRITICAL_LOW_LUMA -> {
+                val steps = when {
+                    absDiff > 0.15f -> 2 // Muy oscuro
+                    evRange >= 6 -> 2   // Dispositivo capaz
+                    else -> 1           // Dispositivo limitado
+                }
+                newEvCompensation = kotlin.math.max(previousEv - steps, MIN_EV_COMPENSATION)
+                changeAmount = newEvCompensation - previousEv
+                Log.i("ExposureControl", "Zona crítica oscura - ajuste agresivo -$steps (luma: ${String.format("%.3f", currentLuma)})")
+            }
+
+            // Zona oscura - ajuste gradual
+            currentLuma < (targetLuma - tolerance) -> {
+                newEvCompensation = kotlin.math.max(previousEv - stepSize, MIN_EV_COMPENSATION)
+                changeAmount = newEvCompensation - previousEv
+                Log.i("ExposureControl", "Zona oscura - ajuste gradual -$stepSize (luma: ${String.format("%.3f", currentLuma)})")
+            }
+
+            // Zona crítica brillante - ajuste agresivo
+            currentLuma > CRITICAL_HIGH_LUMA -> {
+                val steps = when {
+                    absDiff > 0.15f -> 2 // Muy brillante
+                    evRange >= 6 -> 2   // Dispositivo capaz
+                    else -> 1           // Dispositivo limitado
+                }
+                newEvCompensation = kotlin.math.min(previousEv + steps, MAX_EV_COMPENSATION)
+                changeAmount = newEvCompensation - previousEv
+                Log.i("ExposureControl", "Zona crítica brillante - ajuste agresivo +$steps (luma: ${String.format("%.3f", currentLuma)})")
+            }
+
+            // Zona brillante - ajuste gradual
+            currentLuma > (targetLuma + tolerance) -> {
+                newEvCompensation = kotlin.math.min(previousEv + stepSize, MAX_EV_COMPENSATION)
+                changeAmount = newEvCompensation - previousEv
+                Log.i("ExposureControl", "Zona brillante - ajuste gradual +$stepSize (luma: ${String.format("%.3f", currentLuma)})")
+            }
+
+            // En rango óptimo - sin ajuste
+            else -> {
+                Log.i("ExposureControl", "Luminosidad óptima - sin ajuste necesario (luma: ${String.format("%.3f", currentLuma)})")
+                changeAmount = 0
+            }
+        }
+
+        return Pair(newEvCompensation, changeAmount)
     }
     
     private fun processExposureAdjustment(luma: Float, clippingPercentage: Float) {
         try {
-            // Solo actualizar mediciones - NO hacer ajustes automáticos
-            val currentTime = System.currentTimeMillis()
-            
-            // Actualizar luma actual para referencia
+            // SOLO actualizar luma para feedback táctil - SIN ajustes automáticos
             currentLuma = luma
-            
-            // Chequear AE Lock automático (mantener funcionalidad de bloqueo durante grabación)
-            checkAutoAeLock(luma, currentTime)
-            
-            // Actualizar telemetría sin ajustes automáticos
-            val inTargetRange = luma >= TARGET_LUMA_MIN && luma <= TARGET_LUMA_MAX
-            
-            Log.v("ExposureControl", "📊 Medición: luma=${String.format("%.3f", luma)}, EV=$currentEvCompensation, en_rango=$inTargetRange")
-            
-            // Notificar cambios solo si hay diferencias significativas
+
+            // Mantener funcionalidad de bloqueo AE durante grabación
+            if (isRecording) {
+                checkAutoAeLock(luma, System.currentTimeMillis())
+            }
+
+            // Notificar cambios para indicador visual
             notifyExposureChanged()
-            
+
         } catch (e: Exception) {
             Log.e("ExposureControl", "Error procesando medición de exposición: ${e.message}")
         }
@@ -567,25 +486,6 @@ class ExposureControlHelper(
         }, ContextCompat.getMainExecutor(context))
     }
     
-    private fun handleTorchControl(luma: Float) {
-        if (!isTorchSupported) {
-            return
-        }
-        
-        val shouldEnableTorch = when {
-            !isTorchEnabled && luma < TORCH_ENABLE_THRESHOLD && currentEvCompensation >= MAX_EV_COMPENSATION -> true
-            isTorchEnabled && luma > TORCH_DISABLE_THRESHOLD -> false
-            else -> return
-        }
-        
-        if (shouldEnableTorch != isTorchEnabled) {
-            cameraControl?.enableTorch(shouldEnableTorch)?.addListener({
-                isTorchEnabled = shouldEnableTorch
-                Log.i("ExposureControl", "Linterna ${if (shouldEnableTorch) "encendida" else "apagada"} (luma: ${String.format("%.3f", luma)})")
-                notifyExposureChanged()
-            }, ContextCompat.getMainExecutor(context))
-        }
-    }
     
     fun onRecordingStarted() {
         isRecording = true

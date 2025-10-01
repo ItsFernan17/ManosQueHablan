@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dialog dimensions - Short screens (navigation bar with buttons) -->
+    <dimen name="dialog_padding">20dp</dimen>
+    <dimen name="dialog_padding_small">14dp</dimen>
+    <dimen name="dialog_icon_size">72dp</dimen>
+    <dimen name="dialog_icon_size_small">60dp</dimen>
+    <dimen name="dialog_text_size_title">20sp</dimen>
+    <dimen name="dialog_text_size_body">15sp</dimen>
+    <dimen name="dialog_text_size_hint">13sp</dimen>
+    <dimen name="dialog_max_width">380dp</dimen>
+    <dimen name="dialog_button_margin">28dp</dimen>
+    <dimen name="dialog_spacing_small">10dp</dimen>
+    <dimen name="dialog_spacing_medium">14dp</dimen>
+    <dimen name="dialog_spacing_large">18dp</dimen>
+    <dimen name="dialog_spacing_xlarge">22dp</dimen>
+    <!-- Dialog size limits -->
+    <dimen name="dialog_max_screen_width">0.95</dimen>
+    <dimen name="dialog_scroll_max_height">400dp</dimen>
+    <dimen name="splash_logo_size">220dp</dimen>
+    <dimen name="splash_logo_margin_top">104dp</dimen>
+
+    <dimen name="splash_title_text_min">28sp</dimen>
+    <dimen name="splash_title_text_max">48sp</dimen>
+    <dimen name="splash_title_margin_top">24dp</dimen>
+
+    <dimen name="splash_credits_text">14sp</dimen>
+    <dimen name="splash_credits_margin_bottom">96dp</dimen>
+</resources>

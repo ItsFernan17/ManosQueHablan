@@ -5,30 +5,32 @@
     android:orientation="vertical"
     android:padding="24dp"
     android:background="@drawable/fondo_popup_redondeado">
-
-    <!-- Título -->
-    <TextView
-        android:id="@+id/txtTituloBienvenida"
+    
+    <!-- Todo el contenido es scrolleable, incluyendo el botón -->
+    <ScrollView 
+        android:id="@+id/scrollContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Bienvenido a Manos Que Hablan"
-        android:textSize="20sp"
-        android:textColor="@color/texto_videos"
-        android:fontFamily="@font/poppins_semibold"
-        android:gravity="center"
-        android:layout_marginBottom="20dp" />
-
-    <!-- Contenido -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
-        android:maxHeight="400dp">
+        android:fillViewport="false"
+        android:overScrollMode="ifContentScrolls"
+        android:scrollbars="vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
+            <!-- Título -->
+            <TextView
+                android:id="@+id/txtTituloBienvenida"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Bienvenido a Manos Que Hablan"
+                android:textSize="20sp"
+                android:textColor="@color/texto_videos"
+                android:fontFamily="@font/poppins_semibold"
+                android:gravity="center"
+                android:layout_marginBottom="20dp" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -58,7 +60,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Mantén una distancia de 30 a 40 cm entre tus manos y el teléfono."
+                    android:text="Mantén una distancia mínima de 35 cm entre tus manos y el teléfono para mejores resultados."
                     android:textSize="15sp"
                     android:textColor="@color/texto_videos"
                     android:fontFamily="@font/poppins_regular" />
@@ -165,29 +167,29 @@
                     android:fontFamily="@font/poppins_regular" />
             </LinearLayout>
 
+            <!-- Botón Aceptar (también scrolleable) -->
+            <LinearLayout
+                android:id="@+id/btnAceptarBienvenida"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:paddingVertical="12dp"
+                android:paddingHorizontal="20dp"
+                android:background="@drawable/boton_redondeado_aceptar"
+                android:layout_marginTop="24dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Entendido"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/poppins_semibold" />
+
+            </LinearLayout>
+
         </LinearLayout>
     </ScrollView>
-
-    <!-- Botón Aceptar -->
-    <LinearLayout
-        android:id="@+id/btnAceptarBienvenida"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:paddingVertical="12dp"
-        android:paddingHorizontal="20dp"
-        android:background="@drawable/boton_redondeado_aceptar"
-        android:layout_marginTop="8dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Entendido"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            android:fontFamily="@font/poppins_semibold" />
-
-    </LinearLayout>
 
 </LinearLayout>

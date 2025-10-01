@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dialog dimensions - Large text accessibility -->
+    <dimen name="dialog_padding">32dp</dimen>
+    <dimen name="dialog_padding_small">24dp</dimen>
+    <dimen name="dialog_icon_size">96dp</dimen>
+    <dimen name="dialog_icon_size_small">80dp</dimen>
+    <dimen name="dialog_text_size_title">28sp</dimen>
+    <dimen name="dialog_text_size_body">20sp</dimen>
+    <dimen name="dialog_text_size_hint">18sp</dimen>
+    <dimen name="dialog_max_width">500dp</dimen>
+    <dimen name="dialog_button_margin">48dp</dimen>
+    <dimen name="dialog_spacing_small">16dp</dimen>
+    <dimen name="dialog_spacing_medium">20dp</dimen>
+    <dimen name="dialog_spacing_large">28dp</dimen>
+    <dimen name="dialog_spacing_xlarge">36dp</dimen>
+    <!-- Dialog size limits -->
+    <dimen name="dialog_max_screen_width">0.95</dimen>
+    <dimen name="dialog_scroll_max_height">400dp</dimen>
+    <dimen name="splash_logo_size">180dp</dimen>
+    <dimen name="splash_logo_margin_top">88dp</dimen>
+
+    <dimen name="splash_title_text_min">26sp</dimen>
+    <dimen name="splash_title_text_max">42sp</dimen>
+    <dimen name="splash_title_margin_top">20dp</dimen>
+
+    <dimen name="splash_credits_text">13sp</dimen>
+    <dimen name="splash_credits_margin_bottom">88dp</dimen>
+</resources>

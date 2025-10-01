@@ -15,6 +15,10 @@
 
 -keep class androidx.core.content.FileProvider { *; }
 
+# WorkManager keep rules to prevent R8 from breaking foreground service
+-keep class androidx.work.impl.foreground.SystemForegroundService { *; }
+-keep class androidx.work.impl.foreground.** { *; }
+
 -keepattributes Signature, InnerClasses, EnclosingMethod
 -keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
 -keepclassmembers,allowshrinking,allowobfuscation interface * {

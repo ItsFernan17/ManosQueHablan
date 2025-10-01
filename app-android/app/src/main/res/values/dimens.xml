@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dialog dimensions - Default (phones) -->
+    <dimen name="dialog_padding">24dp</dimen>
+    <dimen name="dialog_padding_small">16dp</dimen>
+    <dimen name="dialog_icon_size">80dp</dimen>
+    <dimen name="dialog_icon_size_small">64dp</dimen>
+    <dimen name="dialog_text_size_title">22sp</dimen>
+    <dimen name="dialog_text_size_body">16sp</dimen>
+    <dimen name="dialog_text_size_hint">14sp</dimen>
+    <dimen name="dialog_max_width">400dp</dimen>
+    <dimen name="dialog_button_margin">32dp</dimen>
+    <dimen name="dialog_spacing_small">12dp</dimen>
+    <dimen name="dialog_spacing_medium">16dp</dimen>
+    <dimen name="dialog_spacing_large">20dp</dimen>
+    <dimen name="dialog_spacing_xlarge">25dp</dimen>
+    <!-- Dialog size limits -->
+    <dimen name="dialog_max_screen_width">0.95</dimen>
+    <dimen name="dialog_scroll_max_height">400dp</dimen>
+
+    <dimen name="splash_logo_size">160dp</dimen>
+    <dimen name="splash_logo_margin_top">72dp</dimen>
+
+    <dimen name="splash_title_text_min">24sp</dimen>
+    <dimen name="splash_title_text_max">40sp</dimen>
+    <dimen name="splash_title_margin_top">16dp</dimen>
+
+    <dimen name="splash_credits_text">12sp</dimen>
+    <dimen name="splash_credits_margin_bottom">72dp</dimen>
+</resources>

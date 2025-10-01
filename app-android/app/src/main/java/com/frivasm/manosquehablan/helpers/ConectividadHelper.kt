@@ -67,19 +67,19 @@ class ConectividadHelper(private val context: Context) {
                 "Conexión exitosa" to "El servidor está funcionando correctamente"
 
             ServerConfig.ServerStatus.SIN_CONEXION ->
-                "Sin conexión a internet" to "No se detecta conexión de red. Activa Wi-Fi o datos móviles para continuar"
+                "Sin conexión a internet" to "Tu dispositivo no tiene conexión a internet activa. Necesitas Wi-Fi o datos móviles para usar este servicio."
 
             ServerConfig.ServerStatus.TIMEOUT ->
-                "Tiempo de espera agotado" to "El servidor está tardando en responder. Puede ser por congestión de red o mantenimiento"
+                "Tiempo de espera agotado" to "La conexión está tardando demasiado en responder. Esto puede ocurrir si tu internet está lento o si el servidor está muy ocupado."
 
             ServerConfig.ServerStatus.ERROR_SERVIDOR ->
-                "Error interno del servidor" to "Hay un problema técnico en nuestros servidores. Estamos trabajando para solucionarlo"
+                "Error en el servidor" to "Algo salió mal en nuestros servidores. Nuestro equipo está trabajando para solucionarlo lo antes posible."
 
             ServerConfig.ServerStatus.NO_DISPONIBLE ->
-                "Servicio temporalmente suspendido" to "El servicio de traducción está en mantenimiento programado. Regresa en unos minutos"
+                "Servicio en mantenimiento" to "El servicio de traducción está temporalmente en mantenimiento. Esto no tomará mucho tiempo."
 
             ServerConfig.ServerStatus.ERROR_DESCONOCIDO ->
-                "Error inesperado" to "Ha ocurrido un problema no identificado. Intenta nuevamente o contacta soporte si persiste"
+                "Verifica tu conexión" to "No pudimos procesar tu video en este momento. Puede ser un problema de conexión o algo inesperado."
         }
     }
     

@@ -1,34 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- ====== Permisos base ====== -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Notificaciones (para progreso y heads-up) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Foreground Service (WorkManager FGS) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROCESSING" />
+
+    <!-- ====== Permisos de medios (Android 13+, API 33+) ====== -->
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
+    <!-- Legacy (<= API 32) -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    
-    <!-- Permisos para WorkManager y foreground services -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
-    <uses-feature
-        android:name="android.hardware.microphone"
-        android:required="false" />
+    <!-- ====== Queries (Android 11+) para abrir videos con apps externas ====== -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="video/*" />
+        </intent>
+    </queries>
+
+    <!-- ====== Features de hardware (opcionales) ====== -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
     <application
         android:name=".ManosQueHablanApp"
@@ -36,19 +45,24 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@drawable/logo"
+        android:roundIcon="@drawable/logo"
         android:label="@string/app_name"
         android:networkSecurityConfig="@xml/network_security_config"
-        android:roundIcon="@drawable/logo"
         android:supportsRtl="true"
-        android:theme="@style/Theme.ManosQueHablan">
+        android:theme="@style/Theme.ManosQueHablan"
+        tools:ignore="UnusedAttribute">
 
+        <!-- Play Services (si lo usas) -->
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
+
+        <!-- Max aspect ratio para pantallas alargadas -->
         <meta-data
             android:name="android.max_aspect"
             android:value="2.4" />
 
+        <!-- FileProvider para compartir archivos/URIs -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="org.manosquehablan.fileprovider"
@@ -59,18 +73,33 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- BroadcastReceiver para acciones de notificaciones -->
+        <!-- Deshabilitar inicialización automática de WorkManager ya que usamos Configuration.Provider -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="remove">
+        </provider>
+
+        <!-- Receiver para acciones desde notificaciones (cancelar, etc.) -->
         <receiver
             android:name=".notifications.NotificationActionReceiver"
             android:exported="false" />
 
-        <!-- WorkManager SystemForegroundService -->
+        <!-- ====== WorkManager: servicio en primer plano ====== -->
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
-            android:foregroundServiceType="dataSync"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="mediaProcessing"
+            tools:node="merge"
+            tools:replace="android:foregroundServiceType,android:exported" />
 
-        <!-- Actividades -->
+        <!-- Tipo de FGS que usará WorkManager al arrancar su servicio -->
+        <meta-data
+            android:name="android.workmanager.foreground_service_type"
+            android:value="mediaProcessing" />
+
+        <!-- ====== Activities ====== -->
 
         <activity
             android:name=".GrabarVideoActivity"
@@ -103,6 +132,7 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <!-- Launcher / Splash -->
         <activity
             android:name=".InicioSplashScreenActivity"
             android:exported="true"
@@ -112,7 +142,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
 
     </application>
 

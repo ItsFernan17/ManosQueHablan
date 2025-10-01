@@ -102,14 +102,14 @@ class SmoothPositionModal(
         val message = when (state) {
             PositionValidator.PositionState.RED -> {
                 if (hasGyroscope) {
-                    "Endereza tu teléfono para continuar"
+                    "Ajusta la inclinación del teléfono para continuar"
                 } else {
-                    "Sin giroscopio: coloca el teléfono verticalmente"
+                    "Coloca el teléfono verticalmente (sin sensor de orientación)"
                 }
             }
             PositionValidator.PositionState.CRITICAL -> {
                 if (hasGyroscope) {
-                    "¡Posición crítica! Ajusta la orientación"
+                    "¡Cuidado! La inclinación es muy alta, ajusta el teléfono"
                 } else {
                     "Sin giroscopio: coloca el teléfono verticalmente"
                 }
@@ -118,14 +118,9 @@ class SmoothPositionModal(
         }
 
         messageText?.text = message
-        
-        if (hasGyroscope) {
-            angleText?.text = "Ángulo actual: ${String.format("%.0f", uxAngle)}° (ideal: 70-90°)"
-            angleText?.visibility = View.VISIBLE
-            // Ya no necesitamos animación del ícono warning
-        } else {
-            angleText?.visibility = View.GONE
-        }
+
+        // No mostrar ángulos, solo mensajes amigables
+        angleText?.visibility = View.GONE
 
         // Color según estado
         val backgroundColor = when (state) {
@@ -161,7 +156,8 @@ class SmoothPositionModal(
     }
 
     private fun updateAngleSmoothly(uxAngle: Float) {
-        angleText?.text = "Ángulo actual: ${String.format("%.0f", uxAngle)}° (ideal: 70-90°)"
+        // No mostrar ángulos, mantener solo para compatibilidad
+        angleText?.visibility = View.GONE
         lastAngle = uxAngle
     }
 
@@ -292,22 +288,22 @@ class SmoothPositionModal(
         if (modalContainer == null) {
             createModal()
         }
-        
+
         isShowing = true
-        
-        // Mostrar mensaje de verificación
-        messageText?.text = "Verificando ángulo..."
-        angleText?.text = "Espera un momento..."
-        
-        // Color amarillo para indicar verificación
+
+        // Mostrar mensaje de verificación más engaging
+        messageText?.text = "Comprobando posición del teléfono..."
+        angleText?.text = "No muevas el teléfono por un momento"
+
+        // Color azul para indicar verificación activa
         val verifyingColor = ContextCompat.getColor(context, R.color.celeste)
         (modalContainer?.background as? GradientDrawable)?.setColor(verifyingColor)
-        
+
         // Mostrar modal si no está visible
         modalContainer?.let { container ->
             if (container.alpha == 0f) {
                 container.visibility = View.VISIBLE
-                
+
                 // Animar fondo
                 backgroundOverlay?.let { bg ->
                     ObjectAnimator.ofFloat(bg, View.ALPHA, 0f, BACKGROUND_ALPHA).apply {
@@ -315,14 +311,24 @@ class SmoothPositionModal(
                         start()
                     }
                 }
-                
+
                 container.animate()
                     .alpha(1f)
                     .setDuration(ANIMATION_DURATION)
                     .start()
             }
         }
+
+        // DESHABILITADO - Añadir animación de pulso para mantener diseño natural
+        // startPulseAnimation()
     }
+
+    private var currentPulseAnimation: AnimatorSet? = null
+
+    // DESHABILITADO - Función de animación de pulso para mantener diseño natural
+    // private fun startPulseAnimation() {
+    //     // Función comentada para evitar efectos visuales innecesarios
+    // }
     
     // Callback para notificar cuando el flujo de verificación está completo
     var onVerificationComplete: (() -> Unit)? = null
@@ -334,36 +340,21 @@ class SmoothPositionModal(
         // Verificar la posición final después del movimiento
         when (state) {
             PositionValidator.PositionState.GREEN -> {
-                // Posición correcta - mostrar mensaje de éxito brevemente
-                showSuccessMessage()
-                
-                // Primero mostrar el mensaje de éxito durante 800ms
-                // y luego notificar que el flujo está completo y ocultar el modal
-                handler.postDelayed({ 
-                    // Notificar al validador de posición que la verificación está completa
-                    positionValidator?.completeAngleVerification()
-                    
-                    // Notificar que el flujo está completo (callback adicional si es necesario)
-                    onVerificationComplete?.invoke()
-                    
-                    // Ocultar el modal
-                    hideModalSmoothly() 
-                }, 800)
+                // Posición correcta - notificar inmediatamente sin mostrar modal de éxito
+                // Notificar al validador de posición que la verificación está completa
+                positionValidator?.completeAngleVerification()
+
+                // Notificar que el flujo está completo (callback adicional si es necesario)
+                onVerificationComplete?.invoke()
+
+                // Ocultar el modal directamente
+                hideModalSmoothly()
             }
             PositionValidator.PositionState.RED, PositionValidator.PositionState.CRITICAL -> {
                 // Posición incorrecta - mostrar error
                 showModalSmoothly(state, uxAngle, hasGyroscope)
             }
         }
-    }
-    
-    private fun showSuccessMessage() {
-        messageText?.text = "¡Ángulo correcto!"
-        angleText?.text = "Posición verificada"
-        
-        // Color verde para éxito
-        val successColor = ContextCompat.getColor(context, R.color.violeta)
-        (modalContainer?.background as? GradientDrawable)?.setColor(successColor)
     }
 
     private fun findParentFrameLayout(): FrameLayout? {
@@ -402,9 +393,9 @@ class SmoothPositionModal(
             }
             
             // Mostrar mensaje de verificación inmediata
-            messageText?.text = "Verificando posición del teléfono..."
-            angleText?.text = "Espera un momento..."
-            angleText?.visibility = View.VISIBLE
+            messageText?.text = "Analizando la orientación del teléfono..."
+            angleText?.text = "Un momento por favor..."
+            angleText?.visibility = View.GONE
             
             // Color de verificación (azul)
             val verifyingColor = ContextCompat.getColor(context, R.color.celeste)
@@ -444,6 +435,9 @@ class SmoothPositionModal(
     fun cleanup() {
         handler.removeCallbacksAndMessages(null)
         verificationRunnable?.let { handler.removeCallbacks(it) }
+        // Cancelar animación de pulso si está corriendo
+        currentPulseAnimation?.cancel()
+        currentPulseAnimation = null
         removeModal()
     }
 

@@ -70,7 +70,10 @@ class InicioAppActivity : AppCompatActivity() {
 
         // Log de configuración de servidor
         Log.i("ServerConfig", ServerConfig.getServerInfo())
-        
+
+        // Verificar tipo de foreground service declarado (para debugging Android 14+)
+        verificarForegroundServiceType()
+
         // Verificar estado de trabajos pendientes
         verificarTrabajosPendientes()
 
@@ -128,22 +131,52 @@ class InicioAppActivity : AppCompatActivity() {
     }
     
     /**
-     * Verifica si hay trabajos de procesamiento pendientes y pregunta al usuario qué hacer
+     * Verifica el tipo de foreground service declarado en el manifest (para debugging Android 14+)
+     */
+    private fun verificarForegroundServiceType() {
+        try {
+            val pm = applicationContext.packageManager
+            val cn = android.content.ComponentName(
+                applicationContext,
+                androidx.work.impl.foreground.SystemForegroundService::class.java
+            )
+            val si = if (android.os.Build.VERSION.SDK_INT >= 33) {
+                pm.getServiceInfo(cn, android.content.pm.PackageManager.ComponentInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getServiceInfo(cn, 0)
+            }
+            android.util.Log.i(
+                "FGS-CHECK",
+                "declaredType=0x${si.foregroundServiceType.toString(16)} (expect 0x2000 for MEDIA_PROCESSING)"
+            )
+        } catch (e: Exception) {
+            android.util.Log.w("FGS-CHECK", "Error verificando foreground service type: ${e.message}")
+        }
+    }
+
+    /**
+     * Verifica si hay trabajos de procesamiento pendientes y los descarta inmediatamente
      */
     private fun verificarTrabajosPendientes() {
         try {
             // Log estado de trabajos para debugging
             JobStatusUtils.logJobStatus(this)
 
-            // Verificar si hay trabajos pendientes (no activos, sino pausados)
-            val jobManager = com.frivasm.manosquehablan.persistence.VideoProcessingJobManager(this)
-            val pendingJobs = jobManager.getResumableJobs()
+            // Verificar si hay trabajos pendientes en WorkManager
+            val workManager = androidx.work.WorkManager.getInstance(this)
+            val pendingWorkInfos = workManager.getWorkInfosByTag("video_processing").get()
+
+            val pendingJobs = pendingWorkInfos.filter { workInfo ->
+                workInfo.state == androidx.work.WorkInfo.State.ENQUEUED ||
+                workInfo.state == androidx.work.WorkInfo.State.RUNNING
+            }
 
             if (pendingJobs.isNotEmpty()) {
-                Log.i("InicioAppActivity", "=== PENDING JOBS === Se encontraron ${pendingJobs.size} trabajos pendientes para reanudar")
+                Log.i("InicioAppActivity", "=== PENDING JOBS === Se encontraron ${pendingJobs.size} trabajos pendientes - descartándolos")
 
-                // Mostrar diálogo preguntando si quiere reanudar
-                mostrarDialogoTrabajosPendientes(pendingJobs)
+                // Cancelar inmediatamente todos los trabajos pendientes
+                descartarTrabajosPendientes(pendingJobs)
 
             } else {
                 // Verificar si hay trabajos activos
@@ -161,68 +194,81 @@ class InicioAppActivity : AppCompatActivity() {
     }
 
     /**
-     * Muestra un diálogo preguntando al usuario qué hacer con trabajos pendientes
+     * Descarta inmediatamente todos los trabajos pendientes de WorkManager
      */
-    private fun mostrarDialogoTrabajosPendientes(pendingJobs: List<VideoProcessingJobManager.ProcessingJob>) {
-        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
-        val inflater = layoutInflater
-        val view = inflater.inflate(R.layout.dialog_error_mejorado, null)
-
-        val txtTitulo = view.findViewById<TextView>(R.id.txtTitulo)
-        val txtMensaje = view.findViewById<TextView>(R.id.txtMensaje)
-        val txtSugerencia = view.findViewById<TextView>(R.id.txtSugerencia)
-        val btnAceptar = view.findViewById<View>(R.id.btnAceptar)
-        val btnCancelar = view.findViewById<View>(R.id.btnCancelar)
-
-        txtTitulo.setText("Trabajos pendientes")
-        txtMensaje.setText("Se encontraron ${pendingJobs.size} video(s) que estaban siendo procesados cuando la app se cerró. ¿Quieres reanudar el procesamiento?")
-        txtSugerencia.setText("Puedes reanudar ahora o cancelar los trabajos si ya no los necesitas.")
-
-        // Configurar botones
-        (btnAceptar as? TextView)?.setText("Reanudar")
-        (btnCancelar as? TextView)?.setText("Cancelar trabajos")
-
-        val dialog = builder.setView(view).setCancelable(false).create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-        btnAceptar.setOnClickListener {
-            dialog.dismiss()
-            reanudarTrabajosPendientes(pendingJobs)
-        }
-
-        btnCancelar.setOnClickListener {
-            dialog.dismiss()
-            cancelarTrabajosPendientes(pendingJobs)
-        }
-
-        dialog.show()
-    }
-
-    /**
-     * Reanuda los trabajos pendientes seleccionados por el usuario
-     */
-    private fun reanudarTrabajosPendientes(pendingJobs: List<VideoProcessingJobManager.ProcessingJob>) {
-        Log.i("InicioAppActivity", "Usuario decidió reanudar ${pendingJobs.size} trabajos pendientes")
-
+    private fun descartarTrabajosPendientes(pendingWorkInfos: List<androidx.work.WorkInfo>) {
         try {
-            Log.d("InicioAppActivity", "Llamando a VideoWorkManager.resumePendingJobs()")
-            VideoWorkManager.resumePendingJobs(this) // Esto reanudará todos los trabajos pendientes
+            val workManager = androidx.work.WorkManager.getInstance(this)
+
+            // Cancelar todos los trabajos pendientes por tag
+            workManager.cancelAllWorkByTag("video_processing")
+            Log.d("InicioAppActivity", "Cancelados ${pendingWorkInfos.size} trabajos pendientes por tag")
+
+            // Limpiar historial interno de WorkManager
+            workManager.pruneWork()
+            Log.d("InicioAppActivity", "Historial de WorkManager limpiado")
+
+            // Borrar archivos temporales de vídeo
+            borrarArchivosTemporales()
+
+            // Limpiar trabajos del VideoProcessingJobManager
+            val jobManager = VideoProcessingJobManager(this)
+            val activeJobs = jobManager.getActiveJobs()
+            activeJobs.forEach { job ->
+                jobManager.cancelJob(job.id)
+                Log.d("InicioAppActivity", "Trabajo cancelado en persistencia: ${job.id}")
+            }
+
+            // Mostrar mensaje informativo
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Subidas descartadas")
+                .setMessage("Se descartaron subidas pendientes para evitar envíos duplicados al servidor.")
+                .setPositiveButton("Aceptar", null)
+                .show()
+
+            Log.i("InicioAppActivity", "=== PENDING JOBS === ${pendingWorkInfos.size} trabajos descartados exitosamente")
+
         } catch (e: Exception) {
-            Log.e("InicioAppActivity", "Error reanudando trabajos pendientes: ${e.message}")
+            Log.e("InicioAppActivity", "Error descartando trabajos pendientes: ${e.message}")
         }
     }
 
     /**
-     * Cancela los trabajos pendientes seleccionados por el usuario
+     * Borra todos los archivos temporales de vídeo que empiecen por "temp_video"
      */
-    private fun cancelarTrabajosPendientes(pendingJobs: List<VideoProcessingJobManager.ProcessingJob>) {
-        Log.i("InicioAppActivity", "Usuario decidió cancelar ${pendingJobs.size} trabajos pendientes")
+    private fun borrarArchivosTemporales() {
+        try {
+            val cacheDir = cacheDir
+            val tempFiles = cacheDir.listFiles { file ->
+                file.name.startsWith("temp_video")
+            }
+
+            tempFiles?.forEach { file ->
+                if (file.delete()) {
+                    Log.d("InicioAppActivity", "Archivo temporal borrado: ${file.name}")
+                } else {
+                    Log.w("InicioAppActivity", "No se pudo borrar archivo temporal: ${file.name}")
+                }
+            }
+
+            Log.d("InicioAppActivity", "Borrados ${tempFiles?.size ?: 0} archivos temporales")
+
+        } catch (e: Exception) {
+            Log.e("InicioAppActivity", "Error borrando archivos temporales: ${e.message}")
+        }
+    }
+
+    /**
+     * Elimina los trabajos pendientes para evitar bucles en el servidor
+     */
+    private fun eliminarTrabajosPendientes(pendingJobs: List<VideoProcessingJobManager.ProcessingJob>) {
+        Log.i("InicioAppActivity", "Eliminando ${pendingJobs.size} trabajos pendientes para evitar bucles en el servidor")
 
         val jobManager = VideoProcessingJobManager(this)
 
         pendingJobs.forEach { job ->
             try {
-                Log.d("InicioAppActivity", "Cancelando trabajo pendiente: ${job.id}")
+                Log.d("InicioAppActivity", "Eliminando trabajo pendiente: ${job.id}")
                 jobManager.cancelJob(job.id)
 
                 // También intentar cancelar en WorkManager si existe
@@ -230,17 +276,18 @@ class InicioAppActivity : AppCompatActivity() {
                 VideoWorkManager.cancelVideoProcessing(this, sessionId)
 
             } catch (e: Exception) {
-                Log.e("InicioAppActivity", "Error cancelando trabajo ${job.id}: ${e.message}")
+                Log.e("InicioAppActivity", "Error eliminando trabajo ${job.id}: ${e.message}")
             }
         }
 
         // Mostrar mensaje de confirmación
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Trabajos cancelados")
-            .setMessage("${pendingJobs.size} trabajo(s) de procesamiento fueron cancelados.")
+            .setTitle("Trabajos eliminados")
+            .setMessage("${pendingJobs.size} trabajo(s) pendiente(s) fueron eliminado(s) para evitar problemas con el servidor.")
             .setPositiveButton("Aceptar", null)
             .show()
     }
+
 
     /**
      * Aplica animación de colores al TextView "No hay videos aún"

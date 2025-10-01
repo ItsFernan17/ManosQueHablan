@@ -2,30 +2,39 @@ package com.frivasm.manosquehablan
 
 import android.app.Application
 import android.util.Log
+import androidx.work.Configuration
 import com.frivasm.manosquehablan.notifications.NotificationManager as AppNotificationManager
 import com.frivasm.manosquehablan.workers.VideoWorkManager
 
 /**
+ * Application class for global app initialization
+ * Handles initial setup and pending work resumption
+ *
  * Clase Application para inicialización global de la app
  * Maneja la configuración inicial y reanudación de trabajos pendientes
  */
-class ManosQueHablanApp : Application() {
-    
+class ManosQueHablanApp : Application(), androidx.work.Configuration.Provider {
+
     companion object {
         private const val TAG = "ManosQueHablanApp"
     }
-    
+
+    override val workManagerConfiguration =
+        androidx.work.Configuration.Builder()
+            .setMinimumLoggingLevel(Log.INFO)
+            .build()
+
     override fun onCreate() {
         super.onCreate()
-        
+
         Log.i(TAG, "Inicializando aplicación Manos Que Hablan")
-        
-        // Crear canales de notificación
+
+        // Crear canales de notificación ANTES de cualquier uso de FGS/WorkManager
         setupNotificationChannels()
-        
+
         // Reanudar trabajos pendientes de WorkManager
         resumePendingWork()
-        
+
         Log.i(TAG, "Aplicación inicializada correctamente")
     }
     
@@ -58,4 +67,5 @@ class ManosQueHablanApp : Application() {
             Log.e(TAG, "Error verificando trabajos pendientes: ${e.message}")
         }
     }
+
 }

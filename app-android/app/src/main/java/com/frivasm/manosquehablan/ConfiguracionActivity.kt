@@ -3,7 +3,9 @@ package com.frivasm.manosquehablan
 import android.animation.ValueAnimator
 import android.animation.ArgbEvaluator
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Bundle
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
@@ -48,9 +50,10 @@ class ConfiguracionActivity : AppCompatActivity() {
             onBackPressedDispatcher.onBackPressed()
         }
         
-        // Configurar animación del título
+        // Configurar título con color estático (sin animación)
         val txtTitulo = findViewById<TextView>(R.id.txtTituloConfiguracion)
-        animarTituloColores(this, txtTitulo)
+        // DESHABILITADO - animarTituloColores(this, txtTitulo) para mantener natural
+        txtTitulo.setTextColor(ContextCompat.getColor(this, R.color.rojo)) // Color estático
         
         // Inicializar switches
         inicializarSwitches()
@@ -92,36 +95,28 @@ class ConfiguracionActivity : AppCompatActivity() {
         // Configurar click listener para "Privacidad"
         val cardPrivacidad = findViewById<MaterialCardView>(R.id.cardPrivacidad)
         cardPrivacidad.setOnClickListener {
-            DialogUtils.mostrarDialogoPrivacidad(this)
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.manosquehablan.org/politica-privacidad"))
+            startActivity(intent)
+        }
+
+        // Configurar click listener para "Términos de Uso"
+        val cardTerminosUso = findViewById<MaterialCardView>(R.id.cardTerminosUso)
+        cardTerminosUso.setOnClickListener {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.manosquehablan.org/terminos-uso.html"))
+            startActivity(intent)
         }
     }
     
-    private fun animarTituloColores(context: Context, textView: TextView) {
-        val colorRojo = ContextCompat.getColor(context, R.color.rojo)
-        val colorCeleste = ContextCompat.getColor(context, R.color.celeste)
-        
-        val animador = ValueAnimator.ofFloat(0f, 1f)
-        animador.duration = 3000 // Un poco más rápido pero aún suave
-        animador.repeatCount = ValueAnimator.INFINITE
-        animador.repeatMode = ValueAnimator.REVERSE
-        animador.interpolator = AccelerateDecelerateInterpolator() // Interpolador suave
-        
-        animador.addUpdateListener { animation ->
-            val progreso = animation.animatedValue as Float
-            val color = ArgbEvaluator().evaluate(progreso, colorRojo, colorCeleste) as Int
-            textView.setTextColor(color)
-        }
-        
-        // Guardar referencia del animador en el tag de la vista para poder cancelarlo después
-        textView.tag = animador
-        animador.start()
-    }
+    // DESHABILITADO - Función de animación de colores para mantener diseño natural
+    // private fun animarTituloColores(context: Context, textView: TextView) {
+    //     // Función comentada para evitar efectos visuales innecesarios
+    // }
     
     override fun onDestroy() {
         super.onDestroy()
-        // Cancelar animación para evitar memory leaks
-        val txtTitulo = findViewById<TextView>(R.id.txtTituloConfiguracion)
-        val animador = txtTitulo.tag as? ValueAnimator
-        animador?.cancel()
+        // DESHABILITADO - Cancelar animación ya no es necesario
+        // val txtTitulo = findViewById<TextView>(R.id.txtTituloConfiguracion)
+        // val animador = txtTitulo.tag as? ValueAnimator
+        // animador?.cancel()
     }
 }

@@ -97,6 +97,9 @@ class ProcesandoVideoActivity : AppCompatActivity() {
     private val activeAnimatorSets = mutableListOf<AnimatorSet>()
     private val activeHandlers = mutableListOf<Handler>()
 
+    // Handler principal para evitar memory leaks
+    private val mainHandler = Handler(Looper.getMainLooper())
+
     // Overlay para indicar que la navegación está bloqueada
     private lateinit var backBlockOverlay: View
     
@@ -490,7 +493,28 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 }
 
                 // Encolar trabajo de procesamiento
-                currentSessionId = VideoWorkManager.enqueueVideoProcessing(this@ProcesandoVideoActivity, videoPath)
+                try {
+                    currentSessionId = VideoWorkManager.enqueueVideoProcessing(this@ProcesandoVideoActivity, videoPath)
+                } catch (e: Exception) {
+                    Log.e("ProcesandoVideoActivity", "Error encolando trabajo WorkManager: ${e.message}")
+                    mostrarErrorYRegresarInicio("Error iniciando procesamiento. Inténtalo de nuevo.")
+                    return@launch
+                }
+
+                if (currentSessionId == null) {
+                    // Ya hay una subida activa, mostrar mensaje y regresar
+                    Log.w("ProcesandoVideoActivity", "Ya hay una subida activa - no se encoló nueva")
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@ProcesandoVideoActivity,
+                            "Ya hay una subida en progreso. Espera a que termine.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        finish()
+                    }
+                    return@launch
+                }
+
                 Log.i("ProcesandoVideoActivity", "Trabajo encolado con sesión: $currentSessionId")
 
                 // Observar progreso del trabajo
@@ -519,7 +543,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                         // Obtener progreso detallado del Worker
                         val progress = workInfo.progress
                         val state = progress.getString("state") ?: "procesando"
-                        val message = progress.getString("message") ?: "Procesando tu video..."
+                        val message = progress.getString("message") ?: "Procesando tu video, por favor espera..."
                         
                         txtProcesando.text = message
                         Log.d("ProcesandoVideoActivity", "Trabajo ejecutándose: $state - $message")
@@ -536,7 +560,7 @@ class ProcesandoVideoActivity : AppCompatActivity() {
 
                         // NO abrir la app automáticamente - dejar que el usuario toque la notificación
                         // Solo reset flag después de un delay para que vea el mensaje
-                        Handler(Looper.getMainLooper()).postDelayed({
+                        mainHandler.postDelayed({
                             if (!isFinishing && !isDestroyed) {
                                 isApiCallInProgress = false // Reset flag
                                 finish()
@@ -561,14 +585,26 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                         // Determinar si es error de conectividad o servidor
                         when {
                             errorMessage.contains("Sin conexión", ignoreCase = true) ||
-                            errorMessage.contains("conexión", ignoreCase = true) -> {
+                            errorMessage.contains("No hay conexión", ignoreCase = true) ||
+                            errorMessage.contains("conexión a internet", ignoreCase = true) ||
+                            errorMessage.contains("Wi-Fi o datos", ignoreCase = true) ||
+                            errorMessage.contains("UnknownHost", ignoreCase = true) -> {
                                 // Error de conectividad - usar diálogo específico
                                 mostrarErrorConectividad(ServerConfig.ServerStatus.SIN_CONEXION, currentVideoPath ?: "")
                             }
                             errorMessage.contains("Error del servidor", ignoreCase = true) ||
+                            errorMessage.contains("fuera de línea", ignoreCase = true) ||
                             errorMessage.contains("500", ignoreCase = true) -> {
                                 // Error del servidor
-                                mostrarErrorYRegresarInicio("Error del servidor. El servicio está temporalmente fuera de línea. Intenta más tarde.")
+                                mostrarErrorYRegresarInicio("El servidor está experimentando dificultades técnicas. Por favor, intenta más tarde.")
+                            }
+                            errorMessage.contains("conectar con el servidor", ignoreCase = true) -> {
+                                // Problema de conexión con el servidor
+                                mostrarErrorConectividad(ServerConfig.ServerStatus.SIN_CONEXION, currentVideoPath ?: "")
+                            }
+                            errorMessage.contains("Error inesperado", ignoreCase = true) -> {
+                                // Error inesperado - probablemente sin internet o problema de red
+                                mostrarErrorConectividad(ServerConfig.ServerStatus.ERROR_DESCONOCIDO, currentVideoPath ?: "")
                             }
                             else -> {
                                 // Error genérico
@@ -640,11 +676,12 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 enviarVideoAlServidor(path)
                 
             } catch (e: Exception) {
-                Log.e("ProcesandoVideoActivity", "Excepción durante verificación: ${e.message}")
+                Log.e("ProcesandoVideoActivity", "Excepción durante verificación: ${e.javaClass.simpleName} - ${e.message}")
                 isApiCallInProgress = false
                 
                 // Clasificar el error y mostrar el diálogo apropiado
                 val estadoError = when (e) {
+                    is java.net.UnknownHostException -> ServerConfig.ServerStatus.SIN_CONEXION
                     is java.net.ConnectException -> ServerConfig.ServerStatus.SIN_CONEXION
                     is java.net.SocketTimeoutException -> ServerConfig.ServerStatus.TIMEOUT
                     else -> ServerConfig.ServerStatus.ERROR_DESCONOCIDO
@@ -775,17 +812,28 @@ class ProcesandoVideoActivity : AppCompatActivity() {
                 // Mostrar error dialog según el tipo de código de respuesta
                 val codigoEstado = response.code()
                 when {
-                    codigoEstado >= 500 -> mostrarErrorYRegresarInicio("Error del servidor")
-                    codigoEstado >= 400 -> mostrarErrorYRegresarInicio("Error en la solicitud")
-                    else -> mostrarErrorYRegresarInicio("Error de conexión")
+                    codigoEstado >= 500 -> mostrarErrorYRegresarInicio("El servidor está experimentando dificultades técnicas. Por favor, intenta más tarde.")
+                    codigoEstado == 413 -> mostrarErrorYRegresarInicio("El video es demasiado grande. Intenta con uno más corto.")
+                    codigoEstado == 404 -> mostrarErrorYRegresarInicio("No encontramos el servicio de traducción. Contacta con soporte.")
+                    codigoEstado >= 400 -> mostrarErrorYRegresarInicio("Hubo un problema con tu solicitud. Revisa tu video e intenta de nuevo.")
+                    else -> mostrarErrorYRegresarInicio("No pudimos procesar tu video. Verifica tu conexión a internet.")
                 }
             }
         } catch (e: Exception) {
-            Log.e("ProcesandoVideoActivity", "Excepción durante llamada API: ${e.message}")
+            Log.e("ProcesandoVideoActivity", "Excepción durante llamada API: ${e.javaClass.simpleName} - ${e.message}")
             // Cancelar notificación de procesamiento
             NotificationManagerCompat.from(this@ProcesandoVideoActivity).cancel(NotificationHelper.NOTIFICATION_ID_PROCESSING)
             isApiCallInProgress = false // Reset flag
-            mostrarErrorYRegresarInicio("Error de conexión con el servidor")
+            
+            // Mensaje específico según el tipo de error
+            val mensajeError = when (e) {
+                is java.net.UnknownHostException -> "No hay conexión a internet. Activa Wi-Fi o datos móviles e intenta de nuevo."
+                is java.net.ConnectException -> "No pudimos conectar con el servidor. Verifica tu conexión a internet e intenta de nuevo."
+                is java.net.SocketTimeoutException -> "La conexión está muy lenta o el servidor no responde. Intenta más tarde."
+                else -> "Algo salió mal al procesar tu video: ${e.message ?: "Error desconocido"}. Intenta de nuevo."
+            }
+            
+            mostrarErrorYRegresarInicio(mensajeError)
         }
     }
     
@@ -984,22 +1032,22 @@ class ProcesandoVideoActivity : AppCompatActivity() {
             txtMensaje.text = mensaje
             txtSugerencia.text = when (estadoServidor) {
                 ServerConfig.ServerStatus.SIN_CONEXION ->
-                    "Activa tu Wi-Fi o datos móviles y vuelve a intentar"
+                    "Por favor, activa tu conexión Wi-Fi o datos móviles en la configuración de tu teléfono y vuelve a intentar."
                 ServerConfig.ServerStatus.TIMEOUT ->
-                    "Espera unos minutos y vuelve a intentar. El servidor puede estar congestionado"
+                    "Te recomendamos esperar unos minutos antes de intentar nuevamente. Si el problema persiste, verifica que tu conexión a internet sea estable."
                 ServerConfig.ServerStatus.ERROR_SERVIDOR ->
-                    "Nuestros técnicos están solucionando el problema. Regresa en unos minutos"
+                    "No te preocupes, nuestro equipo está solucionando el problema. Intenta de nuevo en unos minutos."
                 ServerConfig.ServerStatus.NO_DISPONIBLE ->
-                    "El servicio volverá pronto. Te recomendamos esperar un poco"
+                    "El servicio volverá a estar disponible pronto de forma automática. Gracias por tu paciencia."
                 else ->
-                    "Si el problema persiste, contacta nuestro soporte técnico"
+                    "Verifica que tengas conexión a internet activa. Si el problema continúa, por favor contacta a nuestro soporte técnico."
             }
             
             val dialog = builder.setView(view).setCancelable(false).create()
             dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
             
             // Animación del título
-            DialogUtils.animarTituloColores(this@ProcesandoVideoActivity, txtTitulo)
+            DialogUtils.establecerColorTituloEstatico(this@ProcesandoVideoActivity, txtTitulo)
 
             btnAceptar.setOnClickListener {
                 dialog.dismiss()
@@ -1043,6 +1091,9 @@ class ProcesandoVideoActivity : AppCompatActivity() {
         super.onDestroy()
         Log.d("ProcesandoVideoActivity", "onDestroy() called - isApiCallInProgress=$isApiCallInProgress, currentSessionId=$currentSessionId")
 
+        // Limpiar handler principal para prevenir memory leaks
+        mainHandler.removeCallbacksAndMessages(null)
+
         // Detener todas las animaciones para evitar memory leaks
         stopLoadingAnimation()
 
@@ -1078,8 +1129,10 @@ class ProcesandoVideoActivity : AppCompatActivity() {
 
         runOnUiThread {
             // Regresar al inicio después de un breve delay
-            Handler(Looper.getMainLooper()).postDelayed({
-                mostrarErrorYRegresarInicio("Video guardado pero requiere nueva traducción")
+            mainHandler.postDelayed({
+                if (!isFinishing && !isDestroyed) {
+                    mostrarErrorYRegresarInicio("Video guardado pero requiere nueva traducción")
+                }
             }, 2000) // Tiempo para que el usuario lea el diálogo
         }
     }

@@ -19,21 +19,16 @@ class PermissionHelper(private val activity: Activity) {
             Manifest.permission.RECORD_AUDIO
         )
 
-        // Permisos de medios para Android 13+
+        // Permisos de medios granulares para Android 13+ (API 33+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permisos.add(Manifest.permission.READ_MEDIA_VIDEO)
             permisos.add(Manifest.permission.READ_MEDIA_AUDIO)
             permisos.add(Manifest.permission.READ_MEDIA_IMAGES)
-        }
-
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+            permisos.add(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            // Permisos legacy para versiones anteriores a Android 13
             permisos.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             permisos.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-        }
-
-        // Agregar permiso de notificaciones para Android 13+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permisos.add(Manifest.permission.POST_NOTIFICATIONS)
         }
 
         val noOtorgados = permisos.filter {
@@ -53,22 +48,16 @@ class PermissionHelper(private val activity: Activity) {
             Manifest.permission.RECORD_AUDIO
         )
 
-        // Permisos de medios para Android 13+
+        // Permisos de medios granulares para Android 13+ (API 33+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permisos.add(Manifest.permission.READ_MEDIA_VIDEO)
             permisos.add(Manifest.permission.READ_MEDIA_AUDIO)
             permisos.add(Manifest.permission.READ_MEDIA_IMAGES)
-        }
-
-        // Agregar permisos de almacenamiento para versiones anteriores
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+            permisos.add(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            // Permisos legacy para versiones anteriores a Android 13
             permisos.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             permisos.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-        }
-
-        // Agregar permiso de notificaciones para Android 13+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permisos.add(Manifest.permission.POST_NOTIFICATIONS)
         }
 
         return permisos.all {

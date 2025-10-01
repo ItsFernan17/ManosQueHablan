@@ -7,6 +7,7 @@ import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
+import com.frivasm.manosquehablan.config.ServerConfig
 
 data class RespuestaProcesamiento(
     val video_url: String,
@@ -22,11 +23,11 @@ data class RespuestaHealth(
 
 interface ApiServicio {
     @Multipart
-    @POST("upload_video")
+    @POST(ServerConfig.Endpoints.UPLOAD_VIDEO)
     suspend fun procesarVideo(
         @Part video: MultipartBody.Part
     ): Response<RespuestaProcesamiento>
-    
-    @GET("health")
+
+    @GET(ServerConfig.Endpoints.HEALTH_CHECK)
     suspend fun verificarSalud(): Response<RespuestaHealth>
 }

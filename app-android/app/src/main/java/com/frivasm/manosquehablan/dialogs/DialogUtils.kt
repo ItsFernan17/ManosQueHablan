@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
 import android.media.MediaScannerConnection
+import android.net.Uri
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -20,26 +21,15 @@ import java.io.File
 
 object DialogUtils {
 
-    // Función auxiliar para animar títulos - debe estar al inicio
-    fun animarTituloColores(context: Context, textView: TextView) {
+    // DESHABILITADO - Función auxiliar para animar títulos (manteniendo diseño natural)
+    // fun animarTituloColores(context: Context, textView: TextView) {
+    //     // Función comentada para evitar efectos visuales innecesarios
+    // }
+    
+    // Función auxiliar para establecer color estático de títulos
+    fun establecerColorTituloEstatico(context: Context, textView: TextView) {
         val colorRojo = androidx.core.content.ContextCompat.getColor(context, R.color.rojo)
-        val colorCeleste = androidx.core.content.ContextCompat.getColor(context, R.color.celeste)
-
-        val animador = android.animation.ValueAnimator.ofFloat(0f, 1f)
-        animador.duration = 3000 // Un poco más rápido pero aún suave
-        animador.repeatCount = android.animation.ValueAnimator.INFINITE
-        animador.repeatMode = android.animation.ValueAnimator.REVERSE
-        animador.interpolator = android.view.animation.AccelerateDecelerateInterpolator() // Interpolador suave
-
-        animador.addUpdateListener { animation ->
-            val progreso = animation.animatedValue as Float
-            val color = android.animation.ArgbEvaluator().evaluate(progreso, colorRojo, colorCeleste) as Int
-            textView.setTextColor(color)
-        }
-
-        // Guardar referencia del animador en el tag de la vista para poder cancelarlo después
-        textView.tag = animador
-        animador.start()
+        textView.setTextColor(colorRojo) // Color estático rojo
     }
 
     // Función auxiliar para transformar texto de transcripción
@@ -88,13 +78,12 @@ object DialogUtils {
             onSiguiente() // Ir al segundo diálogo
         }
 
-        // Animación del título con colores rojo y celeste
-        animarTituloColores(context, txtTitulo)
+        // Título con color estático (sin animación)
+        establecerColorTituloEstatico(context, txtTitulo)
 
-        // Cancelar animación cuando el diálogo se cierre
+        // DESHABILITADO - Cancelar animación cuando el diálogo se cierre
         dialog.setOnDismissListener {
-            val animador = txtTitulo.tag as? android.animation.ValueAnimator
-            animador?.cancel()
+            // Ya no hay animación que cancelar
         }
 
         dialog.show()
@@ -104,7 +93,10 @@ object DialogUtils {
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.dialog_uso_responsable, null)
         val btnSiguiente = view.findViewById<LinearLayout>(R.id.btnSiguienteUsoResponsable)
-        val txtTitulo = (view as LinearLayout).getChildAt(0) as TextView
+        // El título ahora está dentro del ScrollView > LinearLayout > TextView
+        val scrollView = (view as LinearLayout).getChildAt(0) as android.widget.ScrollView
+        val contentLayout = scrollView.getChildAt(0) as LinearLayout
+        val txtTitulo = contentLayout.getChildAt(0) as TextView
 
         val dialog = AlertDialog.Builder(context)
             .setView(view)
@@ -118,13 +110,12 @@ object DialogUtils {
             onSiguiente()
         }
 
-        // Animación del título con colores rojo y celeste
-        animarTituloColores(context, txtTitulo)
+        // Título con color estático (sin animación)
+        establecerColorTituloEstatico(context, txtTitulo)
 
-        // Cancelar animación cuando el diálogo se cierre
+        // DESHABILITADO - Cancelar animación cuando el diálogo se cierre
         dialog.setOnDismissListener {
-            val animador = txtTitulo.tag as? android.animation.ValueAnimator
-            animador?.cancel()
+            // Ya no hay animación que cancelar
         }
 
         dialog.show()
@@ -155,12 +146,11 @@ object DialogUtils {
         }
 
         // Animación del título con colores rojo y celeste
-        animarTituloColores(context, txtTitulo)
+        establecerColorTituloEstatico(context, txtTitulo)
 
         // Cancelar animación cuando el diálogo se cierre
         dialog.setOnDismissListener {
-            val animador = txtTitulo.tag as? android.animation.ValueAnimator
-            animador?.cancel()
+            // Ya no hay animación que cancelar
         }
 
         dialog.show()
@@ -243,7 +233,7 @@ object DialogUtils {
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         // Animar colores del título
-        animarTituloColores(context, txtTitulo)
+        establecerColorTituloEstatico(context, txtTitulo)
 
         var mediaPlayer: MediaPlayer? = null
 
@@ -338,45 +328,20 @@ object DialogUtils {
         }
 
         // Animación del título con colores rojo y celeste
-        animarTituloColores(context, txtTitulo)
+        establecerColorTituloEstatico(context, txtTitulo)
 
         // Cancelar animación cuando el diálogo se cierre
         dialog.setOnDismissListener {
-            val animador = txtTitulo.tag as? android.animation.ValueAnimator
-            animador?.cancel()
+            // Ya no hay animación que cancelar
         }
 
         dialog.show()
     }
 
-    fun mostrarDialogoPrivacidad(context: Context) {
-        val inflater = LayoutInflater.from(context)
-        val view = inflater.inflate(R.layout.dialog_privacidad, null)
-        val txtTitulo = view.findViewById<TextView>(R.id.txtTituloPrivacidad)
-        val btnAceptar = view.findViewById<LinearLayout>(R.id.btnAceptarPrivacidad)
 
-        val dialog = AlertDialog.Builder(context)
-            .setView(view)
-            .setCancelable(true)
-            .create()
-
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-        // Botón para cerrar el diálogo
-        btnAceptar.setOnClickListener {
-            dialog.dismiss()
-        }
-
-        // Animación del título con colores rojo y celeste
-        animarTituloColores(context, txtTitulo)
-
-        // Cancelar animación cuando el diálogo se cierre
-        dialog.setOnDismissListener {
-            val animador = txtTitulo.tag as? android.animation.ValueAnimator
-            animador?.cancel()
-        }
-
-        dialog.show()
+    fun mostrarDialogoTerminosUso(context: Context) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.manosquehablan.org/terminos-uso.html"))
+        context.startActivity(intent)
     }
 
     fun mostrarDialogoPreguntasFrecuentes(context: Context) {
@@ -398,12 +363,11 @@ object DialogUtils {
         }
 
         // Animación del título con colores rojo y celeste
-        animarTituloColores(context, txtTitulo)
+        establecerColorTituloEstatico(context, txtTitulo)
 
         // Cancelar animación cuando el diálogo se cierre
         dialog.setOnDismissListener {
-            val animador = txtTitulo.tag as? android.animation.ValueAnimator
-            animador?.cancel()
+            // Ya no hay animación que cancelar
         }
 
         dialog.show()
@@ -426,7 +390,7 @@ object DialogUtils {
             dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
             // Animar colores del título
-            animarTituloColores(context, txtTitulo)
+            establecerColorTituloEstatico(context, txtTitulo)
 
             // Leer el contenido del archivo de transcripción
             val contenidoOriginal = archivoTranscripcion.readText(Charsets.UTF_8)
@@ -467,12 +431,11 @@ object DialogUtils {
         }
 
         // Animación del título con colores rojo y celeste
-        animarTituloColores(context, txtTitulo)
+        establecerColorTituloEstatico(context, txtTitulo)
 
         // Cancelar animación cuando el diálogo se cierre
         dialog.setOnDismissListener {
-            val animador = txtTitulo.tag as? android.animation.ValueAnimator
-            animador?.cancel()
+            // Ya no hay animación que cancelar
         }
 
         dialog.show()
@@ -516,7 +479,7 @@ object DialogUtils {
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         // Animar colores del título
-        animarTituloColores(context, txtTitulo)
+        establecerColorTituloEstatico(context, txtTitulo)
 
         btnCancelar.setOnClickListener {
             dialog.dismiss()

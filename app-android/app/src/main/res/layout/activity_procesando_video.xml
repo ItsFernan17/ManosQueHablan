@@ -273,7 +273,7 @@
             android:id="@+id/txtProcesando"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Procesando video..."
+            android:text="Procesando video…"
             android:textSize="24sp"
             android:textColor="@color/texto_principal"
             android:fontFamily="@font/poppins_semibold"

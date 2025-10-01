@@ -6,14 +6,14 @@ import asyncio
 import tempfile
 import logging
 from typing import Tuple
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from gtts import gTTS
 
 from app.evaluator import evaluate_video_to_file
-from app.utils import ensure_dirs, unique_name, RESULTS_DIR
+from app.utils import ensure_dirs, unique_name, RESULTS_DIR, capitalize_first_letter
 from app.utils_ffmpeg import (
     build_ass_file_per_detection,
     generate_tts_per_detection_items,
@@ -47,7 +47,7 @@ from app.cleanup import register_results_cleaner
 # -----------------------
 ensure_dirs()
 
-app = FastAPI(title="Sign Translator API", version="2.2.0")
+app = FastAPI(title="Manos Que Hablan", version="1.0.0")
 
 # Semáforo para limitar concurrencia y proteger IA
 processing_semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
@@ -57,20 +57,38 @@ logger = get_app_logger()
 app.add_middleware(RequestIdAndLoggingMiddleware, logger=logger)
 app.add_middleware(MaxUploadSizeMiddleware, max_bytes=MAX_UPLOAD_MB * 1024 * 1024)
 
+@app.middleware("http")
+async def timeout_middleware(request: Request, call_next):
+    try:
+        return await asyncio.wait_for(call_next(request), timeout=600.0)  # 10 minutos
+    except asyncio.TimeoutError:
+        return JSONResponse(
+            status_code=408,
+            content={"error": "Procesamiento tomó demasiado tiempo"}
+        )
+
 # CORS (ajusta origins en producción)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://www.manosquehablan.org/", "https://manosquehablan.org/", "http://localhost:8000", "http://127.0.0.1:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+web_dir = os.path.join(os.path.dirname(__file__), "web")
 
 # Archivos estáticos
 app.mount(
     "/static",
-    StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),
-    name="static",
+    StaticFiles(directory=static_dir),
+    name="static"
+)
+
+app.mount(
+    "/web",
+    StaticFiles(directory=web_dir),
+    name="web"
 )
 
 # Limpieza periódica por TTL (resultados)
@@ -113,84 +131,33 @@ def health():
 
 
 @app.get("/")
-def root():
+def root(request: Request):
+    # Si es una petición de navegador, servir la página HTML
+    accept_header = request.headers.get("accept", "")
+    if "text/html" in accept_header:
+        html_path = os.path.join(os.path.dirname(__file__), "web", "index.html")
+        if os.path.exists(html_path):
+            with open(html_path, "r", encoding="utf-8") as f:
+                return HTMLResponse(content=f.read(), status_code=200)
+
+    # Para requests API o otros, devolver JSON
     return {
         "status": "ok",
         "service": "Sign Translator API",
         "version": "2.2.0",
         "endpoints": {
             "health": "/health",
-            "upload_video (final)": "/upload_video",
-            "evaluate-video (testing)": "/evaluate-video",
+            "upload_video": "/upload_video",
             "static": "/static/*",
+            "web": "/web/*",
             "download": "/download/{session_id}/{filename}",
+            "status": "/status/{session_id}",
         },
     }
 
-# -------------------------------------------------------------------
-# 1) TESTING: devuelve detecciones + video con overlays simples
-# -------------------------------------------------------------------
-@app.post("/evaluate-video")
-async def evaluate_video_endpoint(
-    file: UploadFile = File(..., description="Video a procesar (campo: file)"),
-    threshold: float = Form(0.80),
-    margin_frame: int = Form(1),
-    delay_frames: int = Form(3),
-):
-    if not (file.content_type or "").startswith("video"):
-        raise HTTPException(status_code=400, detail="El archivo debe ser un video.")
-
-    session_id, session_dir = create_session_dir()
-    create_processing_lock(session_dir)
-    
-    input_name = unique_name("in", "mp4")
-    input_path = os.path.join(session_dir, input_name)
-
-    try:
-        # Guardado robusto por chunks + validación
-        await save_upload_to_path(file, input_path)
-        size = os.path.getsize(input_path)
-        logger.info(f"file_saved path={input_path} size={size}B")
-        if size == 0:
-            remove_processing_lock(session_dir)
-            raise HTTPException(status_code=400, detail="No se recibió contenido en el campo 'file'.")
-        if not is_valid_media(input_path):
-            remove_processing_lock(session_dir)
-            raise HTTPException(status_code=400, detail="El video recibido está vacío o corrupto.")
-
-        out_name = unique_name("resultado_test", "mp4")
-        out_path = os.path.join(session_dir, out_name)
-
-        # PROTEGIDO (FFmpeg / pesado)
-        detections, meta = await stage(
-            "evaluate_video_to_file(draw=True)",
-            evaluate_video_to_file,
-            video_path=input_path,
-            out_mp4_path=out_path,
-            threshold=threshold,
-            margin_frame=margin_frame,
-            delay_frames=delay_frames,
-            draw=True,
-        )
-
-        remove_processing_lock(session_dir)
-        public_url = f"/static/results/{session_id}/{out_name}"
-
-        return JSONResponse(
-            {
-                "success": True,
-                "detections": detections,
-                "meta": meta,
-                "output_video_url": public_url,
-            }
-        )
-
-    except Exception as e:
-        remove_processing_lock(session_dir)
-        raise HTTPException(status_code=500, detail=str(e))
 
 # -------------------------------------------------------------------
-# 2) PRODUCCIÓN: /upload_video (FINAL para el usuario)
+# PRODUCCIÓN: /upload_video
 #    - Campo: "video"
 #    - Genera: Video con SUBS + AUDIO TTS embebido (sin cambio de resolución)
 #    - Respuesta: { video_url, audio_url, texto_url }
@@ -270,7 +237,7 @@ async def upload_video_endpoint(
 
             # Transcripción (texto continuo) - guardado DIRECTO (más simple)
             transcript = (
-                ". ".join([str(d.get("label", "")).capitalize()
+                ". ".join([capitalize_first_letter(str(d.get("label", "")))
                            for d in detections if d.get("label")])
                 if detections else "Sin detecciones válidas."
             )
@@ -381,112 +348,8 @@ async def upload_video_endpoint(
             remove_processing_lock(session_dir)
             raise HTTPException(status_code=500, detail=str(e))
 
-# -------------------------------------------------------------------
-# 3) TEST simple con un solo MP3 (ahora también por carpeta de sesión)
-# -------------------------------------------------------------------
-@app.post("/test")
-async def test_endpoint(
-    video: UploadFile = File(..., description="Video a procesar (campo: video)"),
-    threshold: float = Form(0.80),
-    margin_frame: int = Form(1),
-    delay_frames: int = Form(3),
-    tts_lang: str = Form("es"),
-):
-    if not (video.content_type or "").startswith("video"):
-        raise HTTPException(status_code=400, detail="El archivo debe ser un video.")
-
-    # Carpeta de sesión dedicada
-    session_id, session_dir = create_session_dir()
-    create_processing_lock(session_dir)
-
-    input_name = unique_name("in", "mp4")
-    input_path = os.path.join(session_dir, input_name)
-
-    try:
-        # Guardado robusto por chunks + validación
-        await save_upload_to_path(video, input_path)
-        size = os.path.getsize(input_path)
-        logger.info(f"file_saved path={input_path} size={size}B")
-        if size == 0:
-            remove_processing_lock(session_dir)
-            raise HTTPException(status_code=400, detail="No se recibió contenido en el campo 'video'.")
-        if not is_valid_media(input_path):
-            remove_processing_lock(session_dir)
-            raise HTTPException(status_code=400, detail="El video recibido está vacío o corrupto.")
-
-        out_video_name = unique_name("resultado", "mp4")
-        out_video_path = os.path.join(session_dir, out_video_name)
-
-        # PROTEGIDO
-        detections, meta = await stage(
-            "evaluate_video_to_file(draw=True)",
-            evaluate_video_to_file,
-            video_path=input_path,
-            out_mp4_path=out_video_path,
-            threshold=threshold,
-            margin_frame=margin_frame,
-            delay_frames=delay_frames,
-            draw=True,
-        )
-
-        # Transcripción detallada
-        out_text_name = unique_name("transcripcion", "txt")
-        out_text_path = os.path.join(session_dir, out_text_name)
-        transcript_lines = []
-        if detections:
-            for d in detections:
-                start_s = d.get("start_time", 0.0)
-                end_s = d.get("end_time", 0.0)
-                label = d.get("label", "")
-                prob = d.get("prob", 0.0)
-                transcript_lines.append(f"[{secs_to_hhmmss_mmm(start_s)} → {secs_to_hhmmss_mmm(end_s)}] {label} ({prob:.1f}%)")
-        else:
-            transcript_lines.append("(Sin detecciones sobre el umbral)")
-
-        with open(out_text_path, "w", encoding="utf-8") as tf:
-            tf.write("\n".join(transcript_lines))
-
-        # TTS simple (PROTEGIDO)
-        out_audio_name = unique_name("audio", "mp3")
-        out_audio_path = os.path.join(session_dir, out_audio_name)
-        try:
-            spoken_text = (
-                ". ".join([d.get("label", "") for d in detections if d.get("label")])
-                if detections
-                else "Sin detecciones válidas."
-            )
-            await stage(
-                "gTTS_simple",
-                lambda txt, lang, outp: gTTS(text=txt, lang=lang).save(outp),
-                spoken_text, tts_lang, out_audio_path
-            )
-        except Exception:
-            out_audio_path = None
-
-        remove_processing_lock(session_dir)
-
-        # URLs por sesión
-        resp = {
-            "video_url": f"/static/results/{session_id}/{out_video_name}",
-            "audio_url": f"/static/results/{session_id}/{out_audio_name}" if out_audio_path else "",
-            "texto_url": f"/static/results/{session_id}/{out_text_name}",
-        }
-
-        return JSONResponse(resp)
-
-    except Exception as e:
-        remove_processing_lock(session_dir)
-        raise HTTPException(status_code=500, detail=str(e))
 
 
-def secs_to_hhmmss_mmm(s: float) -> str:
-    """Convierte segundos float a 'hh:mm:ss.mmm'."""
-    msec = int(round((s - int(s)) * 1000))
-    secs_total = int(s)
-    h = secs_total // 3600
-    m = (secs_total % 3600) // 60
-    sec = secs_total % 60
-    return f"{h:02d}:{m:02d}:{sec:02d}.{msec:03d}"
 
 
 # -------------------------------------------------------------------

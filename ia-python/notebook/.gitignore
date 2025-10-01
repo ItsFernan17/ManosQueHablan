@@ -1,0 +1,9 @@
+# Ignorar datasets
+/Dataset
+
+# Ignorar carpetas de modelos y datos
+models/
+data/
+
+# Permitir archivos de notebook
+!*.ipynb

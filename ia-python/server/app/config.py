@@ -2,7 +2,7 @@
 import os
 
 # Tamaño máx de subida en MB (responde 413 si se excede)
-MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "200"))
+MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "50"))
 
 # Concurrencia máxima para tareas pesadas (FFmpeg/TTS) - REDUCIDA para proteger IA
 FFMPEG_CONCURRENCY = int(os.getenv("FFMPEG_CONCURRENCY", "1"))  # Solo 1 FFmpeg concurrente
@@ -17,4 +17,4 @@ PORT = int(os.getenv("PORT", "8000"))
 GUNICORN_TIMEOUT = int(os.getenv("GUNICORN_TIMEOUT", "180"))
 
 # Límites de recursos para proteger IA
-MAX_CONCURRENT_REQUESTS = int(os.getenv("MAX_CONCURRENT_REQUESTS", "2"))  # Máximo 2 videos simultáneos
+MAX_CONCURRENT_REQUESTS = int(os.getenv("MAX_CONCURRENT_REQUESTS", "1"))

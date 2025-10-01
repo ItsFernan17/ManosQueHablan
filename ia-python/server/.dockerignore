@@ -11,5 +11,6 @@ __pycache__/
 .vscode/
 .idea/
 data/
-app/static/uploads
 app/static/results
+Dockerfile
+docker-compose.yml

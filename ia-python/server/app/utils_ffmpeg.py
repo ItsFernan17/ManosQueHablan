@@ -35,10 +35,8 @@ def get_video_duration_seconds(path: str) -> float:
 # ---------------------------
 
 def _clean_label(text: str) -> str:
-    t = (text or "").strip()
-    if not t:
-        return ""
-    return t[0].upper() + t[1:]
+    from app.utils import capitalize_first_letter
+    return capitalize_first_letter(text or "")
 
 
 def _group_by_gaps(dets: List[Dict[str, Any]], gap_seconds: float = 1.2) -> List[List[Dict[str, Any]]]:
@@ -89,7 +87,7 @@ def _build_sentence_for_group(group: List[Dict[str, Any]]) -> str:
 def build_ass_file_per_detection(
    detections: List[Dict[str, Any]],
     ass_path: str,
-    font: str = "Arial",       # Fuente compatible universalmente
+    font: str = "Poppins",       # Fuente compatible universalmente
     font_size: int = 50,       # Tamaño optimizado para 720p
     margin_v: int = 84,        # distancia desde el borde inferior
     subtitle_delay: float = 0.0

@@ -1,0 +1,30 @@
+[Script Info]
+Title: Subs estilo pill
+ScriptType: v4.00+
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+PlayResX: 720
+PlayResY: 1280
+
+[V4+ Styles]
+; Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+; PrimaryColour  -> texto blanco (opaco)
+; OutlineColour  -> color de la CAJA (negro con ~85% opacidad)
+; BackColour     -> sombra/halo (ligero)
+Style: Pill,Poppins,50,&H00FFFFFF,&H000000FF,&H2A000000,&H5A000000,-1,0,0,0,100,100,0,0,3,10,0,2,30,30,84,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:03.32,0:00:04.52,Pill,,0,0,0,,{\an2\bord10\be2}Hola
+Dialogue: 0,0:00:07.77,0:00:08.97,Pill,,0,0,0,,{\an2\bord10\be2}Feliz
+Dialogue: 0,0:00:11.76,0:00:12.96,Pill,,0,0,0,,{\an2\bord10\be2}Reír
+Dialogue: 0,0:00:16.07,0:00:17.27,Pill,,0,0,0,,{\an2\bord10\be2}Dolor
+Dialogue: 0,0:00:19.39,0:00:20.59,Pill,,0,0,0,,{\an2\bord10\be2}¿Por qué?
+Dialogue: 0,0:00:24.07,0:00:25.27,Pill,,0,0,0,,{\an2\bord10\be2}¿Cuál?
+Dialogue: 0,0:00:29.25,0:00:30.45,Pill,,0,0,0,,{\an2\bord10\be2}¿Dónde?
+Dialogue: 0,0:00:35.22,0:00:36.42,Pill,,0,0,0,,{\an2\bord10\be2}Cantar
+Dialogue: 0,0:00:39.70,0:00:40.90,Pill,,0,0,0,,{\an2\bord10\be2}Estudiar
+Dialogue: 0,0:00:43.32,0:00:44.52,Pill,,0,0,0,,{\an2\bord10\be2}Desconectar
+Dialogue: 0,0:00:46.64,0:00:47.84,Pill,,0,0,0,,{\an2\bord10\be2}Ser
+Dialogue: 0,0:00:53.11,0:00:54.31,Pill,,0,0,0,,{\an2\bord10\be2}Adiós

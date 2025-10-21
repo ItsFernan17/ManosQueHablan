@@ -79,4 +79,15 @@ object PreferenciasHelper {
         val prefs = context.getSharedPreferences(NOMBRE_PREF, Context.MODE_PRIVATE)
         return !prefs.getBoolean("recordatorio_grabacion_deshabilitado", false)
     }
+
+    // Preferencias para diálogo de actualización 1.1.0
+    fun marcarActualizacion110Mostrada(context: Context) {
+        val prefs = context.getSharedPreferences(NOMBRE_PREF, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("actualizacion_110_mostrada", true).apply()
+    }
+
+    fun deberMostrarActualizacion110(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(NOMBRE_PREF, Context.MODE_PRIVATE)
+        return !prefs.getBoolean("actualizacion_110_mostrada", false)
+    }
 }

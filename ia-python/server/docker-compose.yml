@@ -6,7 +6,7 @@ services:
     image: manosquehablan:latest
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "0.0.0.0:8000:8000"
     deploy:
       resources:
         limits:
@@ -19,6 +19,6 @@ services:
       --host 0.0.0.0
       --port 8000
       --http h11
-      --log-level debug
+      --log-level info
       --timeout-keep-alive 300
       --timeout-graceful-shutdown 300

@@ -124,10 +124,20 @@ class InicioAppActivity : AppCompatActivity() {
             btnNuevoVideo.postDelayed({
                 DialogUtils.mostrarDialogoBienvenida(this)
             }, 500)
-        }
+        } 
+        // DESACTIVADO TEMPORALMENTE - Modal de actualización 1.1.0
+        // else if (PreferenciasHelper.deberMostrarActualizacion110(this)) {
+        //     // Si no es primera vez, verificar si debe mostrar el diálogo de actualización 1.1.0
+        //     btnNuevoVideo.postDelayed({
+        //         DialogUtils.mostrarDialogoNuevaActualizacion(this)
+        //     }, 500)
+        // }
         
-        // PARA PRUEBAS: Descomentar la siguiente línea para resetear y ver el diálogo nuevamente
-        // PreferenciasHelper.marcarBienvenidaMostrada(this) // comentar esta línea para resetear
+        // PARA PRUEBAS: Descomentar las siguientes líneas para resetear y ver los diálogos nuevamente
+        // PreferenciasHelper.marcarBienvenidaMostrada(this) // comentar esta línea para resetear bienvenida
+        // PreferenciasHelper.marcarActualizacion110Mostrada(this) // comentar esta línea para resetear actualización
+        
+        // PARA ACTIVAR EN 1.1.0: Descomentar el bloque else if de arriba
     }
     
     /**

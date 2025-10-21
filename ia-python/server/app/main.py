@@ -70,7 +70,7 @@ async def timeout_middleware(request: Request, call_next):
 # CORS (ajusta origins en producción)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://www.manosquehablan.org/", "https://manosquehablan.org/", "http://localhost:8000", "http://127.0.0.1:8000"],
+    allow_origins=["https://www.manosquehablan.org/", "https://manosquehablan.org/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

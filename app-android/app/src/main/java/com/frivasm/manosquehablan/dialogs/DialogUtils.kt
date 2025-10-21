@@ -27,6 +27,30 @@ object DialogUtils {
     // }
     
     // Función auxiliar para establecer color estático de títulos
+    /**
+     * Anima el color del título entre rojo y celeste
+     */
+    fun animarTituloColores(context: Context, textView: TextView) {
+        val colorRojo = androidx.core.content.ContextCompat.getColor(context, R.color.rojo)
+        val colorCeleste = androidx.core.content.ContextCompat.getColor(context, R.color.celeste)
+        
+        val animador = android.animation.ValueAnimator.ofFloat(0f, 1f)
+        animador.duration = 3000 // Duración suave
+        animador.repeatCount = android.animation.ValueAnimator.INFINITE
+        animador.repeatMode = android.animation.ValueAnimator.REVERSE
+        animador.interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+        
+        animador.addUpdateListener { animation ->
+            val progreso = animation.animatedValue as Float
+            val color = android.animation.ArgbEvaluator().evaluate(progreso, colorRojo, colorCeleste) as Int
+            textView.setTextColor(color)
+        }
+        
+        // Guardar referencia del animador en el tag de la vista para poder cancelarlo después
+        textView.tag = animador
+        animador.start()
+    }
+
     fun establecerColorTituloEstatico(context: Context, textView: TextView) {
         val colorRojo = androidx.core.content.ContextCompat.getColor(context, R.color.rojo)
         textView.setTextColor(colorRojo) // Color estático rojo
@@ -340,7 +364,7 @@ object DialogUtils {
 
 
     fun mostrarDialogoTerminosUso(context: Context) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.manosquehablan.org/terminos-uso.html"))
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.manosquehablan.org/terminos-uso"))
         context.startActivity(intent)
     }
 
@@ -492,5 +516,90 @@ object DialogUtils {
         }
 
         dialog.show()
+    }
+
+    fun mostrarDialogoNuevaActualizacion(context: Context) {
+        val inflater = LayoutInflater.from(context)
+        val view = inflater.inflate(R.layout.dialog_nueva_actualizacion, null)
+        val btnAceptar = view.findViewById<View>(R.id.btnAceptarActualizacion)
+        val txtTitulo = view.findViewById<TextView>(R.id.txtTituloActualizacion)
+        val txtDestacado = view.findViewById<TextView>(R.id.txtDestacado)
+        val contenedorModal = view.findViewById<LinearLayout>(R.id.contenedorModal)
+
+        val dialog = AlertDialog.Builder(context)
+            .setView(view)
+            .setCancelable(false)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        btnAceptar.setOnClickListener {
+            // Marcar que ya se mostró la actualización 1.1.0
+            com.frivasm.manosquehablan.helpers.PreferenciasHelper.marcarActualizacion110Mostrada(context)
+            dialog.dismiss()
+        }
+
+        // Animación del título principal con colores rojo y celeste
+        animarTituloColores(context, txtTitulo)
+        
+        // Animación del texto destacado también
+        animarTituloColores(context, txtDestacado)
+
+        // Animación del borde del modal
+        animarBordeModal(context, contenedorModal)
+
+        // Cancelar animación cuando el diálogo se cierre
+        dialog.setOnDismissListener {
+            // Cancelar animaciones si existen
+            txtTitulo.tag?.let { animador ->
+                if (animador is android.animation.ValueAnimator) {
+                    animador.cancel()
+                }
+            }
+            txtDestacado.tag?.let { animador ->
+                if (animador is android.animation.ValueAnimator) {
+                    animador.cancel()
+                }
+            }
+            contenedorModal.tag?.let { animador ->
+                if (animador is android.animation.ValueAnimator) {
+                    animador.cancel()
+                }
+            }
+        }
+
+        dialog.show()
+    }
+
+    /**
+     * Anima el borde del modal con los mismos colores que los títulos
+     */
+    private fun animarBordeModal(context: Context, contenedor: LinearLayout) {
+        val colorRojo = androidx.core.content.ContextCompat.getColor(context, R.color.rojo)
+        val colorCeleste = androidx.core.content.ContextCompat.getColor(context, R.color.celeste)
+        
+        val animador = android.animation.ValueAnimator.ofFloat(0f, 1f)
+        animador.duration = 3000 // Misma duración que los títulos
+        animador.repeatCount = android.animation.ValueAnimator.INFINITE
+        animador.repeatMode = android.animation.ValueAnimator.REVERSE
+        animador.interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+        
+        animador.addUpdateListener { animation ->
+            val progreso = animation.animatedValue as Float
+            val color = android.animation.ArgbEvaluator().evaluate(progreso, colorRojo, colorCeleste) as Int
+            
+            // Crear un nuevo GradientDrawable con el color animado para el borde
+            val drawable = android.graphics.drawable.GradientDrawable()
+            drawable.shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+            drawable.cornerRadius = 16f * context.resources.displayMetrics.density // Radio de esquinas
+            drawable.setColor(androidx.core.content.ContextCompat.getColor(context, android.R.color.white))
+            drawable.setStroke((3 * context.resources.displayMetrics.density).toInt(), color) // Borde de 3dp
+            
+            contenedor.background = drawable
+        }
+        
+        // Guardar referencia del animador en el tag de la vista para poder cancelarlo después
+        contenedor.tag = animador
+        animador.start()
     }
 }

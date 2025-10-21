@@ -1,0 +1,11 @@
+{
+  "status": "uploading",
+  "required": [
+    "video.mp4",
+    "audio.mp3",
+    "transcript.txt"
+  ],
+  "have": [],
+  "last_update": 1760117462.1691802,
+  "created_at": 1760117462.1691802
+}

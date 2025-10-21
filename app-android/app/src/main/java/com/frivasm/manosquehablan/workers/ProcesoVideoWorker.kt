@@ -156,31 +156,24 @@ class ProcesoVideoWorker(
             // Usar solo NotificationManager para evitar duplicados
             val notificationManager = com.frivasm.manosquehablan.notifications.NotificationManager
             notificationManager.createNotificationChannels(appContext.applicationContext)
-            
-            // Foreground service ya iniciado por getForegroundInfo()
-            // Verificar permisos de notificación antes de continuar
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 val notificationManager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 if (!notificationManager.areNotificationsEnabled()) {
                     Log.w(TAG, "Notificaciones no habilitadas - foreground service podría fallar en Android 14+")
-                    // En Android 14, si no hay permisos de notificación, el foreground service fallará
-                    // pero el trabajo puede continuar en segundo plano
                 }
             }
 
             Log.d(TAG, "Foreground service ya iniciado por getForegroundInfo()")
-            
-            // 1. Verificar conectividad
+
             jobManager.updateJobState(job.id, VideoProcessingJobManager.STATE_UPLOADING, "Verificando conexión...")
             updateProgress("Verificando conexión, por favor espera...")
             val conectividadOk = verificarConectividad()
             if (!conectividadOk) {
-                // Sin conexión - cancelar definitivamente el trabajo
                 Log.w(TAG, "Conectividad fallida - cancelando trabajo")
                 return handleFinalError(job.id, "No hay conexión a internet. Verifica que tengas Wi-Fi o datos móviles activados y vuelve a intentar.", videoPath)
             }
 
-            // Verificar si el trabajo fue cancelado después de la verificación de conectividad
             if (isStopped) {
                 Log.w(TAG, "Trabajo cancelado después de verificación de conectividad")
                 return Result.failure()

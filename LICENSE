@@ -1,0 +1,48 @@
+MIT License
+
+Copyright (c) 2025 Fernando Josué Rivas Mauricio
+
+Este software fue desarrollado como parte de un proyecto de tesis para 
+obtener el título de Ingeniería en Sistemas.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+ACADEMIC USE NOTICE:
+
+This project "Manos Que Hablan - Traductor de Lengua de Señas Guatemalteca" 
+was developed as a thesis project. If you use this software for academic 
+purposes, research, or derivative works, please cite it appropriately:
+
+Rivas Mauricio, F. J. (2025). Manos Que Hablan: Sistema de Traducción 
+Automática de Lengua de Señas Guatemalteca usando Deep Learning. 
+[Proyecto de Tesis]. Universidad [Nombre de tu Universidad].
+GitHub: https://github.com/ItsFernan17/LenguaSeniasApp
+
+---
+
+CONTRIBUCIONES:
+
+Se agradece especialmente a:
+- La comunidad sorda guatemalteca por su colaboración en la creación del dataset
+- Los participantes que proporcionaron videos de señas
+- Asesores y revisores académicos del proyecto
+
+Para más información sobre el proyecto, consultar el README.md

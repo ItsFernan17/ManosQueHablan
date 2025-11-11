@@ -122,16 +122,23 @@ class InicioAppActivity : AppCompatActivity() {
         if (PreferenciasHelper.esPrimeraVez(this)) {
             // Usar un pequeño delay para que la actividad termine de cargar
             btnNuevoVideo.postDelayed({
-                DialogUtils.mostrarDialogoBienvenida(this)
+                DialogUtils.mostrarDialogoBienvenida(this) {
+                    // Después de que se cierre el diálogo de bienvenida, verificar si mostrar actualización
+                    if (PreferenciasHelper.deberMostrarActualizacion110(this@InicioAppActivity)) {
+                        btnNuevoVideo.postDelayed({
+                            DialogUtils.mostrarDialogoNuevaActualizacion(this@InicioAppActivity)
+                        }, 500)
+                    }
+                }
             }, 500)
-        } 
-        // DESACTIVADO TEMPORALMENTE - Modal de actualización 1.1.0
-        // else if (PreferenciasHelper.deberMostrarActualizacion110(this)) {
-        //     // Si no es primera vez, verificar si debe mostrar el diálogo de actualización 1.1.0
-        //     btnNuevoVideo.postDelayed({
-        //         DialogUtils.mostrarDialogoNuevaActualizacion(this)
-        //     }, 500)
-        // }
+        } else {
+            // Si no es primera vez, verificar si debe mostrar el diálogo de actualización 1.1.0
+            if (PreferenciasHelper.deberMostrarActualizacion110(this)) {
+                btnNuevoVideo.postDelayed({
+                    DialogUtils.mostrarDialogoNuevaActualizacion(this)
+                }, 500)
+            }
+        }
         
         // PARA PRUEBAS: Descomentar las siguientes líneas para resetear y ver los diálogos nuevamente
         // PreferenciasHelper.marcarBienvenidaMostrada(this) // comentar esta línea para resetear bienvenida

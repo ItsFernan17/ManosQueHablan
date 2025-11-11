@@ -20,6 +20,21 @@
       "descripcion": "¿Por qué? • ¿Dónde? • ¿Cuál?",
       "boton_texto": "Ver Vocabulario",
       "enlace": "https://www.youtube.com/watch?v=kxHIUMcL9Is&list=PLd40dkghU2zd7Jt5-mKOoarLaY0S8Fy0y&index=13"
+    },
+    {
+      "id": "verbos",
+      "titulo": "Verbos",
+      "descripcion": "Cantar • Jugar • Desconectar • Ser • Estudiar",
+      "enlaces": [
+        {
+          "texto": "Ver Vocabulario 1",
+          "url": "https://www.youtube.com/watch?v=01Iw4tRtDVQ&list=PLd40dkghU2zd7Jt5-mKOoarLaY0S8Fy0y&index=16"
+        },
+        {
+          "texto": "Ver Vocabulario 2",
+          "url": "https://youtu.be/6-QdW4HQXbc?si=wcUrNhcS81OBVeka"
+        }
+      ]
     }
   ]
 }

@@ -335,6 +335,66 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Sección: Change Log -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Change Log"
+            android:textSize="18sp"
+            android:textColor="@color/celeste"
+            android:fontFamily="@font/poppins_bold"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardChangeLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:text="Historial de Cambios"
+                        android:textColor="@color/texto_principal"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ver las últimas actualizaciones de la app"
+                        android:textSize="14sp"
+                        android:textColor="@color/texto_secundario"
+                        android:fontFamily="@font/poppins_regular"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_info"
+                    app:tint="@color/texto_principal" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Sección: Acerca de -->
         <TextView
             android:layout_width="match_parent"

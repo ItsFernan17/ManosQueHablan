@@ -82,6 +82,12 @@ class ConfiguracionActivity : AppCompatActivity() {
             preferences.edit().putBoolean(PREF_CONFIRMAR_COMPARTIR_MAL_TRADUCIDOS, isChecked).apply()
         }
 
+        // Configurar click listener para "Change Log"
+        val cardChangeLog = findViewById<MaterialCardView>(R.id.cardChangeLog)
+        cardChangeLog.setOnClickListener {
+            mostrarChangeLog()
+        }
+
         // Configurar click listener para "Acerca de"
         val cardAcercaDe = findViewById<MaterialCardView>(R.id.cardAcercaDe)
         cardAcercaDe.setOnClickListener {
@@ -161,6 +167,26 @@ class ConfiguracionActivity : AppCompatActivity() {
         animador.start()
     }
     
+    private fun mostrarChangeLog() {
+        val dialog = android.app.Dialog(this, android.R.style.Theme_DeviceDefault_Light_NoActionBar_Fullscreen)
+        val view = layoutInflater.inflate(R.layout.dialog_changelog, null)
+        dialog.setContentView(view)
+
+        val btnCerrar = view.findViewById<ImageView>(R.id.btnCerrarChangeLog)
+        val txtVersion110 = view.findViewById<TextView>(R.id.txtVersion110)
+        val txtVersion103 = view.findViewById<TextView>(R.id.txtVersion103)
+
+        // Animar títulos con colores como los demás diálogos
+        animarTituloColores(this, txtVersion110)
+        animarTituloColores(this, txtVersion103)
+
+        btnCerrar.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         // DESHABILITADO - Cancelar animación ya no es necesario

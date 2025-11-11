@@ -435,7 +435,7 @@ object DialogUtils {
         }
     }
 
-    fun mostrarDialogoBienvenida(context: Context) {
+    fun mostrarDialogoBienvenida(context: Context, onDismissed: (() -> Unit)? = null) {
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.dialog_bienvenida, null)
         val btnAceptar = view.findViewById<View>(R.id.btnAceptarBienvenida)
@@ -460,6 +460,7 @@ object DialogUtils {
         // Cancelar animación cuando el diálogo se cierre
         dialog.setOnDismissListener {
             // Ya no hay animación que cancelar
+            onDismissed?.invoke()
         }
 
         dialog.show()

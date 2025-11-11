@@ -20,18 +20,47 @@
     <img src="/web/assets/logo.png" alt="Manos Que Hablan" class="bg-logo" onerror="this.style.display='none';" />
   </div>
 
-  <!-- Navbar (simple) -->
+  <!-- Navbar -->
   <nav class="navbar">
     <div class="nav-container">
       <div class="nav-brand">
-        <a href="/"><img src="/web/assets/logo.png" alt="Manos Que Hablan" onerror="this.style.display='none';" /></a>
+        <a href="/">
+          <img src="/web/assets/logo.png" alt="Manos Que Hablan" class="logo-icon" onerror="this.style.display='none';" />
+          <img src="/web/assets/logoCompleto.png" alt="Manos Que Hablan" class="logo-complete" onerror="this.style.display='none';" />
+        </a>
       </div>
-      <div class="nav-links">
-        <a href="/#acerca" class="nav-link">Acerca de</a>
-        <a href="/#caracteristicas" class="nav-link">Características</a>
-        <a href="/#contacto" class="nav-link">Contacto</a>
+      <div class="nav-menu">
+        <ul class="nav-links">
+          <li><a href="/">Inicio</a></li>
+          <li><a href="/#acerca">Sobre el Proyecto</a></li>
+          <li><a href="/#caracteristicas">Tecnología</a></li>
+          <li><a href="/#margarita-lsg1">IA Margarita</a></li>
+          <li><a href="/#acknowledgments">Colaboradores</a></li>
+          <li><a href="/#privacy">Seguridad de Datos</a></li>
+          <li><a href="/#contacto">Contáctanos</a></li>
+        </ul>
       </div>
+      <button class="hamburger" aria-label="Abrir menú" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
+    <div class="nav-drawer">
+      <div class="nav-drawer-header">
+        <img src="/web/assets/logoCompleto.png" alt="Manos Que Hablan" class="nav-drawer-logo" onerror="this.style.display='none';">
+      </div>
+      <ul class="nav-links-mobile">
+        <li><a href="/">Inicio</a></li>
+        <li><a href="/#acerca">Sobre el Proyecto</a></li>
+        <li><a href="/#caracteristicas">Tecnología</a></li>
+        <li><a href="/#margarita-lsg1">IA Margarita</a></li>
+        <li><a href="/#acknowledgments">Equipo</a></li>
+        <li><a href="/#privacy">Seguridad de Datos</a></li>
+        <li><a href="/#contacto">Contáctanos</a></li>
+      </ul>
+    </div>
+    <div class="overlay"></div>
   </nav>
 
   <main>
@@ -110,7 +139,7 @@
             <p>Podemos restringir el acceso si se incumplen estos Términos o se detecta uso indebido. Tú puedes dejar de usar la app en cualquier momento.</p>
 
             <h3>10. Contacto</h3>
-            <p>Para consultas sobre estos Términos: <a href="mailto:manosquehablan.app@gmail.com">manosquehablan.app@gmail.com</a></p>
+            <p>Para consultas sobre estos Términos: contacto@manosquehablan.org</p>
 
             <h3>11. Ley aplicable y jurisdicción</h3>
             <p>Estos Términos de Uso se rigen por las leyes de la República de Guatemala. Cualquier disputa relacionada con estos términos será resuelta en los tribunales competentes de Guatemala.</p>
@@ -150,6 +179,42 @@
 
   <!-- JS mínimo para botón y animaciones de aparición -->
   <script>
+    // Navbar hamburger menu
+    document.addEventListener('DOMContentLoaded', function() {
+      const hamburger = document.querySelector('.hamburger');
+      const drawer = document.querySelector('.nav-drawer');
+      const overlay = document.querySelector('.overlay');
+      const navLinks = document.querySelectorAll('.nav-links li a, .nav-links-mobile li a');
+
+      // Hamburger toggle
+      if (hamburger) {
+        hamburger.addEventListener('click', function() {
+          const isOpen = drawer.classList.contains('open');
+          drawer.classList.toggle('open');
+          overlay.classList.toggle('open');
+          hamburger.setAttribute('aria-expanded', !isOpen);
+        });
+      }
+
+      // Close drawer on overlay click
+      if (overlay) {
+        overlay.addEventListener('click', function() {
+          drawer.classList.remove('open');
+          overlay.classList.remove('open');
+          if (hamburger) hamburger.setAttribute('aria-expanded', 'false');
+        });
+      }
+
+      // Close on Esc
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && drawer.classList.contains('open')) {
+          drawer.classList.remove('open');
+          overlay.classList.remove('open');
+          if (hamburger) hamburger.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+
     // Botón subir
     const toTop = document.getElementById('toTop');
     const toggleTop = () => { toTop.style.opacity = window.scrollY > 400 ? 1 : 0; };

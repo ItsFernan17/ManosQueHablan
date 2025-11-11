@@ -992,6 +992,9 @@ class ProcesandoVideoActivity : AppCompatActivity() {
             val dialog = builder.setView(view).setCancelable(false).create()
             dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
+            // Animación del título
+            DialogUtils.establecerColorTituloEstatico(this@ProcesandoVideoActivity, view.findViewById(R.id.txtTitulo))
+
             btnAceptar.setOnClickListener {
                 dialog.dismiss()
                 val intent = Intent(this, InicioAppActivity::class.java)

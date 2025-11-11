@@ -20,14 +20,41 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-brand">
-                  <img src="/web/assets/logo.png" alt="Manos Que Hablan" onerror="this.style.display='none';">
+                <img src="/web/assets/logo.png" alt="Manos Que Hablan" class="logo-icon" onerror="this.style.display='none';">
+                <img src="/web/assets/logoCompleto.png" alt="Manos Que Hablan" class="logo-complete" onerror="this.style.display='none';">
             </div>
-            <div class="nav-links">
-                <a href="#acerca" class="nav-link">Acerca de</a>
-                <a href="#caracteristicas" class="nav-link">Características</a>
-                <a href="#contacto" class="nav-link">Contacto</a>
+            <div class="nav-menu">
+                <ul class="nav-links">
+                    <li><a href="/">Inicio</a></li>
+                    <li><a href="#acerca">Sobre el Proyecto</a></li>
+                    <li><a href="#caracteristicas">Tecnología</a></li>
+                    <li><a href="#margarita-lsg1">IA Margarita</a></li>
+                    <li><a href="#acknowledgments">Colaboradores</a></li>
+                    <li><a href="#privacy">Seguridad de Datos</a></li>
+                    <li><a href="#contacto">Contáctanos</a></li>
+                </ul>
             </div>
+            <button class="hamburger" aria-label="Abrir menú" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
+        <div class="nav-drawer">
+            <div class="nav-drawer-header">
+                <img src="/web/assets/logoCompleto.png" alt="Manos Que Hablan" class="nav-drawer-logo" onerror="this.style.display='none';">
+            </div>
+            <ul class="nav-links-mobile">
+                <li><a href="/">Inicio</a></li>
+                <li><a href="#acerca">Sobre el Proyecto</a></li>
+                <li><a href="#caracteristicas">Tecnología</a></li>
+                <li><a href="#margarita-lsg1">IA Margarita</a></li>
+                <li><a href="#acknowledgments">Equipo</a></li>
+                <li><a href="#privacy">Seguridad de Datos</a></li>
+                <li><a href="#contacto">Contáctanos</a></li>
+            </ul>
+        </div>
+        <div class="overlay"></div>
     </nav>
 
     <main>
@@ -44,7 +71,7 @@
                         <span class="highlight">Inteligencia Artificial</span>
                     </p>
                     <div class="hero-actions">
-                        <a href="#" class="cta-button primary" onclick="showComingSoonModal()">
+                        <a href="#" class="cta-button primary" onclick="openPlayStore()">
                             <span>Descargar App</span>
                         </a>
                         <a href="#acerca" class="cta-button secondary">
@@ -53,7 +80,7 @@
                     </div>
                     <div class="hero-note">
                         <img src="/web/assets/android.svg" alt="Android" style="width: 20px; height: 20px; margin-right: 8px;">
-                        Exclusivo para Android - Disponible muy pronto
+                        Exclusivo para Android - ¡Ya disponible!
                     </div>
                 </div>
                 <div class="hero-visual">
@@ -120,6 +147,25 @@
                     <div class="feature-card">
                         <div class="feature-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                                <line x1="12" y1="18" x2="12" y2="18"/>
+                            </svg>
+                        </div>
+                        <h3>Móvil</h3>
+                        <p>Compatible con Android, intuitiva y ligera. Funciona en dispositivos de diferentes gamas sin equipos costosos.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                        </div>
+                        <h3>Inclusión</h3>
+                        <p>Rompe barreras entre comunidades sordas y oyentes, fomentando igualdad de oportunidades.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                             </svg>
                         </div>
@@ -147,38 +193,90 @@
                     <div class="feature-card">
                         <div class="feature-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-                                <line x1="12" y1="18" x2="12" y2="18"/>
+                                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+                                <polyline points="16,6 12,2 8,6"/>
+                                <line x1="12" y1="2" x2="12" y2="15"/>
                             </svg>
                         </div>
-                        <h3>Móvil</h3>
-                        <p>Compatible con Android, intuitiva y ligera. Funciona en dispositivos de diferentes gamas sin equipos costosos.</p>
+                        <h3>Compartir en Redes</h3>
+                        <p>Comparte tus videos traducidos fácilmente en redes sociales para promover la inclusión.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="margarita-lsg1" class="margarita-lsg1">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2>MargaritaLSG1</h2>
+                    <div class="header-accent"></div>
+                    <p class="section-description">Este modelo impulsa la aplicación Manos Que Hablan, siendo el primero en Guatemala especializado en Lengua de Señas Guatemalteca para promover la inclusión digital.</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="Icono de globo para especialización en Lengua de Señas Guatemalteca">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="2" y1="12" x2="22" y2="12"/>
+                                <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+                            </svg>
+                        </div>
+                        <h3>Especializado en LSG</h3>
+                        <p>Desarrollado para reconocer la Lengua de Señas Guatemalteca con precisión e identidad nacional.</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="Icono de altavoz para texto y voz sintética">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/>
                             </svg>
                         </div>
-                        <h3>Inclusión</h3>
-                        <p>Rompe barreras entre comunidades sordas y oyentes, fomentando igualdad de oportunidades.</p>
+                        <h3>Texto y Voz Sintética</h3>
+                        <p>Convierte las señas en texto y voz sintética clara y entendible.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="Icono de ojo para precisión en tiempo real">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </div>
+                        <h3>Precisión en Tiempo Real</h3>
+                        <p>Detección y seguimiento de señas con alta exactitud cuadro a cuadro.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="acknowledgments">
+        <section id="acknowledgments" class="acknowledgments">
             <div class="section-container">
-                <div class="acknowledgments-content">
-                    <h3>Agradecimientos</h3>
-                    <p>
-                        Se agradece al Benemérito Comité Pro Ciegos y Sordos de Guatemala por su valioso apoyo y colaboración en el desarrollo de esta iniciativa de inteligencia artificial. Su respaldo ha sido fundamental para hacer posible esta herramienta de inclusión y accesibilidad destinada a la comunidad con necesidades auditivas especiales en Guatemala.
-                    </p>
+                <div class="section-header">
+                    <h2>Agradecimientos Especiales</h2>
+                    <div class="header-accent"></div>
+                </div>
+                <div class="acknowledgments-grid">
+                    <div class="acknowledgment-card primary">
+                        <div class="acknowledgment-icon">
+                            <img src="/web/assets/prociegosysordos.webp" alt="Benemérito Comité Pro Ciegos y Sordos de Guatemala">
+                        </div>
+                        <h4>Benemérito Comité Pro Ciegos y Sordos de Guatemala</h4>
+                        <p>
+                            Su valioso apoyo y colaboración han sido fundamentales para hacer posible esta herramienta de inclusión y accesibilidad destinada a la comunidad con necesidades auditivas especiales en Guatemala.
+                        </p>
+                    </div>
+                    <div class="acknowledgment-card secondary">
+                        <div class="acknowledgment-icon">
+                            <img src="/web/assets/escuelita.webp" alt="Escuela de Niños Sordomudos JV Huehuetenango">
+                        </div>
+                        <h4>Escuela de Niños Sordomudos JV Huehuetenango</h4>
+                        <p>
+                            Su invaluable apoyo y colaboración han sido esenciales para avanzar en la inclusión y accesibilidad para la comunidad con necesidades auditivas especiales en Guatemala.
+                        </p>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="privacy">
+        <section id="privacy" class="privacy">
             <div class="section-container">
                 <div class="section-header">
                     <h2>Privacidad y Seguridad</h2>
@@ -230,25 +328,72 @@
         </section>
 
 
-        <section id="contacto" class="contact">
+        <section id="contacto" class="contacto">
             <div class="section-container">
                 <div class="section-header">
-                    <h2>Contacto</h2>
-                    <p class="contact-subtitle">¿Tienes dudas o sugerencias? Escríbenos</p>
+                    <h2>Estamos Aquí Para Ti</h2>
+                    <p class="contact-subtitle">Tu opinión es fundamental para seguir mejorando. Escríbenos con tus dudas, sugerencias o comentarios y te responderemos a la brevedad.</p>
                     <div class="header-accent"></div>
                 </div>
-                <div class="contact-content">
-                    <div class="contact-item">
-                        <div class="contact-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                <path d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+
+                <div class="contact-email-box">
+                    <div class="email-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <h3>Envía tu mensaje a:</h3>
+                    <span class="contact-email-link" onclick="copyEmail()" title="Clic para copiar">
+                        contacto@manosquehablan.org
+                    </span>
+                    <p class="contact-info-text" id="copy-message" style="color: #10b981; font-weight: 600; opacity: 0; transition: opacity 0.3s;">
+                        ✓ Correo copiado al portapapeles
+                    </p>
+                    <p class="contact-info-text">
+                        Estamos aquí para ayudarte con cualquier consulta, duda o sugerencia sobre la aplicación.
+                    </p>
+                </div>
+
+                <div class="contact-grid">
+                    <div class="contact-info-card">
+                        <div class="info-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                             </svg>
                         </div>
-                        <div class="contact-info">
-                            <h3>Estamos aquí para ayudarte</h3>
-                            <p class="contact-email">manosquehablan.app@gmail.com</p>
-                        </div>
+                        <h4>Soporte Técnico</h4>
+                        <p>¿Problemas con la aplicación? Te ayudamos a resolverlos rápidamente.</p>
                     </div>
+
+                    <div class="contact-info-card">
+                        <div class="info-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+                            </svg>
+                        </div>
+                        <h4>Sugerencias</h4>
+                        <p>Tu opinión es importante. Comparte tus ideas para mejorar la app.</p>
+                    </div>
+
+                    <div class="contact-info-card">
+                        <div class="info-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 010 7.75"/>
+                            </svg>
+                        </div>
+                        <h4>Colaboración</h4>
+                        <p>¿Quieres colaborar con el proyecto? ¡Contáctanos!</p>
+                    </div>
+                </div>
+
+                <div class="contact-footer-note">
+                    <p>
+                        <strong>Tiempo de respuesta:</strong> Respondemos en un plazo de 24-48 horas hábiles.<br>
+                        <strong>Horario:</strong> Lunes a Viernes, 9:00 AM - 5:00 PM (GMT-6)
+                    </p>
                 </div>
             </div>
         </section>
@@ -289,6 +434,38 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.querySelector('.hamburger');
+            const drawer = document.querySelector('.nav-drawer');
+            const overlay = document.querySelector('.overlay');
+            const navLinks = document.querySelectorAll('.nav-links li a, .nav-links-mobile li a');
+
+            // Hamburger toggle
+            hamburger.addEventListener('click', function() {
+                const isOpen = drawer.classList.contains('open');
+                drawer.classList.toggle('open');
+                overlay.classList.toggle('open');
+                hamburger.setAttribute('aria-expanded', !isOpen);
+            });
+
+            // Close drawer on overlay click
+            overlay.addEventListener('click', function() {
+                drawer.classList.remove('open');
+                overlay.classList.remove('open');
+                hamburger.setAttribute('aria-expanded', 'false');
+            });
+
+            // Close on Esc
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && drawer.classList.contains('open')) {
+                    drawer.classList.remove('open');
+                    overlay.classList.remove('open');
+                    hamburger.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+        });
+
         function showComingSoonModal() {
             document.getElementById('comingSoonModal').style.display = 'flex';
         }
@@ -310,11 +487,53 @@
 
             if (isAndroid) {
                 // Intent para abrir Play Store nativa
-                window.location.href = 'market://details?id=com.manosquehablan.app';
+                window.location.href = 'market://details?id=org.manosquehablan';
             } else {
                 // Abrir Play Store web
-                window.open('https://play.google.com/store/apps/details?id=com.manosquehablan.app', '_blank');
+                window.open('https://play.google.com/store/apps/details?id=org.manosquehablan', '_blank');
             }
+        }
+
+        // Función para copiar el correo al portapapeles
+        function copyEmail() {
+            const email = 'contacto@manosquehablan.org';
+            const message = document.getElementById('copy-message');
+            
+            // Usar la API moderna del portapapeles
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(email).then(() => {
+                    showCopyMessage(message);
+                }).catch(() => {
+                    fallbackCopyEmail(email, message);
+                });
+            } else {
+                fallbackCopyEmail(email, message);
+            }
+        }
+
+        // Método alternativo para navegadores antiguos
+        function fallbackCopyEmail(email, message) {
+            const textArea = document.createElement('textarea');
+            textArea.value = email;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showCopyMessage(message);
+            } catch (err) {
+                console.error('Error al copiar:', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // Mostrar mensaje de confirmación
+        function showCopyMessage(message) {
+            message.style.opacity = '1';
+            setTimeout(() => {
+                message.style.opacity = '0';
+            }, 2000);
         }
     </script>
 </body>
